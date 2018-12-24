@@ -1,0 +1,84 @@
+# Function: 0410184
+# Used Library: EQ (gates: 74, quantum costs: 74)
+# This file have been taken from RevLib (www.revlib.org). 
+.version 1.0
+.numvars 14
+.variables a b c d e f g h i j k l m n
+.inputs a b c d e f g h i j k l m n
+.outputs a b c d e f g h i j k l m n
+.begin
+t2 d c
+t2 e d
+v a c
+t2 a b
+v+ b c
+t2 a b
+v b c
+t2 f e
+t2 g f
+v c e
+t2 d c
+v+ d e
+v+ c e
+t2 h g
+t2 i h
+v e g
+t2 f e
+v+ f g
+v+ e g
+t2 j i
+t2 k j
+v g i
+t2 h g
+v+ h i
+v+ g i
+v i k
+t2 j i
+v+ j k
+v+ i k
+t2 m n
+t1 d
+t1 f
+t1 h
+t1 j
+t2 k l
+t2 m k
+v l n
+v+ k n
+t2 l k
+v+ k n
+v i k
+v+ j k
+t2 i j
+v j k
+v g i
+v+ h i
+t2 g h
+v h i
+t1 j
+t2 m l
+t2 l k
+v e g
+v+ f g
+t2 e f
+v f g
+t1 h
+t2 k i
+v c e
+v+ d e
+t2 c d
+v d e
+t1 f
+t2 i g
+v a c
+t2 b a
+v+ a c
+v b c
+t1 d
+t2 g e
+t2 e c
+t2 e d
+t2 g f
+t2 i h
+t2 k j
+.end

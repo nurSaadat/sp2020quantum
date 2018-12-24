@@ -1,0 +1,51 @@
+{'b': {'n', 'c', 'a'}, 'a': {'b'}, 'c': {'m', 'd', 'b'}, 'd': {'e', 'l', 'c'}, 'e': {'k', 'f', 'd'}, 'k': {'e', 'l', 'j'}, 'f': {'e', 'j', 'g'}, 'g': {'i', 'f'}, 'j': {'i', 'k', 'f'}, 'i': {'h', 'j', 'g'}, 'h': {'i'}, 'l': {'k', 'd', 'm'}, 'm': {'l', 'n', 'c'}, 'n': {'m', 'b'}}
+Weights are:{'ac': 1, 'bc': 2}, skeleton is:['ac', 'bc', 'bc'], vertices are{'c', 'b', 'a'}, paths are {'a': {'c'}, 'b': {'c'}},latest weight are[]
+Self skeleton is ['ac', 'bc', 'bc']
+Reached HERE ac
+Reached HERE bc
+Reached HERE bc
+Missing connections are [['a', 'c']]
+['t2 c a\n', 't2 c b\n', 't2 c b\n']
+Not notMatching element ['a', 'c']
+Hi ['b', 'd', 'm']
+Hello ['b', 'd', 'm']
+Hey [['a', 'b']]
+Hoy ['a', 'b']
+['c', 'a'] ['a', 'c']
+I am fcking here 0
+0
+sw c b
+What to replace is: ['c', 'b']
+FIxing the stuff
+['sw c b', 't2 b a', 'sw c b', 't2 c b\n', 't2 c b\n']
+{'000': 16, '001': 1, '100': 5, '010': 171, '011': 2, '110': 5}
+
+OPENQASM 2.0;
+include "qelib1.inc";
+qreg q0[3];
+creg c0[3];
+x q0[1];
+cx q0[2],q0[0];
+cx q0[2],q0[1];
+cx q0[2],q0[1];
+measure q0[0] -> c0[0];
+measure q0[1] -> c0[1];
+measure q0[2] -> c0[2];
+
+OPENQASM 2.0;
+include "qelib1.inc";
+qreg q1[3];
+creg c1[3];
+x q1[1];
+swap q1[1],q1[2];
+cx q1[1],q1[0];
+swap q1[1],q1[2];
+cx q1[2],q1[1];
+cx q1[2],q1[1];
+measure q1[0] -> c1[0];
+measure q1[1] -> c1[1];
+measure q1[2] -> c1[2];
+
+{'000': 87, '001': 13, '010': 24, '011': 7, '100': 20, '101': 21, '110': 21, '111': 7}
+
+

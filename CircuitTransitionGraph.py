@@ -1,0 +1,256 @@
+class CircuitTransitionGraph:
+    def __init__(self):
+        self.weights = {}
+        self.sk = []
+        self.lines = []
+        self.v = set()
+        self.paths = dict()
+        self.trace = []
+        self.weightsForPath = []
+        self.bestPossibleEdge =[]
+        self.found = 0
+        self.cost = 0
+        self.coupling = {}
+        self.size = 0
+        
+    def modifyWeights(self,first,second):
+        self.v.add(first)
+        self.v.add(second)
+        if second < first:
+            temp = first
+            first = second
+            second = temp
+        key = str(first)+str(second)
+        self.weights[key]=self.weights.get(key,0)+1
+        self.sk.append(key)
+
+    def getMissingConnections(self):
+        self.notMatching = []
+        t = self.coupling
+        print("Self skeleton is",self.sk)
+        for i in self.sk:
+            if (t.get(i[0])!= None):
+                if (i[1] not in t.get(i[0])):
+                    tPair = [i[0],i[1]]
+                    self.notMatching.append(tPair)
+            else:
+                tPair = [i[0],i[1]]
+                self.notMatching.append(tPair)
+        return self.notMatching
+
+    def modifyWeightsOneQubit(self,only):
+        self.v.add(only)
+     
+    def setSize(self,size):
+        self.size = size
+
+ #   def buildPaths(self):
+  #      for i in self.sk:
+   #         vFrom = i[0]
+    #        self.paths[vFrom]=set()
+     #   for i in self.sk:
+      #      vFrom = i[0]
+       #     vTo = i[1]
+        #    pat=self.paths.get(vFrom)
+         #   pat.add(vTo)
+          #  self.paths[vFrom]=pat
+#run an experiemnt and check noise
+# run an experiment and swap with shit
+
+#    def findNodesThatLeadToTo(self, listPiece):
+ #       to = listPiece[1]
+  #      possibleEdges = []
+   #     for element in self.coupling:
+    #        if to in self.coupling.get(element):
+     #           possibleEdges.append( element)
+
+
+      #  if element not in possibleEdges:
+            #startRecursion
+         #   return []
+
+      #  return possibleEdges
+
+    #def findNodesFromConnectedTo(self, listPiece):
+     #   fro = listPiece[0]
+      #  possibleNodes = []
+       # for i in self.coupling.get(fro):
+        #    possibleNodes.append(i)
+        #return possibleNodes
+    
+    def edgeExist(self,a,b):
+        if b in self.coupling.get(a):
+            return 1
+        else:
+            return 0
+
+    def storeLine(self,storeLine):
+        self.lines.append(storeLine)
+
+   # def findConnectedToBoth(self,listFrom,listTo):
+    #    possibleEdges = []
+     #   for a in listFrom:
+      #      for b in listTo:
+       #         if self.edgeExist(a,b):
+        #            possibleEdges.append([a,b])
+        #        
+        #return possibleEdges
+    
+
+    def selectLeastOccupied(self, smallList):
+        minSize = len(smallList[0])
+        myIndex = 0
+        for element in smallList:
+            if len(element)<minSize:
+                minSize = len(element)
+                myIndex = smallList.index(element)
+        return smallList[myIndex]
+
+    def findIndexOfTheGateSkeleton(self,notMatching):
+        inn = 0
+        for line in self.lines:
+            tokens = line.split(" ",1)
+            #todo extend the list with the others
+            if tokens[0]=="t2": 
+                variables=tokens[1].split()
+                print(variables,notMatching)
+                if self.checkSkeletonEquivalence(variables,notMatching)==1:
+                    return inn
+                    print("RETURN DID NOT WORK")
+            inn = inn + 1
+        return inn
+
+    def getLines(self):
+        return self.lines
+
+    def checkSkeletonEquivalence(self, g1,g2):
+        g2.sort()
+        g1.sort()
+        if g1[0]==g2[0]:
+            if g1[1]==g2[1]:
+                return 1
+        return 0
+
+    def whatToReplace(self,item1,item2):
+        if (item1[0] == item2[0]):
+            return [item1[1],item2[1]]
+        else:
+            return [item1[0],item2[0]]
+
+    def rebuildGate(self,replaceTo,index):
+        lineToCorrect = self.lines[index]
+        tokens = lineToCorrect.split()
+        where = tokens.index(replaceTo[0])
+        tokens[where] = replaceTo[1]
+        replacement = ""
+        for element in tokens:
+            if len(replacement) != 0:
+                replacement = replacement+" "+element
+            else:
+                replacement = replacement+element
+        self.lines[index] = replacement
+
+    def surroundWithSwaps(self,index,replaceTo,thing):
+        size = len(replaceTo)
+        print("replaceTo",replaceTo)
+        for i in range(size-2):
+            swapString = "sw "+ replaceTo[i] + " " + replaceTo[i+1]
+            print(swapString)
+            self.lines.insert(index+i+1,swapString)
+            self.weights
+            self.lines.insert(index+i,swapString)
+    
+        print(thing)
+        self.rebuildGate(thing,index+size-2)
+
+    def fixTheSkeleton(self,element,replaceTo):
+        skElement = str(element[0])+str(element[1])
+        nskElement = str(replaceTo[0])+str(replaceTo[1])
+        if self.sk.index(skElement):
+            t = self.sk.index(skElement)
+            self.sk[t] = nskElement
+        print("fixed skeleton",self.sk)
+            
+    def fixMissingEdges(self):
+        for element in self.coupling:
+            print(element)
+        for element in self.notMatching:
+            print( "Paths to",element[0],element[1])
+            self.findPath(element[0],element[1])
+            
+            self.getPathAndStuff()
+            # Select first element record noise
+            # Select second element record noise
+            # Select .... elements record noise
+
+            self.bestPossibleEdge = self.selectLeastOccupied(self.possiblePath)
+            bestPossibleEdge = self.bestPossibleEdge
+            #print("Hoy",bestPossibleEdge)
+            #fix the possibilities: if the first is to , then insert the swap to from and the bestPossibleEdge
+            lastPair = [bestPossibleEdge[len(bestPossibleEdge)-2],bestPossibleEdge[len(bestPossibleEdge)-1]]
+            replaceTo =  self.whatToReplace(element,lastPair)
+            ind = self.findIndexOfTheGateSkeleton(element)
+            #print(ind)
+            self.surroundWithSwaps(ind,bestPossibleEdge,replaceTo)
+            self.fixTheSkeleton(element,replaceTo)
+            #print("What to replace is:",replaceTo)
+
+    def transformCoupling(self,maList):
+        for element in maList:
+            self.coupling[chr(element[0]+ord("a"))] = set()
+            self.coupling[chr(element[1]+ord("a"))] = set()
+        for element in maList:
+            self.coupling[chr(element[0]+ord("a"))].add(chr(element[1]+ord("a")))
+            self.coupling[chr(element[1]+ord("a"))].add(chr(element[0]+ord("a")))
+        return self.coupling
+          
+    def findCurrentCost(self):
+    	self.cost = 0
+    	for element in self.weights:
+    		self.cost = self.cost+element
+    	print (self.cost)
+
+
+    def findPath(self,current,vTo):
+        self.trace = []
+        self.weightsForPath = []
+        self.found = 0
+        self.possiblePath = []
+        self.cost = 0
+        self.findPathHelper(current,vTo,[current])
+        for i in range(0,len(self.trace)-1):
+            key = str(self.trace[i]) + str(self.trace[i+1])
+
+    def getPathAndStuff(self):
+        print("Trace is")
+        print(self.possiblePath)
+        return self.trace,self.weightsForPath
+
+    #The function is supposed to return reversed list of nodes
+    #required to traverse to reach the vTo node from the 
+    #current node
+
+    def findPathHelper(self,current,vTo,trace):
+        if current == vTo :
+            self.possiblePath.append(trace)
+            return
+        #print(self.coupling.get(current))
+        for i in self.coupling.get(current):
+            element = str(i)
+            if not (element in trace):
+         #       print(i)
+                #modify here to costs????
+                t = trace.copy()
+                if not (str(i) in t):
+                    t.append(str(i))
+                self.findPathHelper(i,vTo,t)
+            
+
+
+
+
+
+
+           
+    def __str__(self):
+        return "Weights are:"+str(self.weights)+", skeleton is:"+str(self.sk)+", vertices are"+str(self.v)+", paths are "+str(self.paths)+",latest weight are"+str(self.weightsForPath)

@@ -1,0 +1,13 @@
+# Function: cnotU
+.version 1.0
+.numvars 3
+.variables a b c
+.inputs a b c
+.outputs a b c
+.constants ---
+.garbage ---
+.begin
+sw a b
+t2 b c
+sw a b
+.end
