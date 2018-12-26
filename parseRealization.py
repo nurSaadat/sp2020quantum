@@ -5,18 +5,36 @@ from math import pi
 import numpy as np
 
 #works only if variable names are single characters in the alphabet)
-def readSizeFromFile(fname):
+def readCircuitInformation(fname):
     global ctg
+    global ioClass
+    global testDir
+    fileName1 = testDir+fileName + ".real"
+    fileName2 = testDir+fileName + ".pla"
+    print(filename2)
     ctg = CircuitTransitionGraph()
+    ioClass = InputOutputClass(ctg)
     size = -1
+    # block opens file and read all lines
     with open(fname, 'r') as f:
         lines = f.readlines()
+
+    #iterating through each line of code
     for lineRead in lines:
         tokens = lineRead.split(" ",1)
         if tokens[0]==".numvars":
             size =int( tokens[1])
             ctg.setSize(size)
+            ioClass.setSize(size)
+        if tokens[0]==".inputs":
+            for i in range(1,len(tokens)):
+                if isDigit(tokens[i]):
+                    ctg.hasConstantInputs = 1
+
     return size 
+
+
+
 
 def applySwap(qc,qr,first,second):
 	qc.cx(qr[first],qr[second])
@@ -316,6 +334,19 @@ def readGatesFromFile(fname,ctg):
    # print (ctg.getPathAndStuff())
    # return qc,qr,ctg
 
+#TODO remove 
+def readSizeFromFile(fname):
+    global ctg
+    ctg = CircuitTransitionGraph()
+    size = -1
+    with open(fname, 'r') as f:
+        lines = f.readlines()
+    for lineRead in lines:
+        tokens = lineRead.split(" ",1)
+        if tokens[0]==".numvars":
+            size =int( tokens[1])
+            ctg.setSize(size)
+    return size 
 
 
 #may need to return transpose

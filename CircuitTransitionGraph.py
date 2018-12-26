@@ -1,5 +1,7 @@
 class CircuitTransitionGraph:
     def __init__(self):
+        self.hasGarbage = 0
+        self.hasConstantInputs = 0
         self.weights = {}
         self.sk = []
         self.lines = []
@@ -12,7 +14,7 @@ class CircuitTransitionGraph:
         self.cost = 0
         self.coupling = {}
         self.size = 0
-        
+
     def modifyWeights(self,first,second):
         self.v.add(first)
         self.v.add(second)
