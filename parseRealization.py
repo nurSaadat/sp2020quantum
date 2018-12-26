@@ -1,25 +1,21 @@
 from qiskit import ClassicalRegister, QuantumRegister
 from qiskit import QuantumCircuit, execute
 from CircuitTransitionGraph import *
+from inputOutputClass import *
 from math import pi
 import numpy as np
 
 #works only if variable names are single characters in the alphabet)
-def readCircuitInformation(fname):
-    global ctg
-    global ioClass
-    global testDir
-    fileName1 = testDir+fileName + ".real"
-    fileName2 = testDir+fileName + ".pla"
-    print(filename2)
-    ctg = CircuitTransitionGraph()
+def readCircuitInformation(fname,ctg):
+    fileName1 = fname + ".real"
+    fileName2 = fname + ".pla"
+    print(fileName2)
     ioClass = InputOutputClass(ctg)
     size = -1
-    # block opens file and read all lines
-    with open(fname, 'r') as f:
+    #block opens file and read all lines
+    with open(fileName1, 'r') as f:
         lines = f.readlines()
-
-    #iterating through each line of code
+  #  iterating through each line of code
     for lineRead in lines:
         tokens = lineRead.split(" ",1)
         if tokens[0]==".numvars":
@@ -28,10 +24,11 @@ def readCircuitInformation(fname):
             ioClass.setSize(size)
         if tokens[0]==".inputs":
             for i in range(1,len(tokens)):
-                if isDigit(tokens[i]):
-                    ctg.hasConstantInputs = 1
-
-    return size 
+                if tokens[i].isdigit():
+                    ioClass.hasConstantInputs = 1
+    ioClass.readKmapFromFile(fileName2)
+    return ioClass
+    #return size 
 
 
 
@@ -46,6 +43,7 @@ def applySwap(qc,qr,first,second):
 	qc.cx(qr[first],qr[second])
 	return qc,qr
 #debugHere
+
 def insertSwaps(qc,qr,first,second):
     global ctg
     t =[]
@@ -288,7 +286,9 @@ def readGatesFromCtgNoMod(qc,qr,ctg):
 
    # print (ctg.getPathAndStuff())
     return qc,qr
+
 def readGatesFromFile(fname,ctg):
+    fname = fname + ".real"
     with open(fname, 'r') as f:
         lines = f.readlines()
     for lineRead in lines:
@@ -357,14 +357,3 @@ def getMatrixFromKmap(Stringz,size):
         myArr[int(i,2)][int(Stringz[i],2)]=1
     return myArr
 
-def readKmapFromFile(fname):
-    with open(fname, 'r') as f:
-        lines = f.readlines()
-    s = {}
-    for lineRead in lines:
-        lineRead=lineRead.replace('\n', '')
-        tokens = lineRead.split()
-        if 0 == lineRead.startswith("#") :
-            if 0==lineRead.startswith("."):
-                s[tokens[0]]=tokens[1]
-    return s

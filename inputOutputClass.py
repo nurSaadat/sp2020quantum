@@ -7,6 +7,10 @@ import numpy as np
 class InputOutputClass:
     def __init__(self,ctg):
         self.ctg = ctg
+        self.kMap = {}
+        self.hasConstantInputs = 0
+        self.hasGarbage = 0
+        self.hasConstantInputs = 0
 
 
     def neededOrNot(self):
@@ -25,9 +29,25 @@ class InputOutputClass:
         if self.ctg.hasConstantInputs != 0:
         #TODO implement garbage
             k = 42
-        else
+        else:
+            k = 15
             
 
+    def getKmap(self):
+        return self.kMap
 
-    def verifyOutput(self)
+    def readKmapFromFile(self,fname):
+        print("hi")
+        with open(fname, 'r') as f:
+            lines = f.readlines()
+        print(lines)
+        for lineRead in lines:
+            lineRead=lineRead.replace('\n', '')
+            tokens = lineRead.split()
+            if 0 == lineRead.startswith("#") :
+                if 0==lineRead.startswith("."):
+                    self.kMap[tokens[0]]=tokens[1]
+                    print(tokens[1])
+
+
 
