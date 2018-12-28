@@ -1,3 +1,4 @@
+from math import pi
 class CircuitTransitionGraph:
     def __init__(self):
         self.weights = {}
@@ -87,9 +88,6 @@ class CircuitTransitionGraph:
         else:
             return 0
 
-    def storeLine(self,storeLine):
-        self.lines.append(storeLine)
-
    # def findConnectedToBoth(self,listFrom,listTo):
     #    possibleEdges = []
      #   for a in listFrom:
@@ -123,8 +121,6 @@ class CircuitTransitionGraph:
             inn = inn + 1
         return inn
 
-    def getLines(self):
-        return self.lines
 
     def checkSkeletonEquivalence(self, g1,g2):
         g2.sort()
@@ -247,9 +243,173 @@ class CircuitTransitionGraph:
                 if not (str(i) in t):
                     t.append(str(i))
                 self.findPathHelper(i,vTo,t)
+     
+    def readGatesFromIOClass(self,qc,qr,ioClass):
+        lines = ioClass.getLines()
+        for lineRead in lines:
+            tokens = lineRead.split(" ",1)
+            if tokens[0]=="t3": 
+                variables=tokens[1].split(" ")
+                first = ord(variables[0][0])-ord('a')
+                second = ord(variables[1][0])-ord('a')
+                target = ord(variables[2][0])-ord('a')
+                qc,qr = self.insertToffoliGate(qc,qr,first,second,target)
+                #qc.ccx(qr[first],qr[second],qr[target])
+            if tokens[0]=="v": 
+                variables=tokens[1].split(" ")
+                control = ord(variables[0][0])-ord('a')
+                target = ord(variables[1][0])-ord('a')
+                qc,qr = self.insertV(qc,qr,control,target)
+            if tokens[0]=="v+":             
+                variables=tokens[1].split(" ")
+                control = ord(variables[0][0])-ord('a')
+                target = ord(variables[1][0])-ord('a')
+                qc,qr = self.insertVdag(qc,qr,control,target)
+            if tokens[0]=="t2":             
+                variables=tokens[1].split(" ")
+                control = ord(variables[0][0])-ord('a')
+                target = ord(variables[1][0])-ord('a')
+                qc.cx(qr[control],qr[target])
+            if tokens[0]=="t1":             
+                variables=tokens[1].split(" ")
+                control = ord(variables[0][0])-ord('a')
+                qc.x(qr[control])
+            if tokens[0]=="x":             
+                variables=tokens[1].split(" ")
+                t = ord(variables[0][0])-ord('a')
+                qc.x(qr[t])
+            if tokens[0]=="sw":             
+                variables=tokens[1].split(" ")
+                firstWire = ord(variables[0][0])-ord('a')
+                secondWire = ord(variables[1][0])-ord('a')
+                qc,qr = self.insertSwaps(qc,qr,firstWire,secondWire)
+
+       # print (ctg.getPathAndStuff())
+        return qc,qr
+
+       
+
+
+
+    def applySwap(self,qc,qr,first,second):
+        qc.cx(qr[first],qr[second])
+        qc.h(qr[first])
+        qc.h(qr[second])
+        qc.cx(qr[first],qr[second])
+        qc.h(qr[first])
+        qc.h(qr[second])
+        qc.cx(qr[first],qr[second])
+        return qc,qr
+    #debugHere
+
+    #TODO consider modifying weights bty multiple
+    def insertSwaps(self,qc,qr,first,second):
+        t =[]
+        if first == second:
+            return qc,qr
+        if second<first:
+            for k in range(second,first):
+                t.insert(0,k)
+        else:
+            t = range(first,second)
             
+        for i in t:
+            k = chr(i+ord('a'))
+            k2 = chr(i+ord('a')+1)
+            self.modifyWeights(k,k2)
+            qc,qr = self.applySwap(qc,qr,i,i+1)
+        return qc,qr
+
+    #this function applies controlled v gate to the circuit. the target MUST be control + 1
+    def applyV(self,qc,qr,control,target):
+        if target - 1 != control:
+            print ("The self.insertV function should be applied instead applyV")
+            exit(0)
+        qc.ry(pi/2,qr[target]);
+        qc.rz(pi/4,qr[control]);
+        qc.rz(pi/4,qr[target]);
+        qc.rzz(-pi/4,qr[control],qr[target]);
+        self.modifyWeights(chr(ord("a")+control),chr(ord("a")+target))
+        qc.ry(-pi/2,qr[target]);
+        return qc, qr
+
+    def applyVdag(self,qc,qr,control,target):
+        if target - 1 != control:
+            print ("The self.insertV function should be applied instead applyV")
+            exit(0)
+        qc.ry(-pi/2,qr[target]);
+        qc.rzz(-pi/4,qr[control],qr[target]);
+        self.modifyWeights(chr(ord("a")+control),chr(ord("a")+target))
+        qc.rz(pi/4,qr[target]);
+        qc.rz(pi/4,qr[control]);
+        qc.ry(pi/2,qr[target]);
+        return qc, qr;
+
+    def insertV(self,qc,qr,control,target):
+        second = target - 1
+        first = control
+        maximum = target
+        if target<control:
+            first = target
+            second = control
+            maximum = control
+        qc,qr=self.insertSwaps(qc,qr,first,second)
+        qc,qr=self.applyV(qc,qr,maximum-1,maximum)
+        qc,qr=self.insertSwaps(qc,qr,second,first)
+        return qc,qr
+
+    def insertVdag(self,qc,qr,control,target):
+        second = target - 1
+        first = control
+        maximum = target
+        if target<control:
+            first = target
+            second = control
+            maximum = control
+        qc,qr=self.insertSwaps(qc,qr,first,second)
+        qc,qr=self.applyVdag(qc,qr,maximum-1,maximum)
+        qc,qr=self.insertSwaps(qc,qr,second,first)
+        return qc,qr
 
 
+    def applyToffoliGate(self,qc,qr,first,second,third):
+        qc,qr=self.insertSwaps(qc,qr,first,second)
+        qc,qr=self.insertV(qc,qr,second,third)
+        qc,qr=self.insertSwaps(qc,qr,first,second)
+        qc,qr=self.insertV(qc,qr,second,third)
+        qc.cx(qr[first],qr[second])
+        self.modifyWeights(chr(ord("a")+first),chr(ord("a")+second))
+        qc,qr=self.insertVdag(qc,qr,second,third)
+        qc.cx(qr[first],qr[second])
+        self.modifyWeights(chr(ord("a")+first),chr(ord("a")+second))
+        return qc,qr
+
+
+    #TEST THOROUGHLY
+    def insertToffoliGate(self,qc,qr,first,second,target):
+        myList = [first,second,target]
+        myList.sort()
+        maximum = myList[2]
+        pos = myList.index(target)
+
+        if pos == 0:
+            first = myList[1]-1
+            second = myList[2]-1
+        if pos == 1:
+            first = myList[0]
+            second = myList[2]-1
+        if pos == 2:
+            first = myList[0]
+            second = myList[1]
+        self.insertSwaps(qc,qr,target,maximum)    
+        self.insertSwaps(qc,qr,second,maximum-1)
+        self.insertSwaps(qc,qr,first,maximum-2)
+        qc,qr =  self.applyToffoliGate(qc,qr,maximum-2,maximum-1,maximum)
+        self.insertSwaps(qc,qr,maximum-2,first)
+        self.insertSwaps(qc,qr,maximum-1,second)
+        self.insertSwaps(qc,qr,maximum,target)  
+
+        return qc,qr
 
 
 
