@@ -325,25 +325,33 @@ class CircuitTransitionGraph:
         if target - 1 != control:
             print ("The self.insertV function should be applied instead applyV")
             exit(0)
-        qc.ry(pi/2,qr[target]);
-        qc.rz(pi/4,qr[control]);
-        qc.rz(pi/4,qr[target]);
-        qc.rzz(-pi/4,qr[control],qr[target]);
-        self.modifyWeights(chr(ord("a")+control),chr(ord("a")+target))
-        qc.ry(-pi/2,qr[target]);
+
+        qc.tdg(qr[control])
+        qc.h(qr[target])
+        qc.cx(qr[target],qr[control])
+        qc.t(qr[control])
+        qc.tdg(qr[target])
+        qc.cx(qr[target],qr[control])
+        qc.h(qr[target])
+        self.modifyWeights(chr(ord("a")+target),chr(ord("a")+control))
+        self.modifyWeights(chr(ord("a")+target),chr(ord("a")+control))
         return qc, qr
 
     def applyVdag(self,qc,qr,control,target):
         if target - 1 != control:
             print ("The self.insertV function should be applied instead applyV")
             exit(0)
-        qc.ry(-pi/2,qr[target]);
-        qc.rzz(-pi/4,qr[control],qr[target]);
-        self.modifyWeights(chr(ord("a")+control),chr(ord("a")+target))
-        qc.rz(pi/4,qr[target]);
-        qc.rz(pi/4,qr[control]);
-        qc.ry(pi/2,qr[target]);
-        return qc, qr;
+        qc.h(qr[target])
+        qc.cx(qr[target],qr[control])           
+        qc.t(qr[target])  
+        qc.tdg(qr[control])        
+        qc.cx(qr[target],qr[control])
+        qc.h(qr[target])
+        qc.t(qr[control])
+
+
+
+        return qc, qr
 
     def insertV(self,qc,qr,control,target):
         second = target - 1

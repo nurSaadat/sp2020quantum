@@ -1,0 +1,14 @@
+# Function: CVCVdag
+# Used Library: MCT (gates: 1, quantum costs: 5)
+# This file have been taken from RevLib (www.revlib.org).
+.version 1.0
+.numvars 2
+.variables a b 
+.inputs a b
+.outputs a b 
+.constants --
+.garbage --
+.begin
+v+ a b
+v a b
+.end
