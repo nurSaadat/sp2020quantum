@@ -3,6 +3,12 @@ from qiskit import QuantumCircuit, execute
 from CircuitTransitionGraph import *
 from math import pi
 import numpy as np
+def flipTheString(s):
+    myString=""
+    length = len(s)
+    for it in range(0,length):
+        myString=myString+s[length-1-it]
+    return myString
 
 class InputOutputClass:
     def __init__(self):
@@ -16,7 +22,9 @@ class InputOutputClass:
         self.outputs = ""
 
     def setConstants(self,line):
-        self.constnats = line 
+        print("The constants are set to",line)
+        tokens = line.split()
+        self.constants = tokens[1] 
 
 
     def setOutputs(self,line):
@@ -78,33 +86,61 @@ class InputOutputClass:
     def setSize(self,size):
         self.size = size
 
-    #the function is supposed to return one if there is an error or 
+    # The function is supposed to return one if there is an error or 
     # return zero if there's not
     # @param2 is the results of execution
     # @param3 is the index of the element in the k-map
+    # Assumption: The function works if the values order for dict in python is preserved!
     def checkOutputs(self,counts,number):
-    #for release in stats_sim:
-     #           myString = flipTheString(release)
-      #          if myString != list(answers.keys())[i]:
-       #             error = str(i) + ":" + myString + ":"+list(answers.keys())[i]
-        #
-        return 1
+        expectedAnswer = list(self.kMap.values())[number]
+        
+        #print("The expected answer is",expectedAnswer)
+        #print("The actual answer is",counts)
+        
+        for release in counts.keys():
+        #        print("The \"release object is\"",release)
+         
+                myString = flipTheString(release)
+                if myString != expectedAnswer:
+                    print ("Error occurred",str(number) ,":", myString ,":",release)
+                    return 1
+
+        return 0
     #returns quantum register and quantum circuit initializing to @param state (matching the pla file)
     def createCircuitAndSetInput(self,number):
         size = self.size
+        #print("Size is",size)
         qr = QuantumRegister(size)
         cr = ClassicalRegister(size)
         qc = QuantumCircuit(qr,cr)
         if self.hasConstantInputs == 0:
-            myString = "{:02b}".format(number)
+            formatString = "{:0"+str(size)+"b}"
+            myString = formatString.format(number)
+            #print("My string is: ",myString,", size is ",size)
             for j in range(0,size):
                 if myString[j]=="1":
                     qc.x(qr[j])
-        else if self.hasGarbage == 1 and self.hasConstantInputs==0:
+        elif self.hasGarbage == 1 and self.hasConstantInputs==0:
             k = 42
-        else if self.hasGarbage == 0 and self.hasConstantInputs==1:
-            k = 41
-        else if self.hasGarbage == 1 and self.hasConstantInputs==1:
+        elif self.hasGarbage == 0 and self.hasConstantInputs==1:
+            inputList = []
+            theNumber = list(self.kMap.keys())[number]
+            i = 0 
+            j = 0
+            print("Constant field is:",self.constants)
+            print("Length of constants field is:",len(self.constants))
+            while i < len(self.constants):
+                if self.constants[i]!="-":
+                    inputList.append(self.constants[i])
+                else:
+                    inputList.append(theNumber[j])
+                    j = j + 1
+                i =  i + 1   
+            print("Reached here in preparation of inputs!!!, the inputList is",inputList)
+            for j in range(0,size):
+                if inputList[j]=="1":
+                    qc.x(qr[j])
+        elif self.hasGarbage == 1 and self.hasConstantInputs==1:
             k = 15
         return qr,cr,qc
             
