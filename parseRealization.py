@@ -22,9 +22,14 @@ def readCircuitInformation(fname):
             size =int( tokens[1])
             ioClass.setSize(size)
         if tokens[0]==".inputs":
-            for i in range(1,len(tokens)):
-                if tokens[i].isdigit():
-                    ioClass.hasConstantInputs = 1
+            ioClass.setInputs(lineRead)
+        if tokens[0]==".constants":
+            ioClass.setConstants(lineRead)
+        if tokens[0]==".outputs":
+            ioClass.setOutputs(lineRead)
+        if tokens[0]==".garbage":
+            ioClass.setGarbage(lineRead)
+    ioClass.determineInputs()
     ioClass.readKmapFromFile(fileName2)
     return ioClass
     #return size 
