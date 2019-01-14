@@ -11,6 +11,7 @@ class CircuitTransitionGraph:
         self.bestPossibleEdge =[]
         self.found = 0
         self.cost = 0
+        self.highestConnectivityNodes = []
         self.coupling = {}
         self.size = 0
 
@@ -225,6 +226,36 @@ class CircuitTransitionGraph:
         print(self.possiblePath)
         return self.trace,self.weightsForPath
 
+    def findHighestConnectivityNodesInCoupling(self):
+        maximumConnections = 0
+        maximumElementList = []
+        for element in self.coupling:
+            if len(self.coupling[element])>maximumConnections:
+                maximumElementList = []
+                maximumConnections = len(self.coupling[element])
+                maximumElementList.append(element)
+            elif len(self.coupling[element])==maximumConnections:
+                maximumElementList = []
+                maximumConnections = len(self.coupling[element])
+                maximumElementList.append(element)
+        self.highestConnectivityNodes = maximumElementList
+
+    def findHighestConnectivityNodesInCoupling(self):
+        maximumConnections = 0
+        maximumElementList = []
+        for element in self.coupling:
+            if len(self.coupling[element])>maximumConnections:
+                maximumElementList = []
+                maximumConnections = len(self.coupling[element])
+                maximumElementList.append(element)
+            elif len(self.coupling[element])==maximumConnections:
+                maximumElementList = []
+                maximumConnections = len(self.coupling[element])
+                maximumElementList.append(element)
+        self.highestConnectivityNodes = maximumElementList
+
+
+        
     #The function is supposed to return reversed list of nodes
     #required to traverse to reach the vTo node from the 
     #current node

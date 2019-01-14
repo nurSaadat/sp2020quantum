@@ -75,13 +75,6 @@ class InputOutputClass:
             print("The circuit has no constant inputs lines in it or file parsed incorrectly, check ioclass")
   
 
-    def neededOrNot(self):
-        self.inputs = list()
-        size = ctg.getSize()
-        expandedSize = pow(2,size)   
-        for i in range(0,expandedSize):
-            self.inputs.add(0)
-
 
     def setSize(self,size):
         self.size = size
