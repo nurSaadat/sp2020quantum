@@ -16,8 +16,7 @@ The compile() method does several thing: it calls a transpiler.transpile(args)
 that matches the circuit to the coupling and does optimization passes. There is 
 an option to omit the transpiler step if the pass_manager=PassManager() is given
 as an argument to execute(...). By default, the PassManager is set to be turned 
-off. To do this, you have to add an import line to 
-your python script: "from qiskit.transpiler import PassManager".
+off. 
 
 The abovementioned transpile() method is part of the transpiler package that 
 "provides an extensible infrastructure of pluggable passes that allows 
