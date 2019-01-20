@@ -13,6 +13,7 @@ class CircuitTransitionGraph:
         self.cost = 0
         self.highestConnectivityNodes = []
         self.coupling = {}
+        self.QuantumComputerCoupling = []
         self.size = 0
 
     def getSize(self):
@@ -240,21 +241,7 @@ class CircuitTransitionGraph:
                 maximumElementList.append(element)
         self.highestConnectivityNodes = maximumElementList
 
-    def findHighestConnectivityNodesInCoupling(self):
-        maximumConnections = 0
-        maximumElementList = []
-        for element in self.coupling:
-            if len(self.coupling[element])>maximumConnections:
-                maximumElementList = []
-                maximumConnections = len(self.coupling[element])
-                maximumElementList.append(element)
-            elif len(self.coupling[element])==maximumConnections:
-                maximumElementList = []
-                maximumConnections = len(self.coupling[element])
-                maximumElementList.append(element)
-        self.highestConnectivityNodes = maximumElementList
-
-
+   
         
     #The function is supposed to return reversed list of nodes
     #required to traverse to reach the vTo node from the 
@@ -275,9 +262,9 @@ class CircuitTransitionGraph:
                     t.append(str(i))
                 self.findPathHelper(i,vTo,t)
      
-    def readGatesFromIOClass(self,qc,qr,ioClass):
-        lines = ioClass.getLines()
-        for lineRead in lines:
+    def readGatesFromIOClass(self,qr,qc,ioClass):
+        self.lines = ioClass.getLines()
+        for lineRead in self.lines:
             tokens = lineRead.split(" ",1)
             if tokens[0]=="t3": 
                 variables=tokens[1].split(" ")
@@ -298,9 +285,11 @@ class CircuitTransitionGraph:
                 qc,qr = self.insertVdag(qc,qr,control,target)
             if tokens[0]=="t2":             
                 variables=tokens[1].split(" ")
+                self.modifyWeights(variables[0][0],variables[1][0])
                 control = ord(variables[0][0])-ord('a')
                 target = ord(variables[1][0])-ord('a')
                 qc.cx(qr[control],qr[target])
+
             if tokens[0]=="t1":             
                 variables=tokens[1].split(" ")
                 control = ord(variables[0][0])-ord('a')
@@ -319,7 +308,65 @@ class CircuitTransitionGraph:
         return qc,qr
 
        
+    def readFixedGatesFromCtg(self,qr,qc):
+            lines = self.lines
+            for lineRead in lines:
+                tokens = lineRead.split(" ",1)
+                if tokens[0]=="t3": 
+                    variables=tokens[1].split(" ")
+                    first = ord(variables[0][0])-ord('a')
+                    second = ord(variables[1][0])-ord('a')
+                    target = ord(variables[2][0])-ord('a')
+                    qc,qr = self.insertToffoliGate(qc,qr,first,second,target)
+                    #qc.ccx(qr[first],qr[second],qr[target])
+                if tokens[0]=="v": 
+                    variables=tokens[1].split(" ")
+                    control = ord(variables[0][0])-ord('a')
+                    target = ord(variables[1][0])-ord('a')
+                    qc,qr = self.insertV(qc,qr,control,target)
+                if tokens[0]=="v+":             
+                    variables=tokens[1].split(" ")
+                    control = ord(variables[0][0])-ord('a')
+                    target = ord(variables[1][0])-ord('a')
+                    qc,qr = self.insertVdag(qc,qr,control,target)
+                if tokens[0]=="t2":             
+                    variables=tokens[1].split(" ")
+                    self.modifyWeights(variables[0][0],variables[1][0])
+                    control = ord(variables[0][0])-ord('a')
+                    target = ord(variables[1][0])-ord('a')
+                    qc.cx(qr[control],qr[target])
 
+                if tokens[0]=="t1":             
+                    variables=tokens[1].split(" ")
+                    control = ord(variables[0][0])-ord('a')
+                    qc.x(qr[control])
+                if tokens[0]=="x":             
+                    variables=tokens[1].split(" ")
+                    t = ord(variables[0][0])-ord('a')
+                    qc.x(qr[t])
+                if tokens[0]=="sw":             
+                    variables=tokens[1].split(" ")
+                    firstWire = ord(variables[0][0])-ord('a')
+                    secondWire = ord(variables[1][0])-ord('a')
+                    qc,qr = self.insertSwaps(qc,qr,firstWire,secondWire)
+
+           # print (ctg.getPathAndStuff())
+            return qc,qr
+
+    def resetCtg(self):
+        self.weights = {}
+        self.sk = []
+        self.lines = []
+        self.v = set()
+        self.paths = dict()
+        self.trace = []
+        self.weightsForPath = []
+        self.bestPossibleEdge =[]
+        self.found = 0
+        self.cost = 0
+        self.highestConnectivityNodes = []
+        self.coupling = {}
+        self.size = 0
 
 
     def applySwap(self,qc,qr,first,second):
