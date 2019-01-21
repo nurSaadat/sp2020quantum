@@ -11,8 +11,10 @@ class CircuitTransitionGraph:
         self.bestPossibleEdge =[]
         self.found = 0
         self.cost = 0
+        self.couplingAsList = []
         self.highestConnectivityNodes = []
         self.coupling = {}
+        self.couplingAsList = []
         self.QuantumComputerCoupling = []
         self.size = 0
 
@@ -241,12 +243,12 @@ class CircuitTransitionGraph:
                 maximumElementList.append(element)
         self.highestConnectivityNodes = maximumElementList
 
-   
+       
     def setCoupling(self,maList):
-        for element in self.coupling:
-            key = str(chr(element[0]+ord("a")),chr(element[1]+ord("a")))
-        self.coupling.append(key)
-        return self.coupling
+        for element in  maList:
+            key = str(chr(element[0]+ord("a")))+str(chr(element[1]+ord("a")))
+            self.couplingAsList.append(key)
+        return self.couplingAsList
         
     #The function is supposed to return reversed list of nodes
     #required to traverse to reach the vTo node from the 
@@ -269,6 +271,7 @@ class CircuitTransitionGraph:
      
     def readGatesFromIOClass(self,qr,qc,ioClass):
         self.lines = ioClass.getLines()
+        self.resetCtg()
         for lineRead in self.lines:
             tokens = lineRead.split(" ",1)
             if tokens[0]=="t3": 
@@ -361,17 +364,7 @@ class CircuitTransitionGraph:
     def resetCtg(self):
         self.weights = {}
         self.sk = []
-        self.lines = []
-        self.v = set()
-        self.paths = dict()
-        self.trace = []
-        self.weightsForPath = []
-        self.bestPossibleEdge =[]
-        self.found = 0
-        self.cost = 0
         self.highestConnectivityNodes = []
-        self.coupling = {}
-        self.size = 0
 
 
     def applySwap(self,qc,qr,first,second):
