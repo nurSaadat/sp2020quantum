@@ -199,14 +199,25 @@ class CircuitTransitionGraph:
             #print("What to replace is:",replaceTo)
 
     def transformCoupling(self,maList):
+        for element in  maList:
+            key = str(chr(element[0]+ord("a")))+str(chr(element[1]+ord("a")))
+            self.couplingAsList.append(key)
         for element in maList:
             self.coupling[chr(element[0]+ord("a"))] = set()
             self.coupling[chr(element[1]+ord("a"))] = set()
         for element in maList:
             self.coupling[chr(element[0]+ord("a"))].add(chr(element[1]+ord("a")))
             self.coupling[chr(element[1]+ord("a"))].add(chr(element[0]+ord("a")))
-        return self.coupling
-          
+        return self.couplingAsList
+    
+    def setCoupling(self,maList):
+        for element in  maList:
+            key = str(chr(element[0]+ord("a")))+str(chr(element[1]+ord("a")))
+            self.couplingAsList.append(key)
+        return self.couplingAsList
+    
+    
+    
     def findCurrentCost(self):
     	self.cost = 0
     	for element in self.weights:
@@ -244,11 +255,7 @@ class CircuitTransitionGraph:
         self.highestConnectivityNodes = maximumElementList
 
        
-    def setCoupling(self,maList):
-        for element in  maList:
-            key = str(chr(element[0]+ord("a")))+str(chr(element[1]+ord("a")))
-            self.couplingAsList.append(key)
-        return self.couplingAsList
+
         
     #The function is supposed to return reversed list of nodes
     #required to traverse to reach the vTo node from the 
