@@ -244,7 +244,7 @@ class CircuitTransitionGraph:
    
     def setCoupling(self,maList):
         for element in self.coupling:
-            key = str(chr(element[0]+ord("a")))+str(chr(element[1]+ord("a")))
+            key = str(chr(element[0]+ord("a")),chr(element[1]+ord("a")))
         self.coupling.append(key)
         return self.coupling
         
