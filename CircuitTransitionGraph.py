@@ -200,7 +200,10 @@ class CircuitTransitionGraph:
 
     def transformCoupling(self,maList):
         for element in  maList:
-            key = str(chr(element[0]+ord("a")))+str(chr(element[1]+ord("a")))
+            if (element[0] > element[1]):
+                key = str(chr(element[1]+ord("a")))+str(chr(element[0]+ord("a")))
+            else:
+                key = str(chr(element[0]+ord("a")))+str(chr(element[1]+ord("a")))
             self.couplingAsList.append(key)
         for element in maList:
             self.coupling[chr(element[0]+ord("a"))] = set()
