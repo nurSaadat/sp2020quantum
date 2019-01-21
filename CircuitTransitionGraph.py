@@ -264,6 +264,7 @@ class CircuitTransitionGraph:
      
     def readGatesFromIOClass(self,qr,qc,ioClass):
         self.lines = ioClass.getLines()
+        self.resetCtg()
         for lineRead in self.lines:
             tokens = lineRead.split(" ",1)
             if tokens[0]=="t3": 
@@ -354,19 +355,8 @@ class CircuitTransitionGraph:
             return qc,qr
 
     def resetCtg(self):
-        self.weights = {}
         self.sk = []
-        self.lines = []
-        self.v = set()
-        self.paths = dict()
-        self.trace = []
-        self.weightsForPath = []
-        self.bestPossibleEdge =[]
-        self.found = 0
-        self.cost = 0
         self.highestConnectivityNodes = []
-        self.coupling = {}
-        self.size = 0
 
 
     def applySwap(self,qc,qr,first,second):
