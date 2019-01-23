@@ -328,6 +328,7 @@ class CircuitTransitionGraph:
        
     def readFixedGatesFromCtg(self,qr,qc):
             lines = self.lines
+            self.resetCtg()
             for lineRead in lines:
                 tokens = lineRead.split(" ",1)
                 if tokens[0]=="t3": 
