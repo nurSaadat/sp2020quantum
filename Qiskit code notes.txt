@@ -11,6 +11,11 @@ that is executable on provider.
 Qobj is created using circuit_to_dag(QuantumCircuit) and wrapped up into 
 QobjExperiment().. see qiskit\converters\circuits_to_qobj file.
 
+To execute a compiled object, one should call a run method of a backend object
+with compiled quantum object being an argument 
+Example
+    job = compile(qc,least_busy)
+    job = least_busy.run(job)
 
 The compile() method does several thing: it calls a transpiler.transpile(args) 
 that matches the circuit to the coupling and does optimization passes. There is 
@@ -26,7 +31,23 @@ that).
 In simple terms, the transpiler creates a DAG that represents a quantum circuit
 and matches the coupling - specific architecture of a quantum computer, repre-
 sented as list of tuples that describe physically connected qubits. 
-initial layout to the compile object is what sets the mapping!
+
+One of steps of transpiler is to make sure circuit mapping satisfies
+the coupling map of the selected backend. If the backend is  a simulator,
+layout generation does not happen, otherwise multiple layers of optimizations
+are applied.
+
+
+The coupling may be passed as initial_layout to the compile object,
+there is a pull request [https://github.com/Qiskit/qiskit-terra/pull/527]
+that made sure that swap mapper is not running if suitable coupling 
+was provided.
+
+
+Format is:
+ {('q0', 0): (QuantumRegister(14, 'q'), 0), 
+  ('q0', 1): (QuantumRegister(14, 'q'), 1),
+  ('q0', 2): (QuantumRegister(14, 'q'), 2)}
 
 
 
