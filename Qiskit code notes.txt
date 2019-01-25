@@ -15,8 +15,7 @@ QobjExperiment().. see qiskit\converters\circuits_to_qobj file.
 The compile() method does several thing: it calls a transpiler.transpile(args) 
 that matches the circuit to the coupling and does optimization passes. There is 
 an option to omit the transpiler step if the pass_manager=PassManager() is given
-as an argument to execute(...). By default, the PassManager is set to be turned 
-off. 
+as an argument to execute(...).
 
 The abovementioned transpile() method is part of the transpiler package that 
 "provides an extensible infrastructure of pluggable passes that allows 
@@ -27,6 +26,16 @@ that).
 In simple terms, the transpiler creates a DAG that represents a quantum circuit
 and matches the coupling - specific architecture of a quantum computer, repre-
 sented as list of tuples that describe physically connected qubits. 
+initial layout to the compile object is what sets the mapping!
+
 
 
 notes on parallel execution: it does the parallel_map anyway.
+
+
+
+    q = QuantumRegister(device_qubits, 'q')
+    for qreg in dag.qregs.values():
+        for i in range(qreg.size):
+            layout[(qreg.name, i)] = (q, int(best_sub[map_iter]))
+            map_iter += 1
