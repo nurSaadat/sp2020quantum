@@ -43,22 +43,6 @@ there is a pull request [https://github.com/Qiskit/qiskit-terra/pull/527]
 that made sure that swap mapper is not running if suitable coupling 
 was provided.
 
-To use ibm layout, we have to:
-	1. Call circuit_to_dag from qiskit.converters.circuit_to_dag
-	2. Call __pick_best_layout__ from qiskit.transpiler.transpiler, which
-		If the number of qubits in the circuit is equal or less than zero raises transpiler error
-		If the number of qubits in the circuit is equal to 1 returns [0]
-		Sets device_qubits to be equal to number of qubits of the simulator
-		If more qubits are required than device provides raises Transpiler error
-		retrieves coupling map and transforms it into numpy array, stores as cmap variable
-		creates array containing as much ones as coupling map has connections
-		creates a sparse matrix in coordinate format, with coordinates being coupling pairs
-		and ones being values
-		
-
-
-
-
 
 Format is:
  {('q0', 0): (QuantumRegister(14, 'q'), 0), 
