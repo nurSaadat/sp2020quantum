@@ -1,7 +1,9 @@
 from math import pi
+import collections
 class CircuitTransitionGraph:
     def __init__(self):
         self.weights = {}
+        self.qubitConnectionsCount={}
         self.sk = []
         self.lines = []
         self.v = set()
@@ -244,22 +246,48 @@ class CircuitTransitionGraph:
         return self.trace,self.weightsForPath
 
     def findHighestConnectivityNodesInCoupling(self):
-        maximumConnections = 0
-        maximumElementList = []
-        for element in self.coupling:
-            if len(self.coupling[element])>maximumConnections:
-                maximumElementList = []
-                maximumConnections = len(self.coupling[element])
-                maximumElementList.append(element)
-            elif len(self.coupling[element])==maximumConnections:
-                maximumElementList = []
-                maximumConnections = len(self.coupling[element])
-                maximumElementList.append(element)
-        self.highestConnectivityNodes = maximumElementList
+        while len(self.coupling)>0:
+            maximumConnections = 0
+            maximumElementList = []
+            for element in self.coupling:
+                if len(self.coupling[element])>maximumConnections:
+                    maximumElementList = []
+                    maximumConnections = len(self.coupling[element])
+                    maximumElementList.append((element,self.coupling[element]))
+                elif len(self.coupling[element])==maximumConnections:
+                    maximumConnections = len(self.coupling[element])
+                    maximumElementList.append((element,self.coupling[element]))
+                    
+            for el in maximumElementList:
+                del self.coupling[el[0]]
+            self.highestConnectivityNodes.append(maximumElementList)
 
-       
+    def findHighestConnectivityNodesInSkeleton(self):
+        qubitConnectionsCount = {}
+        usedConnectionsSet = set()
+        for element in self.sk:
+            if not element in usedConnectionsSet:
+                usedConnectionsSet.add(element)
+                qubitConnectionsCount[element[0]]=qubitConnectionsCount.get(element[0],0)+1
+                qubitConnectionsCount[element[1]]=qubitConnectionsCount.get(element[1],0)+1
+        sortedValues = list(qubitConnectionsCount.values())
+        sortedValues.sort(reverse=True)
+        tuplesList = []
+        for element in sortedValues:
+            for elem in qubitConnectionsCount:
+                if qubitConnectionsCount[elem] == element:
+                    tuplesList.append((elem,element))
+        self.qubitConnectionsCount = collections.OrderedDict(tuplesList)
 
-        
+
+    def layOutQubits(self):
+        self.findHighestConnectivityNodesInCoupling()
+        self.findHighestConnectivityNodesInSkeleton()
+        for element in self.highestConnectivityNodes:
+            for elem in element:
+                self.coupling[elem[0]]=elem[1]
+        print ("Result of highestConnectivityNodesInCoupling:",self.highestConnectivityNodes)
+        print ("Result of highestConnectivityNodesInSkeleton:",self.qubitConnectionsCount)
     #The function is supposed to return reversed list of nodes
     #required to traverse to reach the vTo node from the 
     #current node
