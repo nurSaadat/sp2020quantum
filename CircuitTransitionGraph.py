@@ -3,7 +3,7 @@ import collections
 class CircuitTransitionGraph:
     def __init__(self):
         self.weights = {}
-        self.qubitConnectionsCount={}
+        self.qubitConnectionsCount=[]
         self.sk = []
         self.lines = []
         self.v = set()
@@ -237,8 +237,8 @@ class CircuitTransitionGraph:
         self.possiblePath = []
         self.cost = 0
         self.findPathHelper(current,vTo,[current])
-        for i in range(0,len(self.trace)-1):
-            key = str(self.trace[i]) + str(self.trace[i+1])
+        #for i in range(0,len(self.trace)-1):
+        #   key = str(self.trace[i]) + str(self.trace[i+1])
 
     def getPathAndStuff(self):
         print("Trace is")
@@ -271,14 +271,14 @@ class CircuitTransitionGraph:
                 qubitConnectionsCount[element[0]]=qubitConnectionsCount.get(element[0],0)+1
                 qubitConnectionsCount[element[1]]=qubitConnectionsCount.get(element[1],0)+1
         sortedValues = list(qubitConnectionsCount.values())
-        sortedValues.sort(reverse=True)
+        sortedValues.sort()
         tuplesList = []
         for element in sortedValues:
             for elem in qubitConnectionsCount:
                 if qubitConnectionsCount[elem] == element:
                     tuplesList.append((elem,element))
-        self.qubitConnectionsCount = collections.OrderedDict(tuplesList)
-
+        #self.qubitConnectionsCount = collections.OrderedDict(tuplesList)
+        self.qubitConnectionsCount = tuplesList
 
     def layOutQubits(self):
         self.findHighestConnectivityNodesInCoupling()
@@ -286,8 +286,58 @@ class CircuitTransitionGraph:
         for element in self.highestConnectivityNodes:
             for elem in element:
                 self.coupling[elem[0]]=elem[1]
-        print ("Result of highestConnectivityNodesInCoupling:",self.highestConnectivityNodes)
-        print ("Result of highestConnectivityNodesInSkeleton:",self.qubitConnectionsCount)
+        self.layout = {}
+        candidates = []
+        placed = []
+        used = set()
+        while len (self.qubitConnectionsCount)>0:
+            if len(candidates)==0:
+                qbit = self.qubitConnectionsCount[len(self.qubitConnectionsCount)-1][0]
+                while not self.layout.get(qbit[0],None):
+                    if len(self.highestConnectivityNodes[0])!=0:
+                        qbit = self.qubitConnectionsCount.pop()
+                        physBit = self.highestConnectivityNodes[0].pop()
+                    else:
+                        del self.highestConnectivityNodes[0]
+                        continue
+
+                    self.layout[qbit[0]]=physBit[0]
+                    print("SELFLAYOUTOFQUBIT",qbit)
+                    used.add(physBit[0])
+                    placed.append((qbit[0],physBit[0]))
+                    for elem in physBit[1]:
+                        if not elem in used:
+                            candidates.append(elem)
+            else:
+                qbit = placed[len(placed)-1][0]
+                elem = placed[len(placed)-1][1]
+                nextQbit = self.qubitConnectionsCount[len(self.qubitConnectionsCount)-1][0]
+                firstPhysicalBit  = elem
+                secondPhysicalBit = candidates[0]
+                if  not secondPhysicalBit:
+                    print("Was not able to find second physical bit")
+                    raise SystemError
+                self.findPath(firstPhysicalBit,secondPhysicalBit)
+                minDistance = len(self.possiblePath)*len(candidates)-len(self.coupling[secondPhysicalBit])
+                while not self.layout.get(nextQbit,None):
+                    for secondElem in candidates:
+                        #suboptimal, we can start watching at 2nd here
+                        if not elem == secondElem:
+                            self.findPath(elem,secondElem)
+                            tempDistance = len(self.possiblePath)*len(candidates)-len(self.coupling[secondElem])
+                            
+                            if tempDistance<minDistance and tempDistance != 0 :
+                                secondPhysicalBit = secondElem
+                                minDistance = len(self.possiblePath)
+                    self.layout[nextQbit]=secondPhysicalBit
+                    candidates.remove(secondPhysicalBit)
+                    for elem in self.coupling[secondPhysicalBit]:
+                        if not elem in used:
+                            candidates.append(elem)
+                    placed.append((qbit,secondPhysicalBit[0]))
+            self.qubitConnectionsCount.pop()
+        print("Final layout is",self.layout)
+
     #The function is supposed to return reversed list of nodes
     #required to traverse to reach the vTo node from the 
     #current node
