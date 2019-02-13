@@ -239,8 +239,8 @@ class CircuitTransitionGraph:
         #   key = str(self.trace[i]) + str(self.trace[i+1])
 
     def getPathAndStuff(self):
-        print("Trace is")
-        print(self.possiblePath)
+        #print("Trace is")
+        #print(self.possiblePath)
         return self.trace,self.weightsForPath
 
     def findHighestConnectivityNodesInCoupling(self):
@@ -448,6 +448,7 @@ class CircuitTransitionGraph:
                     qc,qr = self.insertSwaps(qc,qr,firstWire,secondWire)
 
            # print (ctg.getPathAndStuff())
+            print ("The updated skeleton is:",self.sk)
             return qc,qr
 
     def resetCtg(self):
