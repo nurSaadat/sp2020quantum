@@ -331,6 +331,7 @@ class CircuitTransitionGraph:
                                 minDistance = len(self.possiblePath)
                     self.layout[nextQbit]=secondPhysicalBit
                     candidates.remove(secondPhysicalBit)
+                    used.add(secondPhysicalBit)
                     for elem in self.coupling[secondPhysicalBit]:
                         if not elem in used:
                             candidates.append(elem)

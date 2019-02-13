@@ -89,15 +89,25 @@ class InputOutputClass:
         
         #print("The expected answer is",expectedAnswer)
         #print("The actual answer is",counts)
-        
-        for release in counts.keys():
-        #        print("The \"release object is\"",release)
-         
+        if self.hasGarbage == 0:
+            for release in counts.keys():
+            #        print("The \"release object is\"",release)
                 myString = flipTheString(release)
                 if myString != expectedAnswer:
                     print ("Error occurred",str(number) ,":", myString ,":",release)
                     return 1
-
+        else:
+            foundErrors = 0
+            for release in counts.keys():
+                myString = flipTheString(release)
+                myStringIter = 0
+                for i in range (0,len(self.garbage)):
+                    if self.garbage[i]=="-":
+                        if myString[myStringIter]!=expectedAnswer[myStringIter]:
+                            foundErrors = foundErrors+1
+                        myStringIter=myStringIter+1
+            if foundErrors!=0:
+                return 1
         return 0
     #returns quantum register and quantum circuit initializing to @param state (matching the pla file)
     def createCircuitAndSetInput(self,number):
@@ -134,7 +144,23 @@ class InputOutputClass:
                 if inputList[j]=="1":
                     qc.x(qr[j])
         elif self.hasGarbage == 1 and self.hasConstantInputs==1:
-            k = 15
+            inputList = []
+            theNumber = list(self.kMap.keys())[number]
+            i = 0 
+            j = 0
+            print("Constant field is:",self.constants)
+            print("Length of constants field is:",len(self.constants))
+            while i < len(self.constants):
+                if self.constants[i]!="-":
+                    inputList.append(self.constants[i])
+                else:
+                    inputList.append(theNumber[j])
+                    j = j + 1
+                i =  i + 1   
+            print("Reached here in preparation of inputs!!!, the inputList is",inputList)
+            for j in range(0,size):
+                if inputList[j]=="1":
+                    qc.x(qr[j])
         return qr,cr,qc
             
 
