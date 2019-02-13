@@ -139,7 +139,7 @@ class InputOutputClass:
                     inputList.append(theNumber[j])
                     j = j + 1
                 i =  i + 1   
-            print("Reached here in preparation of inputs!!!, the inputList is",inputList)
+            #print("Reached here in preparation of inputs!!!, the inputList is",inputList)
             for j in range(0,size):
                 if inputList[j]=="1":
                     qc.x(qr[j])

@@ -174,11 +174,9 @@ class CircuitTransitionGraph:
         if self.sk.index(skElement):
             t = self.sk.index(skElement)
             self.sk[t] = nskElement
-        print("fixed skeleton",self.sk)
+        #print("fixed skeleton",self.sk)
             
     def fixMissingEdges(self):
-        for element in self.coupling:
-            print(element)
         for element in self.notMatching:
             print( "Paths to",element[0],element[1])
             self.findPath(element[0],element[1])
@@ -197,7 +195,7 @@ class CircuitTransitionGraph:
             ind = self.findIndexOfTheGateSkeleton(element)
             #print(ind)
             self.surroundWithSwaps(ind,bestPossibleEdge,replaceTo)
-            self.fixTheSkeleton(element,replaceTo)
+            #self.fixTheSkeleton(element,replaceTo)
             #print("What to replace is:",replaceTo)
 
     def transformCoupling(self,maList):
@@ -302,7 +300,7 @@ class CircuitTransitionGraph:
                         continue
 
                     self.layout[qbit[0]]=physBit[0]
-                    print("SELFLAYOUTOFQUBIT",qbit)
+                    #("SELFLAYOUTOFQUBIT",qbit)
                     used.add(physBit[0])
                     placed.append((qbit[0],physBit[0]))
                     for elem in physBit[1]:
@@ -337,7 +335,7 @@ class CircuitTransitionGraph:
                             candidates.append(elem)
                     placed.append((qbit,secondPhysicalBit[0]))
             self.qubitConnectionsCount.pop()
-        print("Final layout is",self.layout)
+        #print("Final layout is",self.layout)
 
     #The function is supposed to return reversed list of nodes
     #required to traverse to reach the vTo node from the 
@@ -359,7 +357,8 @@ class CircuitTransitionGraph:
                 self.findPathHelper(i,vTo,t)
      
     def readGatesFromIOClass(self,qr,qc,ioClass):
-        self.lines = ioClass.getLines()
+        self.lines = ioClass.getLines().copy()
+        print(self.lines)
         self.resetCtg()
         for lineRead in self.lines:
             tokens = lineRead.split(" ",1)
