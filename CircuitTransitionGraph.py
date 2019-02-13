@@ -449,6 +449,8 @@ class CircuitTransitionGraph:
 
            # print (ctg.getPathAndStuff())
             print ("The updated skeleton is:",self.sk)
+            self.findHighestConnectivityNodesInSkeleton()
+            print("The most used quantum gubits are",self.qubitConnectionsCount)
             return qc,qr
 
     def resetCtg(self):
