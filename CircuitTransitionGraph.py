@@ -162,10 +162,7 @@ class CircuitTransitionGraph:
             swapString = "sw "+ replaceTo[i] + " " + replaceTo[i+1]
             print(swapString)
             self.lines.insert(index+i+1,swapString)
-            self.weights
             self.lines.insert(index+i,swapString)
-    
-        print(thing)
         self.rebuildGate(thing,index+size-2)
 
     def fixTheSkeleton(self,element,replaceTo):
@@ -264,21 +261,24 @@ class CircuitTransitionGraph:
         qubitConnectionsCount = {}
         usedConnectionsSet = set()
         for element in self.sk:
-            if not element in usedConnectionsSet:
-                usedConnectionsSet.add(element)
-                qubitConnectionsCount[element[0]]=qubitConnectionsCount.get(element[0],0)+1
-                qubitConnectionsCount[element[1]]=qubitConnectionsCount.get(element[1],0)+1
+            usedConnectionsSet.add(element)
+            qubitConnectionsCount[element[0]]=qubitConnectionsCount.get(element[0],0)+1
+            qubitConnectionsCount[element[1]]=qubitConnectionsCount.get(element[1],0)+1
         sortedValues = list(qubitConnectionsCount.values())
         sortedValues.sort()
         tuplesList = []
         for element in sortedValues:
             for elem in qubitConnectionsCount:
                 if qubitConnectionsCount[elem] == element:
+                    del qubitConnectionsCount[elem]
                     tuplesList.append((elem,element))
+                    break
+        print(tuplesList)
         #self.qubitConnectionsCount = collections.OrderedDict(tuplesList)
-        self.qubitConnectionsCount = tuplesList
+        self.qubitConnectionsCount = list(tuplesList)
 
     def layOutQubits(self):
+        self.recalculateWeights()
         self.findHighestConnectivityNodesInCoupling()
         self.findHighestConnectivityNodesInSkeleton()
         for element in self.highestConnectivityNodes:
@@ -288,8 +288,11 @@ class CircuitTransitionGraph:
         candidates = []
         placed = []
         used = set()
+        print("Initial self.qubitconnectionscount is",self.qubitConnectionsCount)
         while len (self.qubitConnectionsCount)>0:
             if len(candidates)==0:
+                print("wiggle wiggle")
+                print("Initial self.qubitconnectionscount is",self.qubitConnectionsCount)
                 qbit = self.qubitConnectionsCount[len(self.qubitConnectionsCount)-1][0]
                 while not self.layout.get(qbit[0],None):
                     if len(self.highestConnectivityNodes[0])!=0:
@@ -300,16 +303,19 @@ class CircuitTransitionGraph:
                         continue
 
                     self.layout[qbit[0]]=physBit[0]
-                    #("SELFLAYOUTOFQUBIT",qbit)
+                    print("SELFLAYOUTOFQUBIT",qbit)
                     used.add(physBit[0])
                     placed.append((qbit[0],physBit[0]))
                     for elem in physBit[1]:
                         if not elem in used:
                             candidates.append(elem)
             else:
+                print("Self.qubitconnectionscount=",self.qubitConnectionsCount)
                 qbit = placed[len(placed)-1][0]
                 elem = placed[len(placed)-1][1]
+                
                 nextQbit = self.qubitConnectionsCount[len(self.qubitConnectionsCount)-1][0]
+                print("Placing together",qbit,nextQbit)
                 firstPhysicalBit  = elem
                 secondPhysicalBit = candidates[0]
                 if  not secondPhysicalBit:
@@ -322,21 +328,59 @@ class CircuitTransitionGraph:
                         #suboptimal, we can start watching at 2nd here
                         if not elem == secondElem:
                             self.findPath(elem,secondElem)
-                            tempDistance = len(self.possiblePath)*len(candidates)-len(self.coupling[secondElem])
-                            
+                            tempDistance =self.findPlacingDistance(placed,nextQbit,secondElem)
                             if tempDistance<minDistance and tempDistance != 0 :
                                 secondPhysicalBit = secondElem
-                                minDistance = len(self.possiblePath)
+                                minDistance = tempDistance
                     self.layout[nextQbit]=secondPhysicalBit
                     candidates.remove(secondPhysicalBit)
                     used.add(secondPhysicalBit)
                     for elem in self.coupling[secondPhysicalBit]:
                         if not elem in used:
                             candidates.append(elem)
-                    placed.append((qbit,secondPhysicalBit[0]))
-            self.qubitConnectionsCount.pop()
-        #print("Final layout is",self.layout)
+                    placed.append((nextQbit,secondPhysicalBit[0]))
+                self.qubitConnectionsCount.pop()
+        print("Final layout is",self.layout)
+        #self.updateSkeletonWithLayout()
+    
+    def updateSkeletonWithLayout(self):
+        for i in range(0,len(self.sk)):
+            element = self.sk[i]
+            lOne  = self.layout[element [0]]
+            lTwo  = self.layout[element [1]]
+            connection = lOne+lTwo
+            if lTwo>lOne:
+                connection=lTwo+lOne
+            self.sk[i] = connection
+        print("NewlyUpdated skeleton is:",self.sk)
 
+    def recalculateWeights(self):
+        self.weights={}
+        for elem in self.sk:
+            self.weights[elem] = self.weights.get(elem,0)+1
+        print("Recalculated weights are:",self.weights)
+    # We want to minimize the cost
+    # this means for smallest distance 
+    # we want to place the connections with biggest weight
+    # minimal 
+    def findPlacingDistance(self,placed,logicalQubitToPlace,physicalQubitToplace):
+        cost = 0
+        for element in placed:
+            logicalQubitInPlaced = element[0]
+            physicalQubitInPlaced = element[1]
+            self.findPath(physicalQubitInPlaced,physicalQubitToplace)
+            physicalLength = len(self.possiblePath)
+            connection = logicalQubitInPlaced+logicalQubitToPlace
+            if logicalQubitInPlaced>logicalQubitToPlace:
+                connection=logicalQubitToPlace+logicalQubitInPlaced
+            logicalMultiplyer = self.weights.get(connection,0)
+            cost += physicalLength*logicalMultiplyer
+        return cost
+    
+    def populateDefaultLayout(self):
+        for i in range(0,self.size):
+            layout[a]=b
+        
     #The function is supposed to return reversed list of nodes
     #required to traverse to reach the vTo node from the 
     #current node
@@ -448,7 +492,7 @@ class CircuitTransitionGraph:
                     qc,qr = self.insertSwaps(qc,qr,firstWire,secondWire)
 
            # print (ctg.getPathAndStuff())
-            print ("The updated skeleton is:",self.sk)
+            print ("The updated skeleton is:",self.sk,", its length is:",len(self.sk))
             self.findHighestConnectivityNodesInSkeleton()
             print("The most used quantum gubits are",self.qubitConnectionsCount)
             return qc,qr
@@ -460,6 +504,7 @@ class CircuitTransitionGraph:
 
 
     def applySwap(self,qc,qr,first,second):
+        print("First and second in swap are",first," ",second)
         qc.cx(qr[first],qr[second])
         qc.h(qr[first])
         qc.h(qr[second])
