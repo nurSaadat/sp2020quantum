@@ -1,0 +1,155 @@
+./tests/ex1.pla
+The constants are set to .constants 0-----
+
+The circuit has garbage lines in it or file parsed incorrectly, check ioclass
+The circuit has constant inputs in it or file parsed incorrectly, check ioclass
+Counts is 1
+Counts is 2
+Counts is 3
+Counts is 4
+Counts is 5
+Counts is 6
+Counts is 7
+Counts is 8
+Counts is 9
+Counts is 10
+Counts is 11
+Counts is 12
+Counts is 13
+Counts is 14
+Counts is 15
+Counts is 16
+Counts is 17
+Counts is 18
+['ab', 'bc', 'cd', 'de', 'ek', 'ef', 'fg', 'fj', 'gi', 'hi', 'ij', 'jk', 'dl', 'kl', 'lm', 'cm', 'bn', 'mn'] 18
+Current layout of ctg is: {'a': 'a', 'b': 'b', 'c': 'c', 'd': 'd', 'e': 'e', 'f': 'f'}
+Constant field is: 0-----
+Length of constants field is: 6
+Reached here in preparation of inputs!!!, the inputList is ['0', '0', '0', '0', '0', '1']
+tempDictionary {('q0', 0): ('q0', 0), ('q0', 1): ('q0', 1), ('q0', 2): ('q0', 2), ('q0', 3): ('q0', 3), ('q0', 4): ('q0', 4), ('q0', 5): ('q0', 5)}
+items are dict_items([(('q0', 0), ('q0', 0)), (('q0', 1), ('q0', 1)), (('q0', 2), ('q0', 2)), (('q0', 3), ('q0', 3)), (('q0', 4), ('q0', 4)), (('q0', 5), ('q0', 5))])
+IBMLAYOUT
+{('q0', 0): ('q0', 0), ('q0', 1): ('q0', 1), ('q0', 2): ('q0', 2), ('q0', 3): ('q0', 3), ('q0', 4): ('q0', 4), ('q0', 5): ('q0', 5)}
+['t2 d a\n', 't2 b a\n', 't2 f a\n', 't1 c\n', 't2 c a\n', 't1 e\n', 't2 e a\n']
+Self skeleton is ['ad', 'ab', 'af', 'ac', 'ae']
+Missing connections are [['a', 'd'], ['a', 'f'], ['a', 'c'], ['a', 'e']]
+Paths to a d
+['d', 'a'] ['a', 'd']
+replaceTo ['a', 'b', 'c', 'd']
+sw a b
+sw b c
+Paths to a f
+['d', 'c'] ['a', 'f']
+['b', 'a'] ['a', 'f']
+['f', 'a'] ['a', 'f']
+replaceTo ['a', 'b', 'c', 'd', 'e', 'f']
+sw a b
+sw b c
+sw c d
+sw d e
+Paths to a c
+['d', 'c'] ['a', 'c']
+['b', 'a'] ['a', 'c']
+['f', 'e'] ['a', 'c']
+['c', 'a'] ['a', 'c']
+replaceTo ['a', 'b', 'c']
+sw a b
+Paths to a e
+['d', 'c'] ['a', 'e']
+['b', 'a'] ['a', 'e']
+['f', 'e'] ['a', 'e']
+['c', 'b'] ['a', 'e']
+['e', 'a'] ['a', 'e']
+replaceTo ['a', 'b', 'c', 'd', 'e']
+sw a b
+sw b c
+sw c d
+Lines are: ['sw a b', 'sw b c', 't2 d c', 'sw b c', 'sw a b', 't2 b a\n', 'sw a b', 'sw b c', 'sw c d', 'sw d e', 't2 f e', 'sw d e', 'sw c d', 'sw b c', 'sw a b', 't1 c\n', 'sw a b', 't2 c b', 'sw a b', 't1 e\n', 'sw a b', 'sw b c', 'sw c d', 't2 e d', 'sw c d', 'sw b c', 'sw a b']
+FIxing the stuff
+Constant field is: 0-----
+Length of constants field is: 6
+Reached here in preparation of inputs!!!, the inputList is ['0', '0', '0', '0', '0', '1']
+The updated skeleton is: ['ab', 'bc', 'cd', 'bc', 'ab', 'ab', 'ab', 'bc', 'cd', 'de', 'ef', 'de', 'cd', 'bc', 'ab', 'ab', 'bc', 'ab', 'ab', 'bc', 'cd', 'de', 'cd', 'bc', 'ab'] , its length is: 25
+[('f', 1), ('e', 4), ('d', 8), ('a', 9), ('c', 12), ('b', 16)]
+The most used quantum gubits are [('f', 1), ('e', 4), ('d', 8), ('a', 9), ('c', 12), ('b', 16)]
+{'110101': 300}
+Recalculated weights are: {'ab': 9, 'bc': 7, 'cd': 5, 'de': 3, 'ef': 1}
+[('f', 1), ('e', 4), ('d', 8), ('a', 9), ('c', 12), ('b', 16)]
+Initial self.qubitconnectionscount is [('f', 1), ('e', 4), ('d', 8), ('a', 9), ('c', 12), ('b', 16)]
+wiggle wiggle
+Initial self.qubitconnectionscount is [('f', 1), ('e', 4), ('d', 8), ('a', 9), ('c', 12), ('b', 16)]
+SELFLAYOUTOFQUBIT ('b', 16)
+Self.qubitconnectionscount= [('f', 1), ('e', 4), ('d', 8), ('a', 9), ('c', 12)]
+Placing together b c
+Self.qubitconnectionscount= [('f', 1), ('e', 4), ('d', 8), ('a', 9)]
+Placing together c a
+Self.qubitconnectionscount= [('f', 1), ('e', 4), ('d', 8)]
+Placing together a d
+Self.qubitconnectionscount= [('f', 1), ('e', 4)]
+Placing together d e
+Self.qubitconnectionscount= [('f', 1)]
+Placing together e f
+Final layout is {'b': 'm', 'c': 'c', 'a': 'n', 'd': 'l', 'e': 'd', 'f': 'k'}
+Current layout of ctg is: {'b': 'm', 'c': 'c', 'a': 'n', 'd': 'l', 'e': 'd', 'f': 'k'}
+Constant field is: 0-----
+Length of constants field is: 6
+Reached here in preparation of inputs!!!, the inputList is ['0', '0', '0', '0', '0', '1']
+tempDictionary {('q2', 1): ('q2', 12), ('q2', 2): ('q2', 2), ('q2', 0): ('q2', 13), ('q2', 3): ('q2', 11), ('q2', 4): ('q2', 3), ('q2', 5): ('q2', 10)}
+items are dict_items([(('q2', 1), ('q2', 12)), (('q2', 2), ('q2', 2)), (('q2', 0), ('q2', 13)), (('q2', 3), ('q2', 11)), (('q2', 4), ('q2', 3)), (('q2', 5), ('q2', 10))])
+IBMLAYOUT
+{('q2', 1): ('q2', 12), ('q2', 2): ('q2', 2), ('q2', 0): ('q2', 13), ('q2', 3): ('q2', 11), ('q2', 4): ('q2', 3), ('q2', 5): ('q2', 10)}
+['t2 d a\n', 't2 b a\n', 't2 f a\n', 't1 c\n', 't2 c a\n', 't1 e\n', 't2 e a\n']
+Self skeleton is ['ln', 'mn', 'kn', 'cn', 'dn']
+Missing connections are [['l', 'n'], ['k', 'n'], ['c', 'n'], ['d', 'n']]
+Paths to l n
+['d', 'a'] ['d', 'a']
+replaceTo ['l', 'm', 'n']
+sw l m
+
+C:\Users\krylo\Anaconda3\lib\site-packages\marshmallow\schema.py:364: ChangedInMarshmallow3Warning: strict=False is not recommended. In marshmallow 3.0, schemas will always be strict. See https://marshmallow.readthedocs.io/en/latest/upgrading.html#schemas-are-always-strict
+  ChangedInMarshmallow3Warning
+
+---------------------------------------------------------------------------
+ValueError                                Traceback (most recent call last)
+<ipython-input-4-22a129975270> in <module>
+      2 #if testFromFile(filename) == 0:
+      3 fileName = testDir+fileName
+----> 4 bigFunction(fileName)
+
+<ipython-input-3-1933b6eced09> in bigFunction(fileName)
+     36             #if epoch==0:
+     37             #    measureFidelityWithoutChanges(qr,cr,qc)
+---> 38             ctg = fixTheStuff(ctg)
+     39             #This one needs to comply with changes you did
+     40             #qc,qr = ctg.readFixedGatesFromCtg(qr,qc)
+
+<ipython-input-3-1933b6eced09> in fixTheStuff(ctg)
+     48     print("Missing connections are",ctg.getMissingConnections())
+     49     #This one to fix the changes... fixthemissingedges connects stuff around. did not test though
+---> 50     ctg.fixMissingEdges()
+     51     print("FIxing the stuff")
+     52     return ctg
+
+~\git\circuit-graph\CircuitTransitionGraph.py in fixMissingEdges(self)
+    198             ind = self.findIndexOfTheGateSkeleton(element)
+    199             #print(ind)
+--> 200             self.surroundWithSwaps(ind,bestPossibleEdge,replaceTo)
+    201             #self.fixTheSkeleton(element,replaceTo)
+    202             #print("What to replace is:",replaceTo)
+
+~\git\circuit-graph\CircuitTransitionGraph.py in surroundWithSwaps(self, index, replaceTo, thing)
+    170             self.lines.insert(index+i+1,swapString)
+    171             self.lines.insert(index+i,swapString)
+--> 172         self.rebuildGate(thing,index+size-2)
+    173 
+    174     def fixTheSkeleton(self,element,replaceTo):
+
+~\git\circuit-graph\CircuitTransitionGraph.py in rebuildGate(self, replaceTo, index)
+    152         lineToCorrect = self.lines[index]
+    153         tokens = lineToCorrect.split()
+--> 154         where = tokens.index(replaceTo[0])
+    155         tokens[where] = replaceTo[1]
+    156         replacement = ""
+
+ValueError: 'l' is not in list
+

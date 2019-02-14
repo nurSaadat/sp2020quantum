@@ -12,8 +12,10 @@ class CircuitTransitionGraph:
         self.weightsForPath = []
         self.bestPossibleEdge =[]
         self.found = 0
+        self.layout = {}
         self.cost = 0
         self.couplingAsList = []
+        self.inverseLayout = {}
         self.highestConnectivityNodes = []
         self.coupling = {}
         self.couplingAsList = []
@@ -24,6 +26,8 @@ class CircuitTransitionGraph:
         return self.size
         
     def modifyWeights(self,first,second):
+        first = self.layout[first]
+        second = self.layout[second]
         self.v.add(first)
         self.v.add(second)
         if second < first:
@@ -53,6 +57,7 @@ class CircuitTransitionGraph:
      
     def setSize(self,size):
         self.size = size
+        self.populateDefaultLayout()
 
  #   def buildPaths(self):
   #      for i in self.sk:
@@ -115,6 +120,8 @@ class CircuitTransitionGraph:
 
     def findIndexOfTheGateSkeleton(self,notMatching):
         inn = 0
+        notMatching[0] = self.inverseLayout[notMatching[0]]
+        notMatching[1] = self.inverseLayout[notMatching[1]]
         for line in self.lines:
             tokens = line.split(" ",1)
             #todo extend the list with the others
@@ -123,7 +130,6 @@ class CircuitTransitionGraph:
                 print(variables,notMatching)
                 if self.checkSkeletonEquivalence(variables,notMatching)==1:
                     return inn
-                    print("RETURN DID NOT WORK")
             inn = inn + 1
         return inn
 
@@ -194,6 +200,7 @@ class CircuitTransitionGraph:
             self.surroundWithSwaps(ind,bestPossibleEdge,replaceTo)
             #self.fixTheSkeleton(element,replaceTo)
             #print("What to replace is:",replaceTo)
+        print("Lines are:",self.lines)
 
     def transformCoupling(self,maList):
         for element in  maList:
@@ -281,6 +288,7 @@ class CircuitTransitionGraph:
         self.recalculateWeights()
         self.findHighestConnectivityNodesInCoupling()
         self.findHighestConnectivityNodesInSkeleton()
+        prevLayout = self.layout.copy()
         for element in self.highestConnectivityNodes:
             for elem in element:
                 self.coupling[elem[0]]=elem[1]
@@ -341,8 +349,16 @@ class CircuitTransitionGraph:
                     placed.append((nextQbit,secondPhysicalBit[0]))
                 self.qubitConnectionsCount.pop()
         print("Final layout is",self.layout)
+        self.constructInverseLayout()
         #self.updateSkeletonWithLayout()
     
+    def constructInverseLayout(self):
+        self.inverseLayout = {}
+        for elem in self.layout:
+            k = elem
+            v = self.layout[k]
+            self.inverseLayout[v]=k
+
     def updateSkeletonWithLayout(self):
         for i in range(0,len(self.sk)):
             element = self.sk[i]
@@ -379,7 +395,9 @@ class CircuitTransitionGraph:
     
     def populateDefaultLayout(self):
         for i in range(0,self.size):
-            layout[a]=b
+            letter = chr(ord("a")+i)
+            self.layout[letter]=letter
+        self.constructInverseLayout()
         
     #The function is supposed to return reversed list of nodes
     #required to traverse to reach the vTo node from the 
@@ -504,7 +522,6 @@ class CircuitTransitionGraph:
 
 
     def applySwap(self,qc,qr,first,second):
-        print("First and second in swap are",first," ",second)
         qc.cx(qr[first],qr[second])
         qc.h(qr[first])
         qc.h(qr[second])
