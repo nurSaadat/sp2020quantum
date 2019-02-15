@@ -26,8 +26,8 @@ class CircuitTransitionGraph:
         return self.size
         
     def modifyWeights(self,first,second):
-        first = self.layout[first]
-        second = self.layout[second]
+     #   first = self.layout[first]
+    #    second = self.layout[second]
         self.v.add(first)
         self.v.add(second)
         if second < first:
@@ -43,8 +43,10 @@ class CircuitTransitionGraph:
         t = self.coupling
         print("Self skeleton is",self.sk)
         for i in self.sk:
-            if (t.get(i[0])!= None):
-                if (i[1] not in t.get(i[0])):
+            qubitFrom =self.layout[i[0]]
+            qubitTo = self.layout[i[1]]
+            if (t.get(qubitFrom)!= None):
+                if (qubitTo not in t[qubitFrom]):
                     tPair = [i[0],i[1]]
                     self.notMatching.append(tPair)
             else:
@@ -110,24 +112,31 @@ class CircuitTransitionGraph:
     
 
     def selectLeastOccupied(self, smallList):
-        minSize = len(smallList[0])
+        minSize = 100000000000000
         myIndex = 0
         for element in smallList:
-            if len(element)<minSize:
-                minSize = len(element)
-                myIndex = smallList.index(element)
+            if len(element)<=minSize:
+                matches = 1
+                for elem in element:
+                    if not self.inverseLayout.get(elem,None):
+                        #print("GOTCHA:",element)
+                        matches = 0
+                if matches==1:
+                    minSize = len(element)
+                    myIndex = smallList.index(element)
+                    #print("ASSIGN:",element)
+                    #print("Smallist is [myindex] is:",smallList[myIndex]," its length is",len(smallList[myIndex])) 
+      
         return smallList[myIndex]
 
     def findIndexOfTheGateSkeleton(self,notMatching):
         inn = 0
-        notMatching[0] = self.inverseLayout[notMatching[0]]
-        notMatching[1] = self.inverseLayout[notMatching[1]]
         for line in self.lines:
             tokens = line.split(" ",1)
             #todo extend the list with the others
             if tokens[0]=="t2": 
                 variables=tokens[1].split()
-                print(variables,notMatching)
+                #print(variables,notMatching)
                 if self.checkSkeletonEquivalence(variables,notMatching)==1:
                     return inn
             inn = inn + 1
@@ -163,10 +172,13 @@ class CircuitTransitionGraph:
 
     def surroundWithSwaps(self,index,replaceTo,thing):
         size = len(replaceTo)
-        print("replaceTo",replaceTo)
+        #print("replaceTo",replaceTo)
+        #print("Thing to replace",thing)
         for i in range(size-2):
-            swapString = "sw "+ replaceTo[i] + " " + replaceTo[i+1]
-            print(swapString)
+            currentElem = self.inverseLayout[replaceTo[i]]
+            nextElem = self.inverseLayout[replaceTo[i+1]]
+            swapString = "sw "+ currentElem + " " + nextElem
+            #print(swapString)
             self.lines.insert(index+i+1,swapString)
             self.lines.insert(index+i,swapString)
         self.rebuildGate(thing,index+size-2)
@@ -181,26 +193,26 @@ class CircuitTransitionGraph:
             
     def fixMissingEdges(self):
         for element in self.notMatching:
-            print( "Paths to",element[0],element[1])
-            self.findPath(element[0],element[1])
+            #print( "Paths to",element[0],element[1])
+            self.findPathWithLayout(element[0],element[1])
             
             self.getPathAndStuff()
             # Select first element record noise
             # Select second element record noise
             # Select .... elements record noise
-
+            #print("SELF POSSIBLE PATH IS",self.possiblePath)
             self.bestPossibleEdge = self.selectLeastOccupied(self.possiblePath)
             bestPossibleEdge = self.bestPossibleEdge
             #print("Hoy",bestPossibleEdge)
             #fix the possibilities: if the first is to , then insert the swap to from and the bestPossibleEdge
-            lastPair = [bestPossibleEdge[len(bestPossibleEdge)-2],bestPossibleEdge[len(bestPossibleEdge)-1]]
+            lastPair = [self.inverseLayout[bestPossibleEdge[len(bestPossibleEdge)-2]],self.inverseLayout[bestPossibleEdge[len(bestPossibleEdge)-1]]]
             replaceTo =  self.whatToReplace(element,lastPair)
             ind = self.findIndexOfTheGateSkeleton(element)
             #print(ind)
             self.surroundWithSwaps(ind,bestPossibleEdge,replaceTo)
             #self.fixTheSkeleton(element,replaceTo)
             #print("What to replace is:",replaceTo)
-        print("Lines are:",self.lines)
+        print("Lines are:",self.lines," length of lines is:",len(self.lines))
 
     def transformCoupling(self,maList):
         for element in  maList:
@@ -229,8 +241,17 @@ class CircuitTransitionGraph:
     	self.cost = 0
     	for element in self.weights:
     		self.cost = self.cost+element
-    	print (self.cost)
+        # print (self.cost)
 
+    def findPathWithLayout(self,current,vTo):
+        self.trace = []
+        self.weightsForPath = []
+        self.found = 0
+        self.possiblePath = []
+        self.cost = 0       
+        vTo = self.layout[vTo]
+        current = self.layout[current]
+        self.findPathHelper(current,vTo,[current])
 
     def findPath(self,current,vTo):
         self.trace = []
@@ -238,6 +259,8 @@ class CircuitTransitionGraph:
         self.found = 0
         self.possiblePath = []
         self.cost = 0
+
+
         self.findPathHelper(current,vTo,[current])
         #for i in range(0,len(self.trace)-1):
         #   key = str(self.trace[i]) + str(self.trace[i+1])
@@ -280,7 +303,7 @@ class CircuitTransitionGraph:
                     del qubitConnectionsCount[elem]
                     tuplesList.append((elem,element))
                     break
-        print(tuplesList)
+        #print(tuplesList)
         #self.qubitConnectionsCount = collections.OrderedDict(tuplesList)
         self.qubitConnectionsCount = list(tuplesList)
 
@@ -288,7 +311,6 @@ class CircuitTransitionGraph:
         self.recalculateWeights()
         self.findHighestConnectivityNodesInCoupling()
         self.findHighestConnectivityNodesInSkeleton()
-        prevLayout = self.layout.copy()
         for element in self.highestConnectivityNodes:
             for elem in element:
                 self.coupling[elem[0]]=elem[1]
@@ -296,11 +318,11 @@ class CircuitTransitionGraph:
         candidates = []
         placed = []
         used = set()
-        print("Initial self.qubitconnectionscount is",self.qubitConnectionsCount)
+        #print("Initial self.qubitconnectionscount is",self.qubitConnectionsCount)
         while len (self.qubitConnectionsCount)>0:
             if len(candidates)==0:
-                print("wiggle wiggle")
-                print("Initial self.qubitconnectionscount is",self.qubitConnectionsCount)
+                #print("wiggle wiggle")
+                #print("Initial self.qubitconnectionscount is",self.qubitConnectionsCount)
                 qbit = self.qubitConnectionsCount[len(self.qubitConnectionsCount)-1][0]
                 while not self.layout.get(qbit[0],None):
                     if len(self.highestConnectivityNodes[0])!=0:
@@ -311,19 +333,19 @@ class CircuitTransitionGraph:
                         continue
 
                     self.layout[qbit[0]]=physBit[0]
-                    print("SELFLAYOUTOFQUBIT",qbit)
+                    #print("SELFLAYOUTOFQUBIT",qbit)
                     used.add(physBit[0])
                     placed.append((qbit[0],physBit[0]))
                     for elem in physBit[1]:
                         if not elem in used:
                             candidates.append(elem)
             else:
-                print("Self.qubitconnectionscount=",self.qubitConnectionsCount)
+                #print("Self.qubitconnectionscount=",self.qubitConnectionsCount)
                 qbit = placed[len(placed)-1][0]
                 elem = placed[len(placed)-1][1]
                 
                 nextQbit = self.qubitConnectionsCount[len(self.qubitConnectionsCount)-1][0]
-                print("Placing together",qbit,nextQbit)
+                #print("Placing together",qbit,nextQbit)
                 firstPhysicalBit  = elem
                 secondPhysicalBit = candidates[0]
                 if  not secondPhysicalBit:
@@ -348,7 +370,7 @@ class CircuitTransitionGraph:
                             candidates.append(elem)
                     placed.append((nextQbit,secondPhysicalBit[0]))
                 self.qubitConnectionsCount.pop()
-        print("Final layout is",self.layout)
+        #print("Final layout is",self.layout)
         self.constructInverseLayout()
         #self.updateSkeletonWithLayout()
     
@@ -374,7 +396,9 @@ class CircuitTransitionGraph:
         self.weights={}
         for elem in self.sk:
             self.weights[elem] = self.weights.get(elem,0)+1
-        print("Recalculated weights are:",self.weights)
+        #print("Recalculated weights are:",self.weights)
+
+
     # We want to minimize the cost
     # this means for smallest distance 
     # we want to place the connections with biggest weight
@@ -420,7 +444,7 @@ class CircuitTransitionGraph:
      
     def readGatesFromIOClass(self,qr,qc,ioClass):
         self.lines = ioClass.getLines().copy()
-        print(self.lines)
+        #print("Corrected lines are:",self.lines)
         self.resetCtg()
         for lineRead in self.lines:
             tokens = lineRead.split(" ",1)
@@ -510,9 +534,9 @@ class CircuitTransitionGraph:
                     qc,qr = self.insertSwaps(qc,qr,firstWire,secondWire)
 
            # print (ctg.getPathAndStuff())
-            print ("The updated skeleton is:",self.sk,", its length is:",len(self.sk))
+            #print ("The updated skeleton is:",self.sk,", its length is:",len(self.sk))
             self.findHighestConnectivityNodesInSkeleton()
-            print("The most used quantum gubits are",self.qubitConnectionsCount)
+            #print("The most used quantum gubits are",self.qubitConnectionsCount)
             return qc,qr
 
     def resetCtg(self):

@@ -148,8 +148,8 @@ class InputOutputClass:
             theNumber = list(self.kMap.keys())[number]
             i = 0 
             j = 0
-            print("Constant field is:",self.constants)
-            print("Length of constants field is:",len(self.constants))
+           # print("Constant field is:",self.constants)
+           # print("Length of constants field is:",len(self.constants))
             while i < len(self.constants):
                 if self.constants[i]!="-":
                     inputList.append(self.constants[i])
@@ -157,7 +157,7 @@ class InputOutputClass:
                     inputList.append(theNumber[j])
                     j = j + 1
                 i =  i + 1   
-            print("Reached here in preparation of inputs!!!, the inputList is",inputList)
+            #print("Reached here in preparation of inputs!!!, the inputList is",inputList)
             for j in range(0,size):
                 if inputList[j]=="1":
                     qc.x(qr[j])
