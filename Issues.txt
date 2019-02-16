@@ -1,0 +1,5 @@
+self.skeleton should or should not be touched when inserting coupling?
+can not really deal with toffoli right now
+for big coupling, it does not work! get sw i i
+
+Toffoli3 - this is not a ccx, did not do anything to it!

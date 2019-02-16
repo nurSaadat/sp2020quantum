@@ -1,0 +1,11 @@
+For toffoli 3 i did not use the default ccx function, used the v+ v decomposition
+Toffoli 3 was ignored during the ctg optimization - have no way how to optimize it. The selected solution though should be directly mappable
+
+hwb_42.pla
+
+Default IBM cost is: 4826
+FinalAnswer is: ['sw b a', 't2 d a', 'sw b a', 't2 b c\n', 'sw a b', 't2 c b', 'sw a b', 't3 b d c\n', 't2 a b\n', 't3 a c d\n', 't2 b a\n', 't3 b d c\n', 't2 a d\n', 'sw b a', 't2 d a', 'sw b a', 'sw a b', 't2 c b', 'sw a b']
+FinalAnswer finalLayout: {'c': 'm', 'd': 'n', 'b': 'c', 'a': 'b'}
+FinalAnswer cost is: 3512
+CostHistory is: [19, 19, 19, 19, 21, 21, 21, 21, 21, 23]
+IBMCostHistory is: [3512, 3512, 3517, 3517, 6612, 6845, 7573, 7099, 7259, 4207]

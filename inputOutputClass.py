@@ -55,7 +55,7 @@ class InputOutputClass:
 
     def processGarbage(self):
         tokens = self.garbage.split()
-        if tokens[1]:
+        if len(tokens)>0:
             for t in tokens[1]:
                 if not t == "-":
                     self.hasGarbage = 1

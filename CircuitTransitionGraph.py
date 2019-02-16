@@ -41,7 +41,7 @@ class CircuitTransitionGraph:
     def getMissingConnections(self):
         self.notMatching = []
         t = self.coupling
-        print("Self skeleton is",self.sk)
+        #print("Self skeleton is",self.sk)
         for i in self.sk:
             qubitFrom =self.layout[i[0]]
             qubitTo = self.layout[i[1]]
@@ -115,6 +115,7 @@ class CircuitTransitionGraph:
         minSize = 100000000000000
         myIndex = 0
         for element in smallList:
+            #print("Element of paths is:",element)
             if len(element)<=minSize:
                 matches = 1
                 for elem in element:
@@ -139,6 +140,16 @@ class CircuitTransitionGraph:
                 #print(variables,notMatching)
                 if self.checkSkeletonEquivalence(variables,notMatching)==1:
                     return inn
+            elif tokens[0]=="v": 
+                variables=tokens[1].split()
+                #print(variables,notMatching)
+                if self.checkSkeletonEquivalence(variables,notMatching)==1:
+                    return inn
+            elif tokens[0]=="v+": 
+                variables=tokens[1].split()
+                #print(variables,notMatching)
+                if self.checkSkeletonEquivalence(variables,notMatching)==1:
+                        return inn
             inn = inn + 1
         return inn
 
@@ -160,6 +171,7 @@ class CircuitTransitionGraph:
     def rebuildGate(self,replaceTo,index):
         lineToCorrect = self.lines[index]
         tokens = lineToCorrect.split()
+
         where = tokens.index(replaceTo[0])
         tokens[where] = replaceTo[1]
         replacement = ""
@@ -174,13 +186,16 @@ class CircuitTransitionGraph:
         size = len(replaceTo)
         #print("replaceTo",replaceTo)
         #print("Thing to replace",thing)
+        #print("Size minus two is",size-2)
         for i in range(size-2):
             currentElem = self.inverseLayout[replaceTo[i]]
             nextElem = self.inverseLayout[replaceTo[i+1]]
             swapString = "sw "+ currentElem + " " + nextElem
             #print(swapString)
+            #print("ReplaceTo is:, self.layout is:",replaceTo, self.layout)
             self.lines.insert(index+i+1,swapString)
             self.lines.insert(index+i,swapString)
+        #print("Line to correct is:",self.lines[index+size-2])
         self.rebuildGate(thing,index+size-2)
 
     def fixTheSkeleton(self,element,replaceTo):
@@ -193,6 +208,10 @@ class CircuitTransitionGraph:
             
     def fixMissingEdges(self):
         for element in self.notMatching:
+            #print(" The element that started this",element)
+            #print("self availableShit",self.couplingAsList)
+            #print("Not matching is",element," ",self.layout[element[0]],self.layout[element[1]])
+            #print("Not fixed lines are",self.lines)
             #print( "Paths to",element[0],element[1])
             self.findPathWithLayout(element[0],element[1])
             
@@ -206,10 +225,12 @@ class CircuitTransitionGraph:
             #print("Hoy",bestPossibleEdge)
             #fix the possibilities: if the first is to , then insert the swap to from and the bestPossibleEdge
             lastPair = [self.inverseLayout[bestPossibleEdge[len(bestPossibleEdge)-2]],self.inverseLayout[bestPossibleEdge[len(bestPossibleEdge)-1]]]
+           # print("Last pair is:",lastPair," Element is:",element)
             replaceTo =  self.whatToReplace(element,lastPair)
             ind = self.findIndexOfTheGateSkeleton(element)
-            #print(ind)
+           # print("Going to update the gate at the index",ind)
             self.surroundWithSwaps(ind,bestPossibleEdge,replaceTo)
+            #print("Corrected lines are:",self.lines)
             #self.fixTheSkeleton(element,replaceTo)
             #print("What to replace is:",replaceTo)
         print("Lines are:",self.lines," length of lines is:",len(self.lines))
@@ -316,13 +337,14 @@ class CircuitTransitionGraph:
                 self.coupling[elem[0]]=elem[1]
         self.layout = {}
         candidates = []
+        candidatesSet = set()
         placed = []
         used = set()
         #print("Initial self.qubitconnectionscount is",self.qubitConnectionsCount)
         while len (self.qubitConnectionsCount)>0:
             if len(candidates)==0:
                 #print("wiggle wiggle")
-                #print("Initial self.qubitconnectionscount is",self.qubitConnectionsCount)
+               # print("Self.qubitconnectionscount is",self.qubitConnectionsCount)
                 qbit = self.qubitConnectionsCount[len(self.qubitConnectionsCount)-1][0]
                 while not self.layout.get(qbit[0],None):
                     if len(self.highestConnectivityNodes[0])!=0:
@@ -337,8 +359,9 @@ class CircuitTransitionGraph:
                     used.add(physBit[0])
                     placed.append((qbit[0],physBit[0]))
                     for elem in physBit[1]:
-                        if not elem in used:
+                        if not elem in used and not elem in candidatesSet:
                             candidates.append(elem)
+                            candidatesSet.add(elem)
             else:
                 #print("Self.qubitconnectionscount=",self.qubitConnectionsCount)
                 qbit = placed[len(placed)-1][0]
@@ -365,9 +388,12 @@ class CircuitTransitionGraph:
                     self.layout[nextQbit]=secondPhysicalBit
                     candidates.remove(secondPhysicalBit)
                     used.add(secondPhysicalBit)
+                    #print("Used are:",used)
+                    #print("Candidates are:",candidates)
                     for elem in self.coupling[secondPhysicalBit]:
-                        if not elem in used:
+                        if not elem in used and not elem in candidatesSet:
                             candidates.append(elem)
+                            candidatesSet.add(elem)
                     placed.append((nextQbit,secondPhysicalBit[0]))
                 self.qubitConnectionsCount.pop()
         #print("Final layout is",self.layout)
@@ -390,7 +416,7 @@ class CircuitTransitionGraph:
             if lTwo>lOne:
                 connection=lTwo+lOne
             self.sk[i] = connection
-        print("NewlyUpdated skeleton is:",self.sk)
+        #print("NewlyUpdated skeleton is:",self.sk)
 
     def recalculateWeights(self):
         self.weights={}
@@ -570,7 +596,7 @@ class CircuitTransitionGraph:
         for i in t:
             k = chr(i+ord('a'))
             k2 = chr(i+ord('a')+1)
-            self.modifyWeights(k,k2)
+            #self.modifyWeights(k,k2)
             qc,qr = self.applySwap(qc,qr,i,i+1)
         return qc,qr
 
