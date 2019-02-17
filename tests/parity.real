@@ -1,0 +1,41 @@
+# Function: parity
+# Used Library: MCT (Gates: 32, Quantum costs: 32)
+# This file have been taken from RevLib (www.revlib.org).
+.version  1.0
+# Created by tfc2real J. Rice Jan 2009
+# Parameters ar Exorcism: -n 1 -r 1 -a 0 -b 1 -c 1
+# Templates applied in both directions
+.numvars 14
+.variables  a b c d e f g h i j k l m n 
+.inputs  0 b c d e f g h i j k l m n 
+.outputs  a b c d e f g h i j k l m n
+.constants 0-------------
+.garbage 1111111111111-
+.begin
+t1 b
+t2 b a
+t1 c
+t2 c a
+t1 d
+t2 d a
+t1 e
+t2 e a
+t1 f
+t2 f a
+t1 g
+t2 g a
+t1 h
+t2 h a
+t1 i
+t2 i a
+t1 j
+t2 j a
+t1 k
+t2 k a
+t1 l
+t2 l a
+t1 m
+t2 m a
+t1 n
+t2 n a
+.end

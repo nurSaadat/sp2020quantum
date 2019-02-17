@@ -37,6 +37,7 @@ the coupling map of the selected backend. If the backend is  a simulator,
 layout generation does not happen, otherwise multiple layers of optimizations
 are applied.
 
+We are targeting our optimizations be one of the transpiler optimizations
 
 The coupling may be passed as initial_layout to the compile object,
 there is a pull request [https://github.com/Qiskit/qiskit-terra/pull/527]
