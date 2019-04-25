@@ -474,6 +474,8 @@ class CircuitTransitionGraph:
         self.resetCtg()
         for lineRead in self.lines:
             tokens = lineRead.split(" ",1)
+            little_token1 = tokens[0][0]
+            little_token2 = tokens[0][1]
             if tokens[0]=="t3": 
                 variables=tokens[1].split(" ")
                 first = ord(variables[0][0])-ord('a')
@@ -511,7 +513,8 @@ class CircuitTransitionGraph:
                 firstWire = ord(variables[0][0])-ord('a')
                 secondWire = ord(variables[1][0])-ord('a')
                 qc,qr = self.insertSwaps(qc,qr,firstWire,secondWire)
-
+            if little_token1=="t" and int(little_token2) > 3:
+                print ("Ohhh LaLa")
        # print (ctg.getPathAndStuff())
         return qc,qr
 
@@ -699,9 +702,15 @@ class CircuitTransitionGraph:
 
         return qc,qr
 
-
-
-
+    def insertNControlToffoliGate(self,qc,qr,controls,target,ancila):
+        size_c = len(controls)
+        size_a = len(ancila)
+        self.insertToffoliGate(qc,qr,controls[0],controls[1],ancila[0])
+        for i in : size_a
+            self.insertToffoliGate(qc,qr,ancila[i],controls[i+2],ancila[i+1]
+        self.insertToffoliGate(qc,qr,ancila[size_a-1],controls[size_c-1],target)
+                                   
+        return qc,qr
            
     def __str__(self):
         return "Weights are:"+str(self.weights)+", skeleton is:"+str(self.sk)+", vertices are"+str(self.v)+", paths are "+str(self.paths)+",latest weight are"+str(self.weightsForPath)
