@@ -659,7 +659,9 @@ class CircuitTransitionGraph:
         qc,qr=self.insertSwaps(qc,qr,second,first)
         return qc,qr
 
-
+    # Assumes first second third target are lnn
+    # If better realization of Toffoli gate is known, 
+    # it can be updated here
     def applyToffoliGate(self,qc,qr,first,second,third):
         qc,qr=self.insertSwaps(qc,qr,first,second)
         qc,qr=self.insertV(qc,qr,second,third)
@@ -673,7 +675,10 @@ class CircuitTransitionGraph:
         return qc,qr
 
 
-    #TEST THOROUGHLY
+    # TEST THOROUGHLY
+    # does not require lines to be together, insert swaps
+    # could be optimized by minimizing the number of swaps
+    # bringing lines together
     def insertToffoliGate(self,qc,qr,first,second,target):
         myList = [first,second,target]
         myList.sort()
