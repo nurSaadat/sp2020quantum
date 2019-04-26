@@ -710,10 +710,10 @@ class CircuitTransitionGraph:
     def insertNControlToffoliGate(self,qc,qr,controls,target,ancila):
         size_c = len(controls)
         size_a = len(ancila)
-        self.insertToffoliGate(qc,qr,controls[0],controls[1],ancila[0])
-        for i in : size_a
-            self.insertToffoliGate(qc,qr,ancila[i],controls[i+2],ancila[i+1]
-        self.insertToffoliGate(qc,qr,ancila[size_a-1],controls[size_c-1],target)
+        qc, qr = self.insertToffoliGate(qc,qr,controls[0],controls[1],ancila[0])
+        for i in range(1, size_a):
+            qc,qr = self.insertToffoliGate(qc,qr,ancila[i],controls[i+2],ancila[i+1])
+        qc,qr = self.insertToffoliGate(qc,qr,ancila[size_a-1],controls[size_c-1],target)
                                    
         return qc,qr
            
