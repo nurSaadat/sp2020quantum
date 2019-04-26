@@ -475,7 +475,8 @@ class CircuitTransitionGraph:
         for lineRead in self.lines:
             tokens = lineRead.split(" ",1)
             little_token1 = tokens[0][0]
-            little_token2 = tokens[0][1]
+            if little_token1=="t":
+                little_token2 = tokens[0][1]
             if tokens[0]=="t3": 
                 variables=tokens[1].split(" ")
                 first = ord(variables[0][0])-ord('a')
@@ -724,13 +725,25 @@ class CircuitTransitionGraph:
         print("Controls are", controls)
         print("Target is", target)
         print("Ancila after constructed is",ancila)
+        print("Inserted first Toffoli at",controls[0],controls[1],ancila[0])
         qc, qr = self.insertToffoliGate(qc,qr,controls[0],controls[1],ancila[0])
-        for i in range(1, size_a):
-            print("DEBUG",i+2,i+1)
+        orderOfInsertions =list()
+        for i in range(0, size_a-1):
+            print("DEBUG")
+        
             qc,qr = self.insertToffoliGate(qc,qr,ancila[i],controls[i+2],ancila[i+1])
-            
+            orderOfInsertions.append((ancila[i],controls[i+2],ancila[i+1]))
+            print("Inserted next Toffoli at",ancila[i],controls[i+2],ancila[i+1])
+        orderOfInsertions.reverse()
         qc,qr = self.insertToffoliGate(qc,qr,ancila[size_a-1],controls[size_c-1],target)
-                                   
+        print("Inserted last Toffoli at",ancila[size_a-1],controls[size_c-1],target)                          
+        for elem in orderOfInsertions:
+             qc,qr = self.insertToffoliGate(qc,qr,elem[0],elem[1],elem[2])
+             print("Inserted next Toffoli at",elem[0],elem[1],elem[2])
+
+        qc, qr = self.insertToffoliGate(qc,qr,controls[0],controls[1],ancila[0])
+        print("Inserted first Toffoli at",controls[0],controls[1],ancila[0])
+
         return qc,qr
            
     def __str__(self):

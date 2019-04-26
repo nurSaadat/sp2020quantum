@@ -94,6 +94,12 @@ class InputOutputClass:
             for release in counts.keys():
             #        print("The \"release object is\"",release)
                 myString = flipTheString(release)
+                print ("BEFOR THE Error occurred",str(number) ,"FLIPPED IS: ", myString ,", WHE GOT THIS:",release,"ExpectedAnswerIS",expectedAnswer)
+                if self.ancilaSize!=0:
+                    release = release[self.ancilaSize:]
+                myString = flipTheString(release)
+                #to cut away ancila!
+                print ("BEFOR THE Error occurred without ANCILA",str(number) ,"FLIPPED IS: ", myString ,", WHE GOT THIS:",release,"ExpectedAnswerIS",expectedAnswer)
                 if myString != expectedAnswer:
                     print ("Error occurred",str(number) ,":", myString ,":",release)
                     return 1
@@ -122,9 +128,11 @@ class InputOutputClass:
             formatString = "{:0"+str(size)+"b}"
             myString = formatString.format(number)
             #print("My string is: ",myString,", size is ",size)
-            for j in range(0,size):
+            print("j is:","myString",myString)
+            for j in range(self.ancilaSize,size):
+                
                 if myString[j]=="1":
-                    qc.x(qr[j])
+                    qc.x(qr[j-self.ancilaSize])
         elif self.hasGarbage == 1 and self.hasConstantInputs==0:
             k = 42
         elif self.hasGarbage == 0 and self.hasConstantInputs==1:
@@ -143,6 +151,7 @@ class InputOutputClass:
                 i =  i + 1   
             #print("Reached here in preparation of inputs!!!, the inputList is",inputList)
             for j in range(0,size):
+                print("j is:",j,"InputList",inputList[j])
                 if inputList[j]=="1":
                     qc.x(qr[j])
         elif self.hasGarbage == 1 and self.hasConstantInputs==1:
@@ -191,11 +200,14 @@ class InputOutputClass:
                 self.checkToffoli(lineRead)
 
     def checkToffoli(self,lineRead):
-        tokens = lineRead.split(" ",1)
+        tokens = lineRead.split(" ", 1)
+        #print(tokens)
         little_token1 = tokens[0][0]
+        if little_token1!="t":
+            return
         little_token2 = tokens[0][1]
         if little_token1=="t" and int(little_token2) > 3:
-            self.ancilaSize = int(little_token2)-2 
+            self.ancilaSize = int(little_token2)-3 
 
 
     def getLines(self):

@@ -9,9 +9,6 @@
 .constants ---
 .garbage ---
 .begin
-t4 a b c d
-t3 b c a
-t3 a b c
-t5 b c d e a
+t5 a b c d e
 .end
 
