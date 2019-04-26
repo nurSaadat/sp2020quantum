@@ -516,7 +516,7 @@ class CircuitTransitionGraph:
             if little_token1=="t" and int(little_token2) > 3:
                 controls = list()
                 variables=tokens[1].split(" ")
-                last = variables[len(variables)-1]
+                last = ord(variables[len(variables)-1][0])-ord('a')
                 for i in range(len(variables)-1):
                     temp = ord(variables[i][0])-ord('a')
                     controls.append(temp)
@@ -717,13 +717,18 @@ class CircuitTransitionGraph:
     def insertNControlToffoliGate(self,qc,qr,controls,target,ancilaSize):
         size_c = len(controls)
         ancila = list()
-        for i in range(self.size-ancilaSize,self.size):
+        for i in range(self.size,self.size+ancilaSize):
             ancila.append(i)
             print("Ancilla bit will have number:", i)
         size_a = len(ancila)
+        print("Controls are", controls)
+        print("Target is", target)
+        print("Ancila after constructed is",ancila)
         qc, qr = self.insertToffoliGate(qc,qr,controls[0],controls[1],ancila[0])
         for i in range(1, size_a):
+            print("DEBUG",i+2,i+1)
             qc,qr = self.insertToffoliGate(qc,qr,ancila[i],controls[i+2],ancila[i+1])
+            
         qc,qr = self.insertToffoliGate(qc,qr,ancila[size_a-1],controls[size_c-1],target)
                                    
         return qc,qr
