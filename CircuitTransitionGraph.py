@@ -514,7 +514,14 @@ class CircuitTransitionGraph:
                 secondWire = ord(variables[1][0])-ord('a')
                 qc,qr = self.insertSwaps(qc,qr,firstWire,secondWire)
             if little_token1=="t" and int(little_token2) > 3:
-                print ("Ohhh LaLa")
+                controls = list()
+                variables=tokens[1].split(" ")
+                last = variables[len(variables)-1]
+                for i in range(len(variables)-1):
+                    temp = ord(variables[i][0])-ord('a')
+                    controls.append(temp)
+
+                qc,qr = self.insertNControlToffoliGate(qc,qr,controls,last,ioClass.ancilaSize)
        # print (ctg.getPathAndStuff())
         return qc,qr
 
@@ -707,8 +714,12 @@ class CircuitTransitionGraph:
 
         return qc,qr
 
-    def insertNControlToffoliGate(self,qc,qr,controls,target,ancila):
+    def insertNControlToffoliGate(self,qc,qr,controls,target,ancilaSize):
         size_c = len(controls)
+        ancila = list()
+        for i in range(self.size-ancilaSize,self.size):
+            ancila.append(i)
+            print("Ancilla bit will have number:", i)
         size_a = len(ancila)
         qc, qr = self.insertToffoliGate(qc,qr,controls[0],controls[1],ancila[0])
         for i in range(1, size_a):

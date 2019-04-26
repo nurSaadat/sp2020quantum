@@ -20,7 +20,7 @@ class InputOutputClass:
         self.garbage = ""
         self.inputs = ""
         self.outputs = ""
-        self.ancila =0
+        self.ancilaSize =0
 
     def setConstants(self,line):
         print("The constants are set to",line)
@@ -113,7 +113,7 @@ class InputOutputClass:
     #returns quantum register and quantum circuit initializing to @param state (matching the pla file)
     def createCircuitAndSetInput(self,number):
         size = self.size
-        size = size + self.ancila
+        size = size + self.ancilaSize
         #print("Size is",size)
         qr = QuantumRegister(size)
         cr = ClassicalRegister(size)
@@ -195,7 +195,7 @@ class InputOutputClass:
         little_token1 = tokens[0][0]
         little_token2 = tokens[0][1]
         if little_token1=="t" and int(little_token2) > 3:
-            self.ancila = int(little_token2)-2 
+            self.ancilaSize = int(little_token2)-2 
 
 
     def getLines(self):
