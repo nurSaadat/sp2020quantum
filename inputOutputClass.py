@@ -20,6 +20,7 @@ class InputOutputClass:
         self.garbage = ""
         self.inputs = ""
         self.outputs = ""
+        self.ancila =0
 
     def setConstants(self,line):
         print("The constants are set to",line)
@@ -186,6 +187,14 @@ class InputOutputClass:
         for lineRead in lines:
             if not (lineRead.startswith("#") or lineRead.startswith(".") or lineRead.startswith("\n")):
                 self.lines.append(lineRead)
+                self.checkToffoli(lineRead)
+
+    def checkToffoli(self,lineRead):
+        tokens = lineRead.split(" ",1)
+        little_token1 = tokens[0][0]
+        little_token2 = tokens[0][1]
+        if little_token1=="t" and int(little_token2) > 3:
+            self.ancila = int(little_token2)-2 
 
 
     def getLines(self):
