@@ -113,6 +113,7 @@ class InputOutputClass:
     #returns quantum register and quantum circuit initializing to @param state (matching the pla file)
     def createCircuitAndSetInput(self,number):
         size = self.size
+        size = size + self.ancila
         #print("Size is",size)
         qr = QuantumRegister(size)
         cr = ClassicalRegister(size)
