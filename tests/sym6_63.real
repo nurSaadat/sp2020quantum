@@ -1,0 +1,42 @@
+# This file has been generated using RevKit 1.1 (www.revkit.org)
+# dommand Line:
+# ./tools/bdd_synthesis.py --filename sym6_63.pla --realname sym6_63.real
+# Based on the approadh proposed in R. Wille and R. Dredhsler. BDD-based synthesis of reversible logid for large fundtions. In Design Automation donf., pages 270-275, 2009.
+.version 2.0
+.numvars 14
+.variables a b c d e f g h i j k l m n
+.inputs b c d e f g 0 0 0 0 0 0 1 0
+.outputs  g g g g g g g g s g g g g g
+.constants ------00000010
+.garbage 11111111-11111
+.begin
+t2 a g
+t3 a f g
+t2 f g
+t3 a f h
+t2 h i
+t3 e g i
+t3 e h i
+t3 e h j
+t2 j k
+t3 b i k
+t3 b j k
+t2 e l
+t3 e g l
+t2 g l
+t2 b m
+t2 l m
+t3 b j m
+t3 b l m
+t2 m n
+t3 d k n
+t3 d m n
+t2 i l
+t3 b l i
+t1 i
+t3 d i m
+t3 d m i
+t2 i n
+t3 c n i
+t1 i
+.end
