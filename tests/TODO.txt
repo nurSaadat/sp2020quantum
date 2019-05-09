@@ -1,3 +1,4 @@
 Need to fill non connected qubits when not all qubits are used
 need to check if enabling the skeleton for intermediate gates was a good idea - test on a small circuit
 fix the growth caused by changing layout
+optionally enable swaps?
