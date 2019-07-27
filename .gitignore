@@ -3,3 +3,4 @@ __pycache__/*
 codeTests/*
 latex_error.log
 CtgExperiments.ipynb
+.vscode/*
