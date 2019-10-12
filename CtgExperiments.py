@@ -1,18 +1,18 @@
 #!/usr/bin/env python
 # coding: utf-8
-
 # In[1]:
 
 
 from qiskit import ClassicalRegister, QuantumRegister
-from qiskit import QuantumCircuit,compile, execute,IBMQ
+from qiskit import QuantumCircuit, execute,IBMQ
 from qiskit import BasicAer
 from qiskit.tools.visualization import circuit_drawer
 from qiskit.tools.visualization import plot_histogram
 from qiskit.providers.ibmq import least_busy
 from math import pi
-from qiskit.mapper._layout import Layout as Ibmlayout
-from qiskit.tools.compiler import compile as qcompile
+from qiskit.transpiler.layout import Layout as Ibmlayout
+from qiskit.compiler import transpile
+from qiskit.compiler import assemble
 import matplotlib.pyplot as plt
 import sys
 from qiskit.tools.visualization import circuit_drawer
@@ -20,18 +20,18 @@ from parseRealization import *
 from copy import deepcopy
 get_ipython().run_line_magic('matplotlib', 'inline')
 testDir="./tests/"
-
+# In[2]:
+IBMQ.load_account()
 
 # In[2]:
 
 
 #select a backend
-IBMQ.load_accounts()
-backends = IBMQ.backends(simulator=False,filters=lambda x: x.configuration().n_qubits > 4)
-print(backends)
+provider = IBMQ.get_provider(group='open')
+
 #print(available)
 #least_busy = BasicAer.get_backend('qasm_simulator')
-least_busy = IBMQ.get_backend('ibmq_16_melbourne')
+least_busy = provider.get_backend('ibmq_16_melbourne')
 couplingMap = least_busy.configuration().coupling_map
 print(couplingMap,"its length:",len(couplingMap))
 qubitsSize = least_busy.configuration().n_qubits
@@ -42,16 +42,16 @@ qubitsSize = least_busy.configuration().n_qubits
 
 def prepareIBMQLayout(qReg,layout):
     ibmLayout = {}
-    for elem in layout:
-       # print("Element in layout is",elem," physical is",layout[elem])
-        quantum = ord(elem)-ord("a")
-        physical = ord(layout[elem])-ord("a")
-        quantumTuple = (qReg.name, quantum)
-        ibmLayout[quantumTuple]=(qReg.name,physical)
+    print(qReg)
+    print(layout)
+    for i in range(0,len(layout)):
+        logical = ord(layout[chr(i+ord("a"))])-ord("a")
+        physical = qReg[i]
+        ibmLayout[logical]=physical
     #print("tempDictionary",ibmLayout)
     #print("items are",ibmLayout.items())
-    #print("IBMLAYOUT")
-    #print(ibmLayout)
+    print("IBMLAYOUT")
+    print(ibmLayout)
     return ibmLayout
 
 def bigFunction(fileName):
@@ -95,6 +95,7 @@ def bigFunction(fileName):
             tempCost = compileToSeeCost(qr,cr,qc,ioClass,ibmLayout,i)
             ibmCostHistory.append(tempCost)
             costHistory.append(len(ctg.lines))
+            print("Epoch "+str(epoch)+", cost history is:",tempCost)
             if tempCost < leastCost:
                 finalAnswer = deepcopy(ctg.lines)
                 finalLayout = deepcopy(tempLayout)
@@ -132,23 +133,22 @@ def fixTheStuff(ctg):
 def  compileToSeeCost(qr,cr,qc,ioClass,ibmLayout,i):
     #least_busy = BasicAer.get_backend('qasm_simulator')
     qc.measure(qr,cr)
-    qobj = qcompile(qc,least_busy,initial_layout=ibmLayout,pass_manager=None)
-    #This line provides print of the compiled circuit qasm
-    print("Length of IBM compiled circuit with fixes is:",len(qobj.experiments[0].header.as_dict()["compiled_circuit_qasm"]))
-    return len(qobj.experiments[0].header.as_dict()["compiled_circuit_qasm"])
-    #job = execute(qc,least_busy,shots=200)
-    #result = job.result()
-    #print(result.get_counts())
-    #plot_histogram(result.get_counts())
+    qcircuit = transpile(qc,least_busy,initial_layout=ibmLayout,pass_manager=None)
+    qobj = assemble(qcircuit)
+    return len(qobj.experiments[0].instructions)
     
 def measureFidelityWithoutChanges(qr,cr,qc):
     #least_busy = BasicAer.get_backend('qasm_simulator')
     qc.measure(qr,cr)
     
-    qobj = qcompile(qc,least_busy,initial_layout=None,pass_manager=None)
+    qcircuit = transpile(qc,least_busy,initial_layout=None,pass_manager=None)
+    qobj = assemble(qcircuit)
+    print(qcircuit)
+    print(qobj.experiments)
+    print(len(qobj.experiments))
     #This line provides print of the compiled circuit qasm
-    print("Length of IBM compiled circuit is:",len(qobj.experiments[0].header.as_dict()["compiled_circuit_qasm"]))
-    return len(qobj.experiments[0].header.as_dict()["compiled_circuit_qasm"])
+    #print("Length of IBM compiled circuit is:",len(qobj.experiments[0].header.as_dict()["compiled_circuit_qasm"]))
+    return len(qobj.experiments[0].instructions)
 #This needs to be implemented    
 def measureToVerifyOutputWtihChanges(qr,cr,qc,ioClass,ibmLayout,i):
     least_busy = BasicAer.get_backend('qasm_simulator')
@@ -164,23 +164,10 @@ def measureToVerifyOutputWtihChanges(qr,cr,qc,ioClass,ibmLayout,i):
 
 
 # In[4]:
-
-
 goodExamples = ["0410184","ex1","hwb4_52","parity"]
 fileName=goodExamples[1]
 #if testFromFile(filename) == 0:
 fileName = testDir+fileName
 bigFunction(fileName)
 
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
+#%%
