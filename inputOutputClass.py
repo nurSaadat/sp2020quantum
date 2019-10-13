@@ -102,6 +102,7 @@ class InputOutputClass:
                 print ("BEFOR THE Error occurred without ANCILA",str(number) ,"FLIPPED IS: ", myString ,", WHE GOT THIS:",release,"ExpectedAnswerIS",expectedAnswer)
                 if myString != expectedAnswer:
                     print ("Error occurred",str(number) ,":", myString ,":",release)
+                    raise SystemError
                     return 1
         else:
             foundErrors = 0
