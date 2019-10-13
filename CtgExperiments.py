@@ -76,7 +76,7 @@ def bigFunction(fileName):
     for i in range(0,1):
         epoch = 0
         #This part corresponds for part of experiment without minimal or no changes
-        while epoch < 10:
+        while epoch <3:
             print("Epoch number:",epoch)
             print("Current layout of ctg is:",ctg.layout)
             tempLayout = ctg.layout.copy()
@@ -100,7 +100,7 @@ def bigFunction(fileName):
                 finalAnswer = deepcopy(ctg.lines)
                 finalLayout = deepcopy(tempLayout)
                 leastCost = tempCost
-            #measureToVerifyOutputWtihChanges(qr,cr,qc,ioClass,ibmLayout,i)
+            measureToVerifyOutputWtihChanges(qr,cr,qc,ioClass,ibmLayout,i)
             ctg.layOutQubits()
             epoch = epoch+1
     for i in range(0,len(costHistory)):
@@ -135,6 +135,7 @@ def  compileToSeeCost(qr,cr,qc,ioClass,ibmLayout,i):
     qc.measure(qr,cr)
     qcircuit = transpile(qc,least_busy,initial_layout=ibmLayout,pass_manager=None)
     qobj = assemble(qcircuit)
+    print(qobj.experiments[0].instructions)
     return len(qobj.experiments[0].instructions)
     
 def measureFidelityWithoutChanges(qr,cr,qc):
@@ -153,7 +154,7 @@ def measureFidelityWithoutChanges(qr,cr,qc):
 def measureToVerifyOutputWtihChanges(qr,cr,qc,ioClass,ibmLayout,i):
     least_busy = BasicAer.get_backend('qasm_simulator')
     qc.measure(qr,cr)
-    job = execute(qc,least_busy,initial_layout=ibmLayout,shots=300)
+    job = execute(qc,least_busy,initial_layout=ibmLayout,shots=20)
     result = job.result()
     print(result.get_counts())
     error = ioClass.checkOutputs(result.get_counts(),i)
@@ -164,7 +165,7 @@ def measureToVerifyOutputWtihChanges(qr,cr,qc,ioClass,ibmLayout,i):
 
 
 # In[4]:
-goodExamples = ["0410184","ex1","hwb4_52","parity"]
+goodExamples = ["test1","0410184","ex1","hwb4_52","parity"]
 fileName=goodExamples[1]
 #if testFromFile(filename) == 0:
 fileName = testDir+fileName

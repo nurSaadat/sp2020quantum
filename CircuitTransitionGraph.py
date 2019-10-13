@@ -609,13 +609,17 @@ class CircuitTransitionGraph:
 
 
     def applySwap(self,qc,qr,first,second):
-        qc.cx(qr[first],qr[second])
-        qc.h(qr[first])
-        qc.h(qr[second])
-        qc.cx(qr[first],qr[second])
-        qc.h(qr[first])
-        qc.h(qr[second])
-        qc.cx(qr[first],qr[second])
+        useIBMSwaps=1
+        if useIBMSwaps==0:
+            qc.cx(qr[first],qr[second])
+            qc.h(qr[first])
+            qc.h(qr[second])
+            qc.cx(qr[first],qr[second])
+            qc.h(qr[first])
+            qc.h(qr[second])
+            qc.cx(qr[first],qr[second])
+        else: 
+            qc.swap(first,second)
         self.recordSwapInLines(first,second)
         return qc,qr
     #debugHere
@@ -717,14 +721,19 @@ class CircuitTransitionGraph:
     # If better realization of Toffoli gate is known, 
     # it can be updated here
     def applyToffoliGate(self,qc,qr,first,second,third):
-        qc,qr=self.insertSwaps(qc,qr,first,second)
-        qc,qr=self.insertV(qc,qr,second,third)
-        qc,qr=self.insertSwaps(qc,qr,first,second)
-        qc,qr=self.insertV(qc,qr,second,third)
-        qc.cx(qr[first],qr[second])
+        useIBMToffoli =1
+        if useIBMToffoli ==0:
+            qc,qr=self.insertSwaps(qc,qr,first,second)
+            qc,qr=self.insertV(qc,qr,second,third)
+            qc,qr=self.insertSwaps(qc,qr,first,second)
+            qc,qr=self.insertV(qc,qr,second,third)
+            qc.cx(qr[first],qr[second])
+            qc,qr=self.insertVdag(qc,qr,second,third)
+            qc.cx(qr[first],qr[second])
+        else:
+            qc.ccx(first,second,third)
         self.modifyWeights(chr(ord("a")+first),chr(ord("a")+second))
-        qc,qr=self.insertVdag(qc,qr,second,third)
-        qc.cx(qr[first],qr[second])
+
         self.modifyWeights(chr(ord("a")+first),chr(ord("a")+second))
         return qc,qr
 
