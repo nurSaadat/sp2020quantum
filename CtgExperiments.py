@@ -100,6 +100,9 @@ def bigFunction(fileName):
                 finalAnswer = deepcopy(ctg.lines)
                 finalLayout = deepcopy(tempLayout)
                 leastCost = tempCost
+            qr,cr,qc = ioClass.createCircuitAndSetInput(i)
+            qc,qr = ctg.readFixedGatesFromCtg(qr,qc)
+            ibmLayout = prepareIBMQLayout(qr,tempLayout) 
             measureToVerifyOutputWtihChanges(qr,cr,qc,ioClass,ibmLayout,i,epoch)
             ctg.layOutQubits()
             epoch = epoch+1
