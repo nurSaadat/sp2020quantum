@@ -18,7 +18,7 @@ import sys
 from qiskit.tools.visualization import circuit_drawer
 from parseRealization import *
 from copy import deepcopy
-get_ipython().run_line_magic('matplotlib', 'inline')
+#get_ipython().run_line_magic('matplotlib', 'inline')
 testDir="./tests/"
 # In[2]:
 IBMQ.load_account()
@@ -100,7 +100,7 @@ def bigFunction(fileName):
                 finalAnswer = deepcopy(ctg.lines)
                 finalLayout = deepcopy(tempLayout)
                 leastCost = tempCost
-            measureToVerifyOutputWtihChanges(qr,cr,qc,ioClass,ibmLayout,i)
+            measureToVerifyOutputWtihChanges(qr,cr,qc,ioClass,ibmLayout,i,epoch)
             ctg.layOutQubits()
             epoch = epoch+1
     for i in range(0,len(costHistory)):
@@ -135,7 +135,7 @@ def  compileToSeeCost(qr,cr,qc,ioClass,ibmLayout,i):
     qc.measure(qr,cr)
     qcircuit = transpile(qc,least_busy,initial_layout=ibmLayout,pass_manager=None)
     qobj = assemble(qcircuit)
-    print(qobj.experiments[0].instructions)
+    #print(qobj.experiments[0].instructions)
     return len(qobj.experiments[0].instructions)
     
 def measureFidelityWithoutChanges(qr,cr,qc):
@@ -151,7 +151,7 @@ def measureFidelityWithoutChanges(qr,cr,qc):
     #print("Length of IBM compiled circuit is:",len(qobj.experiments[0].header.as_dict()["compiled_circuit_qasm"]))
     return len(qobj.experiments[0].instructions)
 #This needs to be implemented    
-def measureToVerifyOutputWtihChanges(qr,cr,qc,ioClass,ibmLayout,i):
+def measureToVerifyOutputWtihChanges(qr,cr,qc,ioClass,ibmLayout,i,epoch):
     least_busy = BasicAer.get_backend('qasm_simulator')
     qc.measure(qr,cr)
     job = execute(qc,least_busy,initial_layout=ibmLayout,shots=20)
@@ -159,7 +159,7 @@ def measureToVerifyOutputWtihChanges(qr,cr,qc,ioClass,ibmLayout,i):
     print(result.get_counts())
     error = ioClass.checkOutputs(result.get_counts(),i)
     if error != 0 :
-        print("ERROR APPEARED")
+        print("ERROR APPEARED on epoch",epoch)
         raise SystemError
     #plot_histogram(result.get_counts())
 
