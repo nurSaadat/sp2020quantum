@@ -1,0 +1,48 @@
+The function readFixedGatesFromCtg is supposed to read sequence of gates that are ready to use and test them. 
+Verifying correctness is vital.
+
+The code that reads fixed gates from ctg relies on same functions that are used inside of readGatesFromIOClass.
+This means when we try to read fixed gates from ctg, extra lines are appended into lines.
+
+To prevent this from happening we should change
+
+  def applySwap(self,qc,qr,first,second):
+        useIBMSwaps=1
+        if useIBMSwaps==0:
+            qc.cx(qr[first],qr[second])
+            qc.h(qr[first])
+            qc.h(qr[second])
+            qc.cx(qr[first],qr[second])
+            qc.h(qr[first])
+            qc.h(qr[second])
+            qc.cx(qr[first],qr[second])
+        else: 
+            qc.swap(first,second)
+        self.recordSwapInLines(first,second)
+        return qc,qr
+
+into
+
+	def applySwap(self,qc,qr,first,second):
+		qc,qr = self.modifyCircuitToApplySwap(qc,qr,first,second)
+		self.recordSwapInLines(first,second)
+		return qc,qr
+
+	def modifyCircuitToApplySwap(self,qc,qr,first,second)
+		useIBMSwaps=1
+		if useIBMSwaps==0:
+			qc.cx(qr[first],qr[second])
+			qc.h(qr[first])
+			qc.h(qr[second])
+			qc.cx(qr[first],qr[second])
+			qc.h(qr[first])
+			qc.h(qr[second])
+			qc.cx(qr[first],qr[second])
+		else: 
+			qc.swap(first,second)
+		return qc,qr
+
+InsertV should also probably recieve changes, somehow
+
+After doing that for all functions, the readGatesFromIoclass should use applySwap;
+while readFixedGatesFromCthg should use modifyCircuitToApply swap in main loop

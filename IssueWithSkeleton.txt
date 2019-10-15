@@ -1,0 +1,6 @@
+The problem is when inserting toffoli gates, we want to bring all three into the proximity (if we are relying on the IBM decomposition, which we do as of now)
+So the skeleton should change to accomodate [ a,b,c] as missing edges
+The fixMissingEdges should be modified accordingly
+We also need to realize  that for toffoli we have hard requirement all three being around
+Alternatively, we could stick to our decomposition that uses two bits, but we have got to 
+start displaying it in the lines.

@@ -133,7 +133,7 @@ def testFromFile(fileName,details=0,drawPicture=0):
 
 testNames=["hwb6","hwb4_12","testToffoli5","parity","0410184","test00","ex1","testCVCVdag","ham3_28","miller","hwb4_52","testVCVC","3_17","test01","simpleSwap","swap1-2","swap1-3", "swap3-2","test1","testCVCV","simpleToffoli","hwb4_52_mod","toffoli"]
 fails = 0
-testNames = ["hwb6","hwb4_12","testToffoli5"]
+testNames = ["toffoli"]
 for fileName in testNames:
     fileName = testDir + fileName 
     fails = fails + testFromFile(fileName,1,0)
