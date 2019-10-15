@@ -2,7 +2,8 @@
 # coding: utf-8
 # In[1]:
 
-
+%load_ext autoreload
+%autoreload 2
 from qiskit import ClassicalRegister, QuantumRegister
 from qiskit import QuantumCircuit, execute,IBMQ
 from qiskit import BasicAer
@@ -83,16 +84,20 @@ def bigFunction(fileName):
             qr,cr,qc = ioClass.createCircuitAndSetInput(i)
             ibmLayout = prepareIBMQLayout(qr,tempLayout)
             qc,qr = ctg.readGatesFromIOClass(qr,qc, ioClass)
+            print("LINES AFTER WE've just read them",ctg.lines)
             if epoch==0:
                 defaultIBMCost = measureFidelityWithoutChanges(qr,cr,qc)
             ctg = fixTheStuff(ctg)
+            print("LINES AFTER FIXING",ctg.lines)
             #This one needs to comply with changes you did
             #qc,qr = ctg.readFixedGatesFromCtg(qr,qc)
            
             qr,cr,qc = ioClass.createCircuitAndSetInput(i)
             qc,qr = ctg.readFixedGatesFromCtg(qr,qc)
+            print("LINES AFTER READING FIXED GATES FROM CTG",ctg.lines)
             ibmLayout = prepareIBMQLayout(qr,tempLayout)
             tempCost = compileToSeeCost(qr,cr,qc,ioClass,ibmLayout,i)
+
             ibmCostHistory.append(tempCost)
             costHistory.append(len(ctg.lines))
             print("Epoch "+str(epoch)+", cost history is:",tempCost)
@@ -147,8 +152,6 @@ def measureFidelityWithoutChanges(qr,cr,qc):
     
     qcircuit = transpile(qc,least_busy,initial_layout=None,pass_manager=None)
     qobj = assemble(qcircuit)
-    print(qcircuit)
-    print(qobj.experiments)
     print(len(qobj.experiments))
     #This line provides print of the compiled circuit qasm
     #print("Length of IBM compiled circuit is:",len(qobj.experiments[0].header.as_dict()["compiled_circuit_qasm"]))
@@ -157,7 +160,11 @@ def measureFidelityWithoutChanges(qr,cr,qc):
 def measureToVerifyOutputWtihChanges(qr,cr,qc,ioClass,ibmLayout,i,epoch):
     least_busy = BasicAer.get_backend('qasm_simulator')
     qc.measure(qr,cr)
-    job = execute(qc,least_busy,initial_layout=ibmLayout,shots=20)
+    qc = transpile(qc,least_busy,initial_layout=ibmLayout)
+    qobj = assemble(qc,shots=20)
+    print("ALALALALOMALALALALALOMLOMLILOMLOMLOM")
+    print(qobj.experiments[0].instructions)
+    job = execute(qc,least_busy)
     result = job.result()
     print(result.get_counts())
     error = ioClass.checkOutputs(result.get_counts(),i)

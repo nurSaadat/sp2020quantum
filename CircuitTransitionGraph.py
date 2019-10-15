@@ -225,7 +225,7 @@ class CircuitTransitionGraph:
             
     def fixMissingEdges(self):
         for element in self.notMatching:
-            #print(" The element that started this",element)
+            print(" The element that started this",element)
             #print("self availableShit",self.couplingAsList)
             # print("Not matching is",element," ",self.layout[element[0]],self.layout[element[1]])
             #print("Not fixed lines are",self.lines)
@@ -488,15 +488,18 @@ class CircuitTransitionGraph:
                 self.findPathHelper(i,vTo,t)
      
     def readGatesFromIOClass(self,qr,qc,ioClass):
-        justLines = ioClass.getLines().copy()
-        #print("Corrected lines are:",self.lines)
         self.resetCtg()
+
+        justLines = ioClass.getLines().copy()
+        print("LINES FROM IOCLASS ARE:",justLines)
+       #  = self.lines.copy()
         for lineRead in justLines:
             tokens = lineRead.split(" ",1)
             little_token1 = tokens[0][0]
             if little_token1=="t":
                 little_token2 = tokens[0][1]
             if tokens[0]=="t3": 
+                
                 variables=tokens[1].split(" ")
                 first = ord(variables[0][0])-ord('a')
                 second = ord(variables[1][0])-ord('a')
@@ -552,8 +555,10 @@ class CircuitTransitionGraph:
 
        
     def readFixedGatesFromCtg(self,qr,qc):
-            lines = self.lines
-            self.resetCtg()
+            lines = self.lines.copy()
+            print("The lines before reset are:", lines)
+           # self.resetCtg()
+            print("The lines after reset are:", lines)
             for lineRead in lines:
                 tokens = lineRead.split(" ",1)
                 if tokens[0]=="t3": 
@@ -623,6 +628,22 @@ class CircuitTransitionGraph:
         self.recordSwapInLines(first,second)
         return qc,qr
     #debugHere
+    def recordToffoliGateInLines(self,first,second,third):
+        # line = "t2 "+str(first) + " "+ str(second)
+        # self.lines.append(line)
+        # line = "h "+str(first)
+        # self.lines.append(line)
+        # line = "h "+str(second)
+        # self.lines.append(line)
+        # line = "t2 "+str(first) + " "+ str(second)
+        # self.lines.append(line)
+        # line = "h "+str(first)
+        # self.lines.append(line)
+        # line = "h "+str(second)
+        # self.lines.append(line)
+        # line = "t2 "+str(first) + " "+ str(second)
+        line = "t3 "+str(chr(first+ord("a"))) + " "+ str(chr(second+ord("a")))+" "+ str(chr(third+ord("a")))
+        self.lines.append(line)
 
     def recordSwapInLines(self,first,second):
         # line = "t2 "+str(first) + " "+ str(second)
@@ -732,9 +753,10 @@ class CircuitTransitionGraph:
             qc.cx(qr[first],qr[second])
         else:
             qc.ccx(first,second,third)
+        self.recordToffoliGateInLines(first,second,third)
         self.modifyWeights(chr(ord("a")+first),chr(ord("a")+second))
-
-        self.modifyWeights(chr(ord("a")+first),chr(ord("a")+second))
+        self.modifyWeights(chr(ord("a")+second),chr(ord("a")+third))
+        self.modifyWeights(chr(ord("a")+first),chr(ord("a")+third))
         return qc,qr
 
 
