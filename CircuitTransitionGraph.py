@@ -27,18 +27,19 @@ class CircuitTransitionGraph:
     def getSize(self):
         return self.size
         
-    def modifyWeights(self,first,second):
+    def modifyWeights(self,first,second,record = True):
      #   first = self.layout[first]
     #    second = self.layout[second]
-        self.v.add(first)
-        self.v.add(second)
-        if second < first:
-            temp = first
-            first = second
-            second = temp
-        key = str(first)+str(second)
-        self.weights[key]=self.weights.get(key,0)+1
-        self.sk.append(key)
+        if True == record:
+            self.v.add(first)
+            self.v.add(second)
+            if second < first:
+                temp = first
+                first = second
+                second = temp
+            key = str(first)+str(second)
+            self.weights[key]=self.weights.get(key,0)+1
+            self.sk.append(key)
 
     def getMissingConnections(self):
         self.notMatching = []
@@ -56,8 +57,9 @@ class CircuitTransitionGraph:
                 self.notMatching.append(tPair)
         return self.notMatching
 
-    def modifyWeightsOneQubit(self,only):
-        self.v.add(only)
+    def modifyWeightsOneQubit(self,only,record = True):
+        if True == record:
+            self.v.add(only)
      
     def setSize(self,size):
         self.size = size
@@ -487,9 +489,9 @@ class CircuitTransitionGraph:
                     t.append(str(i))
                 self.findPathHelper(i,vTo,t)
      
-    def readGatesFromIOClass(self,qr,qc,ioClass):
+    def readGatesFromIOClass(self,qr,qc,ioClass,useIBMToffoli = False, record = True):
         self.resetCtg()
-
+        
         justLines = ioClass.getLines().copy()
         print("LINES FROM IOCLASS ARE:",justLines)
        #  = self.lines.copy()
@@ -499,33 +501,32 @@ class CircuitTransitionGraph:
             if little_token1=="t":
                 little_token2 = tokens[0][1]
             if tokens[0]=="t3": 
-                
                 variables=tokens[1].split(" ")
                 first = ord(variables[0][0])-ord('a')
                 second = ord(variables[1][0])-ord('a')
                 target = ord(variables[2][0])-ord('a')
-                qc,qr = self.insertToffoliGate(qc,qr,first,second,target)
+                qc,qr = self.insertToffoliGate(qc,qr,first,second,target,record=record,useIBMToffoli=useIBMToffoli)
                 #qc.ccx(qr[first],qr[second],qr[target])
             if tokens[0]=="v": 
                 self.lines.append(lineRead)    
                 variables=tokens[1].split(" ")
                 control = ord(variables[0][0])-ord('a')
                 target = ord(variables[1][0])-ord('a')
-                qc,qr = self.insertV(qc,qr,control,target)
+                qc,qr = self.insertV(qc,qr,control,target,record=record)
             if tokens[0]=="v+":
                 self.lines.append(lineRead)                 
                 variables=tokens[1].split(" ")
                 control = ord(variables[0][0])-ord('a')
                 target = ord(variables[1][0])-ord('a')
-                qc,qr = self.insertVdag(qc,qr,control,target)
+                qc,qr = self.insertVdag(qc,qr,control,target,record=record)
             if tokens[0]=="t2":       
                 self.lines.append(lineRead)           
                 variables=tokens[1].split(" ")
-                self.modifyWeights(variables[0][0],variables[1][0])
+                if True == record:
+                    self.modifyWeights(variables[0][0],variables[1][0])
                 control = ord(variables[0][0])-ord('a')
                 target = ord(variables[1][0])-ord('a')
                 qc.cx(qr[control],qr[target])
-
             if tokens[0]=="t1":      
                 self.lines.append(lineRead)            
                 variables=tokens[1].split(" ")
@@ -537,11 +538,12 @@ class CircuitTransitionGraph:
                 t = ord(variables[0][0])-ord('a')
                 qc.x(qr[t])
             if tokens[0]=="sw":   
-                self.lines.append(lineRead)              
+                if True == record:
+                    self.lines.append(lineRead)              
                 variables=tokens[1].split(" ")
                 firstWire = ord(variables[0][0])-ord('a')
                 secondWire = ord(variables[1][0])-ord('a')
-                qc,qr = self.insertSwaps(qc,qr,firstWire,secondWire)
+                qc,qr = self.insertSwaps(qc,qr,firstWire,secondWire,record=record)
             if little_token1=="t" and int(little_token2) > 3:
                 controls = list()
                 variables=tokens[1].split(" ")
@@ -549,24 +551,27 @@ class CircuitTransitionGraph:
                 for i in range(len(variables)-1):
                     temp = ord(variables[i][0])-ord('a')
                     controls.append(temp)
-                qc,qr = self.insertNControlToffoliGate(qc,qr,controls,last,ioClass.ancilaSize)
+                qc,qr = self.insertNControlToffoliGate(qc,qr,controls,last,ioClass.ancilaSize,record=record,useIBMToffoli=useIBMToffoli)
        # print (ctg.getPathAndStuff())
         return qc,qr
 
        
-    def readFixedGatesFromCtg(self,qr,qc):
+    def readFixedGatesFromCtg(self,qr,qc,useIBMToffoli = False):
             lines = self.lines.copy()
             print("The lines before reset are:", lines)
            # self.resetCtg()
             print("The lines after reset are:", lines)
             for lineRead in lines:
                 tokens = lineRead.split(" ",1)
+                little_token1 = tokens[0][0]
+                if little_token1=="t":
+                    little_token2 = tokens[0][1]
                 if tokens[0]=="t3": 
                     variables=tokens[1].split(" ")
                     first = ord(variables[0][0])-ord('a')
                     second = ord(variables[1][0])-ord('a')
                     target = ord(variables[2][0])-ord('a')
-                    qc,qr = self.insertToffoliGate(qc,qr,first,second,target)
+                    qc,qr = self.insertToffoliGate(qc,qr,first,second,target,useIBMToffoli)
                     #qc.ccx(qr[first],qr[second],qr[target])
                 if tokens[0]=="v": 
                     variables=tokens[1].split(" ")
@@ -599,7 +604,14 @@ class CircuitTransitionGraph:
                     firstWire = ord(variables[0][0])-ord('a')
                     secondWire = ord(variables[1][0])-ord('a')
                     qc,qr = self.insertSwaps(qc,qr,firstWire,secondWire)
-
+                if little_token1=="t" and int(little_token2) > 3:
+                    controls = list()
+                    variables=tokens[1].split(" ")
+                    last = ord(variables[len(variables)-1][0])-ord('a')
+                    for i in range(len(variables)-1):
+                        temp = ord(variables[i][0])-ord('a')
+                        controls.append(temp)
+                    qc,qr = self.insertNControlToffoliGate(qc,qr,controls,last,ioClass.ancilaSize,useIBMToffoli)
            # print (ctg.getPathAndStuff())
             #print ("The updated skeleton is:",self.sk,", its length is:",len(self.sk))
             self.findHighestConnectivityNodesInSkeleton()
@@ -613,9 +625,8 @@ class CircuitTransitionGraph:
         self.highestConnectivityNodes = []
 
 
-    def applySwap(self,qc,qr,first,second):
-        useIBMSwaps=1
-        if useIBMSwaps==0:
+    def applySwap(self,qc,qr,first,second,record=True,useIBMSwaps = True):
+        if True == useIBMSwaps:
             qc.cx(qr[first],qr[second])
             qc.h(qr[first])
             qc.h(qr[second])
@@ -625,7 +636,8 @@ class CircuitTransitionGraph:
             qc.cx(qr[first],qr[second])
         else: 
             qc.swap(first,second)
-        self.recordSwapInLines(first,second)
+        if True == record:
+            self.recordSwapInLines(first,second)
         return qc,qr
     #debugHere
     def recordToffoliGateInLines(self,first,second,third):
@@ -663,7 +675,7 @@ class CircuitTransitionGraph:
         self.lines.append(line)
 
     #TODO consider modifying weights bty multiple
-    def insertSwaps(self,qc,qr,first,second):
+    def insertSwaps(self,qc,qr,first,second,record = True):
         t =[]
         if first == second:
             return qc,qr
@@ -674,14 +686,15 @@ class CircuitTransitionGraph:
             t = range(first,second)
             
         for i in t:
-            k = chr(i+ord('a'))
-            k2 = chr(i+ord('a')+1)
-            self.modifyWeights(k,k2)
-            qc,qr = self.applySwap(qc,qr,i,i+1)
+            if True == record:
+                k = chr(i+ord('a'))
+                k2 = chr(i+ord('a')+1)
+                self.modifyWeights(k,k2)
+            qc,qr = self.applySwap(qc,qr,i,i+1,record)
         return qc,qr
 
     #this function applies controlled v gate to the circuit. the target MUST be control + 1
-    def applyV(self,qc,qr,control,target):
+    def applyV(self,qc,qr,control,target,record=True):
         if target - 1 != control:
             print ("The self.insertV function should be applied instead applyV")
             exit(0)
@@ -693,11 +706,12 @@ class CircuitTransitionGraph:
         qc.tdg(qr[target])
         qc.cx(qr[target],qr[control])
         qc.h(qr[target])
-        self.modifyWeights(chr(ord("a")+target),chr(ord("a")+control))
-        self.modifyWeights(chr(ord("a")+target),chr(ord("a")+control))
+        if True == record:
+            self.modifyWeights(chr(ord("a")+target),chr(ord("a")+control))
+            self.modifyWeights(chr(ord("a")+target),chr(ord("a")+control))
         return qc, qr
 
-    def applyVdag(self,qc,qr,control,target):
+    def applyVdag(self,qc,qr,control,target, record = True):
         if target - 1 != control:
             print ("The self.insertV function should be applied instead applyV")
             exit(0)
@@ -708,11 +722,12 @@ class CircuitTransitionGraph:
         qc.cx(qr[target],qr[control])
         qc.h(qr[target])
         qc.t(qr[control])
-        self.modifyWeights(chr(ord("a")+target),chr(ord("a")+control))
-        self.modifyWeights(chr(ord("a")+target),chr(ord("a")+control))
+        if True == record: 
+            self.modifyWeights(chr(ord("a")+target),chr(ord("a")+control))
+            self.modifyWeights(chr(ord("a")+target),chr(ord("a")+control))
         return qc, qr
 
-    def insertV(self,qc,qr,control,target):
+    def insertV(self,qc,qr,control,target, record = True):
         second = target - 1
         first = control
         maximum = target
@@ -720,12 +735,12 @@ class CircuitTransitionGraph:
             first = target
             second = control
             maximum = control
-        qc,qr=self.insertSwaps(qc,qr,first,second)
-        qc,qr=self.applyV(qc,qr,maximum-1,maximum)
-        qc,qr=self.insertSwaps(qc,qr,second,first)
+        qc,qr=self.insertSwaps(qc,qr,first,second,record)
+        qc,qr=self.applyV(qc,qr,maximum-1,maximum,record)
+        qc,qr=self.insertSwaps(qc,qr,second,first,record)
         return qc,qr
 
-    def insertVdag(self,qc,qr,control,target):
+    def insertVdag(self,qc,qr,control,target,record = True):
         second = target - 1
         first = control
         maximum = target
@@ -733,30 +748,30 @@ class CircuitTransitionGraph:
             first = target
             second = control
             maximum = control
-        qc,qr=self.insertSwaps(qc,qr,first,second)
-        qc,qr=self.applyVdag(qc,qr,maximum-1,maximum)
-        qc,qr=self.insertSwaps(qc,qr,second,first)
+        qc,qr=self.insertSwaps(qc,qr,first,second, record)
+        qc,qr=self.applyVdag(qc,qr,maximum-1,maximum,record)
+        qc,qr=self.insertSwaps(qc,qr,second,first,record)
         return qc,qr
 
     # Assumes first second third target are lnn
     # If better realization of Toffoli gate is known, 
     # it can be updated here
-    def applyToffoliGate(self,qc,qr,first,second,third):
-        useIBMToffoli =1
-        if useIBMToffoli ==0:
-            qc,qr=self.insertSwaps(qc,qr,first,second)
-            qc,qr=self.insertV(qc,qr,second,third)
-            qc,qr=self.insertSwaps(qc,qr,first,second)
-            qc,qr=self.insertV(qc,qr,second,third)
+    def applyToffoliGate(self,qc,qr,first,second,third, record = True, useIBMToffoli = False):
+        if False == useIBMToffoli:
+            qc,qr=self.insertSwaps(qc,qr,first,second,record)
+            qc,qr=self.insertV(qc,qr,second,third,record)
+            qc,qr=self.insertSwaps(qc,qr,first,second,record)
+            qc,qr=self.insertV(qc,qr,second,third,record)
             qc.cx(qr[first],qr[second])
-            qc,qr=self.insertVdag(qc,qr,second,third)
+            qc,qr=self.insertVdag(qc,qr,second,third,record)
             qc.cx(qr[first],qr[second])
         else:
             qc.ccx(first,second,third)
-        self.recordToffoliGateInLines(first,second,third)
-        self.modifyWeights(chr(ord("a")+first),chr(ord("a")+second))
-        self.modifyWeights(chr(ord("a")+second),chr(ord("a")+third))
-        self.modifyWeights(chr(ord("a")+first),chr(ord("a")+third))
+        if True == record:
+            self.recordToffoliGateInLines(first,second,third)
+            self.modifyWeights(chr(ord("a")+first),chr(ord("a")+second))
+            self.modifyWeights(chr(ord("a")+second),chr(ord("a")+third))
+            self.modifyWeights(chr(ord("a")+first),chr(ord("a")+third))
         return qc,qr
 
 
@@ -764,7 +779,7 @@ class CircuitTransitionGraph:
     # does not require lines to be together, insert swaps
     # could be optimized by minimizing the number of swaps
     # bringing lines together
-    def insertToffoliGate(self,qc,qr,first,second,target):
+    def insertToffoliGate(self,qc,qr,first,second,target,record = True,useIBMToffoli = False):
         myList = [first,second,target]
         myList.sort()
         maximum = myList[2]
@@ -779,17 +794,17 @@ class CircuitTransitionGraph:
         if pos == 2:
             first = myList[0]
             second = myList[1]
-        self.insertSwaps(qc,qr,target,maximum)    
-        self.insertSwaps(qc,qr,second,maximum-1)
-        self.insertSwaps(qc,qr,first,maximum-2)
-        qc,qr =  self.applyToffoliGate(qc,qr,maximum-2,maximum-1,maximum)
-        self.insertSwaps(qc,qr,maximum-2,first)
-        self.insertSwaps(qc,qr,maximum-1,second)
-        self.insertSwaps(qc,qr,maximum,target)  
+        self.insertSwaps(qc,qr,target,maximum,record)    
+        self.insertSwaps(qc,qr,second,maximum-1,record)
+        self.insertSwaps(qc,qr,first,maximum-2,record)
+        qc,qr =  self.applyToffoliGate(qc,qr,maximum-2,maximum-1,maximum,record)
+        self.insertSwaps(qc,qr,maximum-2,first,record)
+        self.insertSwaps(qc,qr,maximum-1,second,record)
+        self.insertSwaps(qc,qr,maximum,target,record)  
 
         return qc,qr
 
-    def insertNControlToffoliGate(self,qc,qr,controls,target,ancilaSize):
+    def insertNControlToffoliGate(self,qc,qr,controls,target,ancilaSize,record=True, useIBMToffoli = False):
         size_c = len(controls)
         ancila = list()
         for i in range(self.size,self.size+ancilaSize):
@@ -800,22 +815,22 @@ class CircuitTransitionGraph:
         print("Target is", target)
         print("Ancila after constructed is",ancila)
         print("Inserted first Toffoli at",controls[0],controls[1],ancila[0])
-        qc, qr = self.insertToffoliGate(qc,qr,controls[0],controls[1],ancila[0])
+        qc, qr = self.insertToffoliGate(qc,qr,controls[0],controls[1],ancila[0],record,useIBMToffoli)
         orderOfInsertions =list()
         for i in range(0, size_a-1):
             print("DEBUG")
         
-            qc,qr = self.insertToffoliGate(qc,qr,ancila[i],controls[i+2],ancila[i+1])
+            qc,qr = self.insertToffoliGate(qc,qr,ancila[i],controls[i+2],ancila[i+1],record,useIBMToffoli)
             orderOfInsertions.append((ancila[i],controls[i+2],ancila[i+1]))
             print("Inserted next Toffoli at",ancila[i],controls[i+2],ancila[i+1])
         orderOfInsertions.reverse()
-        qc,qr = self.insertToffoliGate(qc,qr,ancila[size_a-1],controls[size_c-1],target)
+        qc,qr = self.insertToffoliGate(qc,qr,ancila[size_a-1],controls[size_c-1],target,record,useIBMToffoli)
         print("Inserted last Toffoli at",ancila[size_a-1],controls[size_c-1],target)                          
         for elem in orderOfInsertions:
-             qc,qr = self.insertToffoliGate(qc,qr,elem[0],elem[1],elem[2])
-             print("Inserted next Toffoli at",elem[0],elem[1],elem[2])
+             qc,qr = self.insertToffoliGate(qc,qr,elem[0],elem[1],elem[2],record,useIBMToffoli)
+             print("Inserted next Toffoli at",elem[0],elem[1],elem[2],record)
 
-        qc, qr = self.insertToffoliGate(qc,qr,controls[0],controls[1],ancila[0])
+        qc, qr = self.insertToffoliGate(qc,qr,controls[0],controls[1],ancila[0],record,useIBMToffoli)
         print("Inserted first Toffoli at",controls[0],controls[1],ancila[0])
 
         return qc,qr
