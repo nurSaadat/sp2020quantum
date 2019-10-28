@@ -85,21 +85,29 @@ class InputOutputClass:
     # @param2 is the results of execution
     # @param3 is the index of the element in the k-map
     # Assumption: The function works if the values order for dict in python is preserved!
-    def checkOutputs(self,counts,number):
+    def checkOutputs(self,counts,number,debug=False):
         expectedAnswer = list(self.kMap.values())[number]
-        
         #print("The expected answer is",expectedAnswer)
         #print("The actual answer is",counts)
         if self.hasGarbage == 0:
             for release in counts.keys():
-            #        print("The \"release object is\"",release)
+                if True == debug : 
+                    print("The \"line we expect is \"",expectedAnswer)
                 myString = flipTheString(release)
-                print ("BEFOR THE Error occurred",str(number) ,"FLIPPED IS: ", myString ,", WHE GOT THIS:",release,"ExpectedAnswerIS",expectedAnswer)
+                # remove the AND False if you need more data
+                if True == debug and False: 
+                    print ("BEFOR THE Error occurred",str(number) ,"FLIPPED IS: ", myString ,", WHE GOT THIS:",release,"ExpectedAnswerIS",expectedAnswer)
+                
                 if self.ancilaSize!=0:
                     release = release[self.ancilaSize:]
                 myString = flipTheString(release)
-                #to cut away ancila!
-                print ("BEFOR THE Error occurred without ANCILA",str(number) ,"FLIPPED IS: ", myString ,", WHE GOT THIS:",release,"ExpectedAnswerIS",expectedAnswer)
+                if True == debug:
+                    print("The \"line we got is \"",myString)
+
+                # remove the AND False if you need more data
+                if True == debug and False:
+                    print ("BEFOR THE Error occurred without ANCILA",str(number) ,"FLIPPED IS: ", myString ,", WHE GOT THIS:",release,"ExpectedAnswerIS",expectedAnswer)
+                
                 if myString != expectedAnswer:
                     print ("Error occurred",str(number) ,":", myString ,":",release)
                     raise SystemError
@@ -118,10 +126,11 @@ class InputOutputClass:
                 return 1
         return 0
     #returns quantum register and quantum circuit initializing to @param state (matching the pla file)
-    def createCircuitAndSetInput(self,number):
+    def createCircuitAndSetInput(self,number, debug=False):
         size = self.size
         size = size + self.ancilaSize
-        #print("Size is",size)
+        if True == debug:
+            print("Size of the freshly read circuit is:",size)
         qr = QuantumRegister(size)
         cr = ClassicalRegister(size)
         qc = QuantumCircuit(qr,cr)
@@ -129,9 +138,9 @@ class InputOutputClass:
             formatString = "{:0"+str(size)+"b}"
             myString = formatString.format(number)
             #print("My string is: ",myString,", size is ",size)
-            print("j is:","myString",myString)
+            if True == debug :
+                print("My string is: ",myString,", size is ",size)
             for j in range(self.ancilaSize,size):
-                
                 if myString[j]=="1":
                     qc.x(qr[j-self.ancilaSize])
         elif self.hasGarbage == 1 and self.hasConstantInputs==0:
@@ -141,8 +150,9 @@ class InputOutputClass:
             theNumber = list(self.kMap.keys())[number]
             i = 0 
             j = 0
-            print("Constant field is:",self.constants)
-            print("Length of constants field is:",len(self.constants))
+            if True == debug :
+                print("Constant field is:",self.constants)
+                print("Length of constants field is:",len(self.constants))
             while i < len(self.constants):
                 if self.constants[i]!="-":
                     inputList.append(self.constants[i])
@@ -152,7 +162,8 @@ class InputOutputClass:
                 i =  i + 1   
             #print("Reached here in preparation of inputs!!!, the inputList is",inputList)
             for j in range(0,size):
-                print("j is:",j,"InputList",inputList[j])
+                if True == debug:
+                    print("j is:",j,"InputList",inputList[j])
                 if inputList[j]=="1":
                     qc.x(qr[j])
         elif self.hasGarbage == 1 and self.hasConstantInputs==1:

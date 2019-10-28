@@ -77,7 +77,7 @@ def bigFunction(fileName):
     for i in range(0,1):
         epoch = 0
         #This part corresponds for part of experiment without minimal or no changes
-        while epoch <3:
+        while epoch <1:
             print("Epoch number:",epoch)
             print("Current layout of ctg is:",ctg.layout)
             tempLayout = ctg.layout.copy()
@@ -105,10 +105,7 @@ def bigFunction(fileName):
                 finalAnswer = deepcopy(ctg.lines)
                 finalLayout = deepcopy(tempLayout)
                 leastCost = tempCost
-            qr,cr,qc = ioClass.createCircuitAndSetInput(i)
-            qc,qr = ctg.readFixedGatesFromCtg(qr,qc)
-            ibmLayout = prepareIBMQLayout(qr,tempLayout) 
-            measureToVerifyOutputWtihChanges(qr,cr,qc,ioClass,ibmLayout,i,epoch)
+            measureToVerifyOutputWtihChanges(ctg,ioClass,tempLayout,i,epoch)
             ctg.layOutQubits()
             epoch = epoch+1
     for i in range(0,len(costHistory)):
@@ -157,17 +154,27 @@ def measureFidelityWithoutChanges(qr,cr,qc):
     #print("Length of IBM compiled circuit is:",len(qobj.experiments[0].header.as_dict()["compiled_circuit_qasm"]))
     return len(qobj.experiments[0].instructions)
 #This needs to be implemented    
-def measureToVerifyOutputWtihChanges(qr,cr,qc,ioClass,ibmLayout,i,epoch):
+def measureToVerifyOutputWtihChanges(ctg,ioClass,tempLayout,i,epoch,debug = True):
+    if True == debug:
+        print ("Hello from test routine")
+    answers = ioClass.getKmap()
+    size = ioClass.getSize()
+    error_count = 0
     least_busy = BasicAer.get_backend('qasm_simulator')
-    qc.measure(qr,cr)
-    qc = transpile(qc,least_busy,initial_layout=ibmLayout)
-    qobj = assemble(qc,shots=20)
-    print("ALALALALOMALALALALALOMLOMLILOMLOMLOM")
-    print(qobj.experiments[0].instructions)
-    job = execute(qc,least_busy)
-    result = job.result()
-    print(result.get_counts())
-    error = ioClass.checkOutputs(result.get_counts(),i)
+    if True == debug:
+        print ("Length of answers is:",len(answers))
+    for i in range(0,len(answers)):
+        qr,cr,qc = ioClass.createCircuitAndSetInput(i)
+        qc,qr = ctg.readFixedGatesFromCtg(qr,qc)
+        ibmLayout = prepareIBMQLayout(qr,tempLayout) 
+        qc.measure(qr,cr)
+        qc = transpile(qc,least_busy,initial_layout=ibmLayout)
+        qobj = assemble(qc,shots=20)
+        job = execute(qc,least_busy)
+        stats_sim = job.result().get_counts()
+        error = ioClass.checkOutputs(stats_sim,i)
+        error_count = error_count+error
+
     if error != 0 :
         print("ERROR APPEARED on epoch",epoch)
         raise SystemError
@@ -181,4 +188,5 @@ fileName=goodExamples[0]
 fileName = testDir+fileName
 bigFunction(fileName)
 
-#%%
+
+# %%

@@ -556,7 +556,7 @@ class CircuitTransitionGraph:
         return qc,qr
 
        
-    def readFixedGatesFromCtg(self,qr,qc,useIBMToffoli = False):
+    def readFixedGatesFromCtg(self,qr,qc,useIBMToffoli = False, record = False):
             lines = self.lines.copy()
             print("The lines before reset are:", lines)
            # self.resetCtg()
@@ -571,7 +571,7 @@ class CircuitTransitionGraph:
                     first = ord(variables[0][0])-ord('a')
                     second = ord(variables[1][0])-ord('a')
                     target = ord(variables[2][0])-ord('a')
-                    qc,qr = self.insertToffoliGate(qc,qr,first,second,target,useIBMToffoli)
+                    qc,qr = self.insertToffoliGate(qc,qr,first,second,target,useIBMToffoli,record)
                     #qc.ccx(qr[first],qr[second],qr[target])
                 if tokens[0]=="v": 
                     variables=tokens[1].split(" ")
@@ -582,11 +582,12 @@ class CircuitTransitionGraph:
                     variables=tokens[1].split(" ")
                     control = ord(variables[0][0])-ord('a')
                     target = ord(variables[1][0])-ord('a')
-                    qc,qr = self.insertVdag(qc,qr,control,target)
+                    qc,qr = self.insertVdag(qc,qr,control,target,record)
                     
                 if tokens[0]=="t2":             
                     variables=tokens[1].split(" ")
-                    self.modifyWeights(variables[0][0],variables[1][0])
+                    if True == record:
+                        self.modifyWeights(variables[0][0],variables[1][0])
                     control = ord(variables[0][0])-ord('a')
                     target = ord(variables[1][0])-ord('a')
                     qc.cx(qr[control],qr[target])
@@ -603,7 +604,7 @@ class CircuitTransitionGraph:
                     variables=tokens[1].split(" ")
                     firstWire = ord(variables[0][0])-ord('a')
                     secondWire = ord(variables[1][0])-ord('a')
-                    qc,qr = self.insertSwaps(qc,qr,firstWire,secondWire)
+                    qc,qr = self.insertSwaps(qc,qr,firstWire,secondWire,record)
                 if little_token1=="t" and int(little_token2) > 3:
                     controls = list()
                     variables=tokens[1].split(" ")
@@ -614,7 +615,7 @@ class CircuitTransitionGraph:
                     qc,qr = self.insertNControlToffoliGate(qc,qr,controls,last,ioClass.ancilaSize,useIBMToffoli)
            # print (ctg.getPathAndStuff())
             #print ("The updated skeleton is:",self.sk,", its length is:",len(self.sk))
-            self.findHighestConnectivityNodesInSkeleton()
+           # self.findHighestConnectivityNodesInSkeleton()
             #print("The most used quantum gubits are",self.qubitConnectionsCount)
             return qc,qr
 
