@@ -41,21 +41,26 @@ qubitsSize = least_busy.configuration().n_qubits
 # In[3]:
 
 
-def prepareIBMQLayout(qReg,layout):
+def prepareIBMQLayout(qReg,layout,debug = False):
     ibmLayout = {}
-    print(qReg)
-    print(layout)
+    if True == debug:
+        print("You've entered the function that generates an IBMQ layout", end ='')
+        print(", current quantum register is:")
+        print(qReg)
+        print (" , current layout is")
+        print(layout)
     for i in range(0,len(layout)):
         logical = ord(layout[chr(i+ord("a"))])-ord("a")
         physical = qReg[i]
         ibmLayout[logical]=physical
     #print("tempDictionary",ibmLayout)
     #print("items are",ibmLayout.items())
-    print("IBMLAYOUT")
-    print(ibmLayout)
+    if True == debug:
+        print("Generated IBM layout is:")
+        print(ibmLayout)
     return ibmLayout
 
-def bigFunction(fileName):
+def bigFunction(fileName,maxEpoch = 5,debug = False):
     ioClass = readCircuitInformation(fileName) 
     answers = ioClass.getKmap()
     size = ioClass.getSize()
@@ -65,7 +70,8 @@ def bigFunction(fileName):
     
     ctg = CircuitTransitionGraph()
     tempStuff = ctg.transformCoupling(couplingMap)
-    print(tempStuff,len(tempStuff))
+    if True == debug:
+        print("The prepared coupling is:",tempStuff,len(tempStuff))
     ctg.setSize(size)
    
     leastCost = 2000000
@@ -77,24 +83,28 @@ def bigFunction(fileName):
     for i in range(0,1):
         epoch = 0
         #This part corresponds for part of experiment without minimal or no changes
-        while epoch <1:
+        while epoch < maxEpoch:
             print("Epoch number:",epoch)
-            print("Current layout of ctg is:",ctg.layout)
+            if True == debug:
+                print("Current layout of ctg is:",ctg.layout)
             tempLayout = ctg.layout.copy()
             qr,cr,qc = ioClass.createCircuitAndSetInput(i)
             ibmLayout = prepareIBMQLayout(qr,tempLayout)
             qc,qr = ctg.readGatesFromIOClass(qr,qc, ioClass)
-            print("LINES AFTER WE've just read them",ctg.lines)
+            if True == debug:
+                print("LINES AFTER WE've just read them",ctg.lines)
             if epoch==0:
                 defaultIBMCost = measureFidelityWithoutChanges(qr,cr,qc)
             ctg = fixTheStuff(ctg)
-            print("LINES AFTER FIXING",ctg.lines)
+            if True == debug:
+                print("LINES AFTER FIXING",ctg.lines)
             #This one needs to comply with changes you did
             #qc,qr = ctg.readFixedGatesFromCtg(qr,qc)
            
             qr,cr,qc = ioClass.createCircuitAndSetInput(i)
             qc,qr = ctg.readFixedGatesFromCtg(qr,qc)
-            print("LINES AFTER READING FIXED GATES FROM CTG",ctg.lines)
+            if True == debug:
+                print("LINES AFTER READING FIXED GATES FROM CTG",ctg.lines)
             ibmLayout = prepareIBMQLayout(qr,tempLayout)
             tempCost = compileToSeeCost(qr,cr,qc,ioClass,ibmLayout,i)
 
@@ -124,11 +134,14 @@ def bigFunction(fileName):
     print("CostHistory is:",costHistory)
     print("IBMCostHistory is:",ibmCostHistory)   
    
-    plt.plot(ibmCostHistory,costHistory)
+   # plt.plot(ibmCostHistory,costHistory)
 
     
-def fixTheStuff(ctg):
-    print("Missing connections are",ctg.getMissingConnections())
+def fixTheStuff(ctg,debug=False):
+    if True == debug:
+        print("Missing connections are",ctg.getMissingConnections())
+    else:
+        ctg.getMissingConnections()
     #This one to fix the changes... fixthemissingedges connects stuff around. did not test though
     ctg.fixMissingEdges()
     #print("FIxing the stuff")
@@ -143,18 +156,19 @@ def  compileToSeeCost(qr,cr,qc,ioClass,ibmLayout,i):
     #print(qobj.experiments[0].instructions)
     return len(qobj.experiments[0].instructions)
     
-def measureFidelityWithoutChanges(qr,cr,qc):
+def measureFidelityWithoutChanges(qr,cr,qc,debug = False):
     #least_busy = BasicAer.get_backend('qasm_simulator')
     qc.measure(qr,cr)
     
     qcircuit = transpile(qc,least_busy,initial_layout=None,pass_manager=None)
     qobj = assemble(qcircuit)
-    print(len(qobj.experiments))
+    if True == debug:
+        print(len(qobj.experiments))
     #This line provides print of the compiled circuit qasm
     #print("Length of IBM compiled circuit is:",len(qobj.experiments[0].header.as_dict()["compiled_circuit_qasm"]))
     return len(qobj.experiments[0].instructions)
 #This needs to be implemented    
-def measureToVerifyOutputWtihChanges(ctg,ioClass,tempLayout,i,epoch,debug = True):
+def measureToVerifyOutputWtihChanges(ctg,ioClass,tempLayout,i,epoch,debug = False):
     if True == debug:
         print ("Hello from test routine")
     answers = ioClass.getKmap()
@@ -172,21 +186,23 @@ def measureToVerifyOutputWtihChanges(ctg,ioClass,tempLayout,i,epoch,debug = True
         qobj = assemble(qc,shots=20)
         job = execute(qc,least_busy)
         stats_sim = job.result().get_counts()
-        error = ioClass.checkOutputs(stats_sim,i)
+        error = ioClass.checkOutputs(stats_sim,i,True)
         error_count = error_count+error
 
     if error != 0 :
         print("ERROR APPEARED on epoch",epoch)
         raise SystemError
+    else:
+        print ("Epoch", epoch,": all tests passed")
     #plot_histogram(result.get_counts())
 
 
 # In[4]:
-goodExamples = ["3_17","0410184","ex1","hwb4_52","parity"]
-fileName=goodExamples[0]
-#if testFromFile(filename) == 0:
+passes = ["3_17"]
+doesNotPass = ["hwb4_52","parity","graycode6_47","0410184","ex1",]
+fileName=doesNotPass[2]
 fileName = testDir+fileName
-bigFunction(fileName)
+bigFunction(fileName,maxEpoch=10)
 
 
 # %%

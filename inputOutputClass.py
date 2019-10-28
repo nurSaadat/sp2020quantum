@@ -63,16 +63,16 @@ class InputOutputClass:
         else:
             self.hasGarbage = 0
 
-    def determineInputs(self):
+    def determineInputs(self, debug = False):
         self.processGarbage()
         self.processConstantInputs()
-        if self.hasGarbage == 1:
+        if self.hasGarbage == 1 and True == debug:
             print("The circuit has garbage lines in it or file parsed incorrectly, check ioclass")
-        else:
+        elif  True == debug:
             print("The circuit has no garbage lines in it or file parsed incorrectly, check ioclass")
-        if self.hasConstantInputs == 1:
+        if self.hasConstantInputs == 1 and True == debug:
             print("The circuit has constant inputs in it or file parsed incorrectly, check ioclass")
-        else:
+        elif True == debug:
             print("The circuit has no constant inputs lines in it or file parsed incorrectly, check ioclass")
   
 
@@ -87,12 +87,11 @@ class InputOutputClass:
     # Assumption: The function works if the values order for dict in python is preserved!
     def checkOutputs(self,counts,number,debug=False):
         expectedAnswer = list(self.kMap.values())[number]
-        #print("The expected answer is",expectedAnswer)
-        #print("The actual answer is",counts)
+        if True == debug : 
+            print("The \"line we expect is \":",expectedAnswer)
         if self.hasGarbage == 0:
             for release in counts.keys():
-                if True == debug : 
-                    print("The \"line we expect is \"",expectedAnswer)
+
                 myString = flipTheString(release)
                 # remove the AND False if you need more data
                 if True == debug and False: 
@@ -116,9 +115,13 @@ class InputOutputClass:
             foundErrors = 0
             for release in counts.keys():
                 myString = flipTheString(release)
+                if True == debug:
+                    print("The \"line we got is \":", end = '')
                 myStringIter = 0
                 for i in range (0,len(self.garbage)):
                     if self.garbage[i]=="-":
+                        if True == debug:
+                            print(myString[myStringIter])
                         if myString[myStringIter]!=expectedAnswer[myStringIter]:
                             foundErrors = foundErrors+1
                         myStringIter=myStringIter+1

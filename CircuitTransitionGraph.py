@@ -41,10 +41,11 @@ class CircuitTransitionGraph:
             self.weights[key]=self.weights.get(key,0)+1
             self.sk.append(key)
 
-    def getMissingConnections(self):
+    def getMissingConnections(self,debug = False):
         self.notMatching = []
         t = self.coupling
-        print("Self skeleton is",self.sk)
+        if True == debug:
+            print("Self skeleton is",self.sk)
         for i in self.sk:
             qubitFrom =self.layout[i[0]]
             qubitTo = self.layout[i[1]]
@@ -225,34 +226,41 @@ class CircuitTransitionGraph:
             self.sk[t] = nskElement
         #print("fixed skeleton",self.sk)
             
-    def fixMissingEdges(self):
+    def fixMissingEdges(self,debug = False):
         for element in self.notMatching:
-            print(" The element that started this",element)
-            #print("self availableShit",self.couplingAsList)
-            # print("Not matching is",element," ",self.layout[element[0]],self.layout[element[1]])
-            #print("Not fixed lines are",self.lines)
-            #print( "Paths to",element[0],element[1])
+            if True == debug:
+                print(" The element that started this",element)
+                print("self availableShit",self.couplingAsList)
+                print("Not matching is",element," ",self.layout[element[0]],self.layout[element[1]])
+                print("Not fixed lines are",self.lines)
+                print( "Paths to",element[0],element[1])
             self.findPathWithLayout(element[0],element[1])
             
             self.getPathAndStuff()
             # Select first element record noise
             # Select second element record noise
             # Select .... elements record noise
-            #print("SELF POSSIBLE PATH IS",self.possiblePath)
+            if True == debug:
+                print("SELF POSSIBLE PATH IS",self.possiblePath)
             self.bestPossibleEdge = self.selectLeastOccupied(self.possiblePath)
             bestPossibleEdge = self.bestPossibleEdge
-            #print("Hoy",bestPossibleEdge)
+            if True == debug:
+                print("Best possible edge is:",bestPossibleEdge)
             #fix the possibilities: if the first is to , then insert the swap to from and the bestPossibleEdge
             lastPair = [self.inverseLayout[bestPossibleEdge[len(bestPossibleEdge)-2]],self.inverseLayout[bestPossibleEdge[len(bestPossibleEdge)-1]]]
-           # print("Last pair is:",lastPair," Element is:",element)
+            if True == debug:
+                print("Last pair is:",lastPair," Element is:",element)
             replaceTo =  self.whatToReplace(element,lastPair)
             ind = self.findIndexOfTheGateSkeleton(element)
-            # print("Going to update the gate at the index",ind," Element is",element)
+            if True == debug:
+                print("Going to update the gate at the index",ind," Element is",element)
             self.surroundWithSwaps(ind,bestPossibleEdge,replaceTo)
-            # print("Corrected lines are:",self.lines)
+            if True == debug:
+                print("Corrected lines are:",self.lines)
             #self.fixTheSkeleton(element,replaceTo)
-            # print("What to replace is:",replaceTo,lastPair)
-        # print("Lines are:",self.lines," length of lines is:",len(self.lines))
+                print("What to replace is:",replaceTo,lastPair)
+        if True == debug:
+            print("Lines are:",self.lines," length of lines is:",len(self.lines))
 
     def transformCoupling(self,maList):
         for element in  maList:
@@ -347,7 +355,7 @@ class CircuitTransitionGraph:
         #self.qubitConnectionsCount = collections.OrderedDict(tuplesList)
         self.qubitConnectionsCount = list(tuplesList)
 
-    def layOutQubits(self):
+    def layOutQubits(self,debug = False):
         self.recalculateWeights()
         self.findHighestConnectivityNodesInCoupling()
         self.findHighestConnectivityNodesInSkeleton()
@@ -360,11 +368,12 @@ class CircuitTransitionGraph:
         candidatesSet = set()
         placed = []
         used = set()
-        print("Initial self.qubitconnectionscount is",self.qubitConnectionsCount)
+        if True == debug:
+            print("Initial self.qubitconnectionscount is",self.qubitConnectionsCount)
         while len (self.qubitConnectionsCount)>0:
             if len(candidates)==0:
-                print("wiggle wiggle")
-                print("Self.qubitconnectionscount is",self.qubitConnectionsCount)
+                if True == debug:
+                    print("Self.qubitconnectionscount is",self.qubitConnectionsCount)
                 qbit = self.qubitConnectionsCount[len(self.qubitConnectionsCount)-1][0]
                 while not self.layout.get(qbit[0],None):
                     if len(self.highestConnectivityNodes[0])!=0:
@@ -416,8 +425,9 @@ class CircuitTransitionGraph:
                             candidatesSet.add(elem)
                     placed.append((nextQbit,secondPhysicalBit[0]))
                 self.qubitConnectionsCount.pop()
-        print("Final layout after laying out qubits is",self.layout)
-        print("CandidatesSet is:",candidatesSet)
+        if True == debug:
+            print("Final layout after laying out qubits is",self.layout)
+            print("CandidatesSet is:",candidatesSet)
         self.constructInverseLayout()
         #self.updateSkeletonWithLayout()
     
@@ -489,11 +499,12 @@ class CircuitTransitionGraph:
                     t.append(str(i))
                 self.findPathHelper(i,vTo,t)
      
-    def readGatesFromIOClass(self,qr,qc,ioClass,useIBMToffoli = False, record = True):
+    def readGatesFromIOClass(self,qr,qc,ioClass,useIBMToffoli = False, record = True,debug = False):
         self.resetCtg()
         
         justLines = ioClass.getLines().copy()
-        print("LINES FROM IOCLASS ARE:",justLines)
+        if True == debug:
+            print("LINES FROM IOCLASS ARE:",justLines)
        #  = self.lines.copy()
         for lineRead in justLines:
             tokens = lineRead.split(" ",1)
@@ -556,11 +567,10 @@ class CircuitTransitionGraph:
         return qc,qr
 
        
-    def readFixedGatesFromCtg(self,qr,qc,useIBMToffoli = False, record = False):
+    def readFixedGatesFromCtg(self,qr,qc,useIBMToffoli = False, record = False,debug= False):
             lines = self.lines.copy()
-            print("The lines before reset are:", lines)
-           # self.resetCtg()
-            print("The lines after reset are:", lines)
+            if True == debug:            
+                print("The lines after reset are:", lines)
             for lineRead in lines:
                 tokens = lineRead.split(" ",1)
                 little_token1 = tokens[0][0]
