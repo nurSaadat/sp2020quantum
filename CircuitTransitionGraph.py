@@ -230,7 +230,7 @@ class CircuitTransitionGraph:
         for element in self.notMatching:
             if True == debug:
                 print(" The element that started this",element)
-                print("self availableShit",self.couplingAsList)
+                print("self available coupling lines are:",self.coupling)
                 print("Not matching is",element," ",self.layout[element[0]],self.layout[element[1]])
                 print("Not fixed lines are",self.lines)
                 print( "Paths to",element[0],element[1])

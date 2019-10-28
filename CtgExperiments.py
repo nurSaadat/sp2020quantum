@@ -143,7 +143,7 @@ def fixTheStuff(ctg,debug=False):
     else:
         ctg.getMissingConnections()
     #This one to fix the changes... fixthemissingedges connects stuff around. did not test though
-    ctg.fixMissingEdges()
+    ctg.fixMissingEdges(debug = True)
     #print("FIxing the stuff")
     return ctg
 
@@ -186,7 +186,7 @@ def measureToVerifyOutputWtihChanges(ctg,ioClass,tempLayout,i,epoch,debug = Fals
         qobj = assemble(qc,shots=20)
         job = execute(qc,least_busy)
         stats_sim = job.result().get_counts()
-        error = ioClass.checkOutputs(stats_sim,i,True)
+        error = ioClass.checkOutputs(stats_sim,i,False)
         error_count = error_count+error
 
     if error != 0 :
