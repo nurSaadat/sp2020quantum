@@ -1,4 +1,5 @@
 from math import pi
+from random import uniform, random,choice
 from copy import deepcopy
 
 import collections
@@ -22,6 +23,7 @@ class CircuitTransitionGraph:
         self.coupling = {}
         self.couplingAsList = []
         self.QuantumComputerCoupling = []
+        self.quantumComputerNumberOfQubits=0
         self.size = 0
 
     def getSize(self):
@@ -262,7 +264,8 @@ class CircuitTransitionGraph:
         if True == debug:
             print("Lines are:",self.lines," length of lines is:",len(self.lines))
 
-    def transformCoupling(self,maList):
+    def transformCoupling(self,maList,qubitsSize):
+        self.quantumComputerNumberOfQubits = qubitsSize
         for element in  maList:
             if (element[0] > element[1]):
                 key = str(chr(element[1]+ord("a")))+str(chr(element[0]+ord("a")))
@@ -362,7 +365,9 @@ class CircuitTransitionGraph:
         for element in self.highestConnectivityNodes:
             for elem in element:
                 self.coupling[elem[0]]=elem[1]
-        oldlayout = deepcopy(self.layout)
+        oldLayout = deepcopy(self.layout)
+        if True == debug:
+            print("Size of the oldLayout is:",len(oldLayout))
         self.layout = {}
         candidates = []
         candidatesSet = set()
@@ -425,9 +430,30 @@ class CircuitTransitionGraph:
                             candidatesSet.add(elem)
                     placed.append((nextQbit,secondPhysicalBit[0]))
                 self.qubitConnectionsCount.pop()
+
+        #This piece takes care of placing qubits that were not part of 
+        # two qubit interaction at least somewhere
+        for elem in placed:
+            oldLayout.pop(elem[0])
+        iter = self.quantumComputerNumberOfQubits
+        while len(oldLayout) != 0 and iter>0:
+            randomQubit = "a"
+            while randomQubit in used:
+                randomQubit = chr(ord("a")+random.randint(0, self.quantumComputerNumberOfQubits))
+            t = choice(list(oldLayout.keys()))
+            oldLayout.pop(t)
+            used.add(randomQubit)
+            placed.append((t,randomQubit))
+            self.layout[t]=randomQubit
+            iter = iter - 1
+
         if True == debug:
+            print("Placed is:",placed)
             print("Final layout after laying out qubits is",self.layout)
             print("CandidatesSet is:",candidatesSet)
+        if 0 != len(oldLayout):
+            print("One of the qubits was not placed while constructing the new layout")
+            raise SystemError ("One of the qubits was not placed while constructing the new layout")
         self.constructInverseLayout()
         #self.updateSkeletonWithLayout()
     

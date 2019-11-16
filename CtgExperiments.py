@@ -50,6 +50,7 @@ def prepareIBMQLayout(qReg,layout,debug = False):
         print (" , current layout is")
         print(layout)
     for i in range(0,len(layout)):
+        print ("Layout item is",i)
         logical = ord(layout[chr(i+ord("a"))])-ord("a")
         physical = qReg[i]
         ibmLayout[physical]=logical
@@ -69,7 +70,7 @@ def bigFunction(fileName,maxEpoch = 5,debug = False):
     error_count = 0
     
     ctg = CircuitTransitionGraph()
-    tempStuff = ctg.transformCoupling(couplingMap)
+    tempStuff = ctg.transformCoupling(couplingMap,qubitsSize)
     if True == debug:
         print("The prepared coupling is:",tempStuff,len(tempStuff))
     ctg.setSize(size)
@@ -87,7 +88,7 @@ def bigFunction(fileName,maxEpoch = 5,debug = False):
             print("Epoch number:",epoch)
             if True == debug:
                 print("Current layout of ctg is:",ctg.layout)
-            tempLayout = ctg.layout.copy()
+            tempLayout = deepcopy(ctg.layout)
             qr,cr,qc = ioClass.createCircuitAndSetInput(i)
             ibmLayout = prepareIBMQLayout(qr,tempLayout,debug)
             qc,qr = ctg.readGatesFromIOClass(qr,qc, ioClass)
@@ -116,7 +117,7 @@ def bigFunction(fileName,maxEpoch = 5,debug = False):
                 finalLayout = deepcopy(tempLayout)
                 leastCost = tempCost
             measureToVerifyOutputWtihChanges(ctg,ioClass,tempLayout,i,epoch,debug)
-            ctg.layOutQubits()
+            ctg.layOutQubits(debug=True)
             epoch = epoch+1
     for i in range(0,len(costHistory)):
         for j in range(0,len(costHistory)):
