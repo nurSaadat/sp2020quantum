@@ -519,24 +519,22 @@ class CircuitTransitionGraph:
                 qc,qr = self.insertToffoliGate(qc,qr,first,second,target,record=record,useIBMToffoli=useIBMToffoli)
                 #qc.ccx(qr[first],qr[second],qr[target])
             if tokens[0]=="v": 
-                self.lines.append(lineRead)    
                 variables=tokens[1].split(" ")
                 control = ord(variables[0][0])-ord('a')
                 target = ord(variables[1][0])-ord('a')
                 qc,qr = self.insertV(qc,qr,control,target,record=record)
             if tokens[0]=="v+":
-                self.lines.append(lineRead)                 
                 variables=tokens[1].split(" ")
                 control = ord(variables[0][0])-ord('a')
                 target = ord(variables[1][0])-ord('a')
                 qc,qr = self.insertVdag(qc,qr,control,target,record=record)
             if tokens[0]=="t2":       
-                self.lines.append(lineRead)           
                 variables=tokens[1].split(" ")
-                if True == record:
-                    self.modifyWeights(variables[0][0],variables[1][0])
                 control = ord(variables[0][0])-ord('a')
                 target = ord(variables[1][0])-ord('a')
+                if True == record:
+                    self.recordCNOTInLines(control,target)
+                    self.modifyWeights(variables[0][0],variables[1][0])
                 qc.cx(qr[control],qr[target])
             if tokens[0]=="t1":      
                 self.lines.append(lineRead)            
@@ -549,8 +547,6 @@ class CircuitTransitionGraph:
                 t = ord(variables[0][0])-ord('a')
                 qc.x(qr[t])
             if tokens[0]=="sw":   
-                if True == record:
-                    self.lines.append(lineRead)              
                 variables=tokens[1].split(" ")
                 firstWire = ord(variables[0][0])-ord('a')
                 secondWire = ord(variables[1][0])-ord('a')
@@ -587,7 +583,7 @@ class CircuitTransitionGraph:
                     variables=tokens[1].split(" ")
                     control = ord(variables[0][0])-ord('a')
                     target = ord(variables[1][0])-ord('a')
-                    qc,qr = self.insertV(qc,qr,control,target)
+                    qc,qr = self.insertV(qc,qr,control,target,record)
                 if tokens[0]=="v+":             
                     variables=tokens[1].split(" ")
                     control = ord(variables[0][0])-ord('a')
@@ -635,9 +631,12 @@ class CircuitTransitionGraph:
         self.lines = list()
         self.highestConnectivityNodes = []
 
+    def recordHinLines(self,first):
+        line = "h "+str(chr(first+ord("a")))
+        self.lines.append(line)
 
     def applySwap(self,qc,qr,first,second,record=True,useIBMSwaps = True):
-        if True == useIBMSwaps:
+        if False == useIBMSwaps:
             qc.cx(qr[first],qr[second])
             qc.h(qr[first])
             qc.h(qr[second])
@@ -647,42 +646,54 @@ class CircuitTransitionGraph:
             qc.cx(qr[first],qr[second])
         else: 
             qc.swap(first,second)
-        if True == record:
-            self.recordSwapInLines(first,second)
+            if True == record:
+                self.recordSwapInLines(first,second,useIBMSwaps)
         return qc,qr
+
+    def recordSwapInLines(self,first,second,useIBMSwaps):
+        if True==useIBMSwaps:
+            line = "sw "+str(chr(first+ord("a"))) + " "+ str(chr(second+ord("a")))
+            self.lines.append(line)  
+        else:
+            self.recordCNOTInLines(first,second)
+            self.recordHInLines(first)
+            self.recordHInLines(second)
+            self.recordCNOTInLines(first,second)
+            self.recordHInLines(first)
+            self.recordHInLines(second)
+            self.recordCNOTInLines(first,second)
+            
+
+    def recordCNOTInLines(self,first,second):
+        line = "t2 "+str(chr(first+ord("a"))) + " "+ str(chr(second+ord("a")))
+        self.lines.append(line)  
     #debugHere
-    def recordToffoliGateInLines(self,first,second,third):
-        # line = "t2 "+str(first) + " "+ str(second)
-        # self.lines.append(line)
-        # line = "h "+str(first)
-        # self.lines.append(line)
-        # line = "h "+str(second)
-        # self.lines.append(line)
-        # line = "t2 "+str(first) + " "+ str(second)
-        # self.lines.append(line)
-        # line = "h "+str(first)
-        # self.lines.append(line)
-        # line = "h "+str(second)
-        # self.lines.append(line)
-        # line = "t2 "+str(first) + " "+ str(second)
-        line = "t3 "+str(chr(first+ord("a"))) + " "+ str(chr(second+ord("a")))+" "+ str(chr(third+ord("a")))
+    def recordToffoliGateInLines(self,first,second,third,useIBMToffoli=False):
+        if False == useIBMToffoli:
+            line = "t2 "+str(chr(ord("a")+first)) + " "+ str(chr(ord("a")+second))
+            self.lines.append(line)
+            line = "h "+str(chr(ord("a")+first))
+            self.lines.append(line)
+            line = "h "+str(chr(ord("a")+second))
+            self.lines.append(line)
+            line = "t2 "+str(chr(ord("a")+first)) + " "+ str(chr(ord("a")+second))
+            self.lines.append(line)
+            line = "h "+str(chr(ord("a")+first))
+            self.lines.append(line)
+            line = "h "+str(chr(ord("a")+second))
+            self.lines.append(line)
+            line = "t2 "+str(chr(ord("a")+first)) + " "+ str(chr(ord("a")+second))
+        else:
+            line = "t3 "+str(chr(first+ord("a"))) + " "+ str(chr(second+ord("a")))+" "+ str(chr(third+ord("a")))
+            self.lines.append(line)
+
+    def recordVInLines(self,first,second):
+        "KAVAIII"
+        line = "v "+str(chr(first+ord("a"))) + " "+ str(chr(second+ord("a")))
         self.lines.append(line)
 
-    def recordSwapInLines(self,first,second):
-        # line = "t2 "+str(first) + " "+ str(second)
-        # self.lines.append(line)
-        # line = "h "+str(first)
-        # self.lines.append(line)
-        # line = "h "+str(second)
-        # self.lines.append(line)
-        # line = "t2 "+str(first) + " "+ str(second)
-        # self.lines.append(line)
-        # line = "h "+str(first)
-        # self.lines.append(line)
-        # line = "h "+str(second)
-        # self.lines.append(line)
-        # line = "t2 "+str(first) + " "+ str(second)
-        line = "sw "+str(chr(first+ord("a"))) + " "+ str(chr(second+ord("a")))
+    def recordVdagInLines(self,first,second):
+        line = "v+ "+str(chr(first+ord("a"))) + " "+ str(chr(second+ord("a")))
         self.lines.append(line)
 
     #TODO consider modifying weights bty multiple
@@ -718,6 +729,7 @@ class CircuitTransitionGraph:
         qc.cx(qr[target],qr[control])
         qc.h(qr[target])
         if True == record:
+            self.recordVInLines(control,target)
             self.modifyWeights(chr(ord("a")+target),chr(ord("a")+control))
             self.modifyWeights(chr(ord("a")+target),chr(ord("a")+control))
         return qc, qr
@@ -733,7 +745,8 @@ class CircuitTransitionGraph:
         qc.cx(qr[target],qr[control])
         qc.h(qr[target])
         qc.t(qr[control])
-        if True == record: 
+        if True == record:
+            self.recordVdagInLines(control,target) 
             self.modifyWeights(chr(ord("a")+target),chr(ord("a")+control))
             self.modifyWeights(chr(ord("a")+target),chr(ord("a")+control))
         return qc, qr
@@ -774,15 +787,19 @@ class CircuitTransitionGraph:
             qc,qr=self.insertSwaps(qc,qr,first,second,record)
             qc,qr=self.insertV(qc,qr,second,third,record)
             qc.cx(qr[first],qr[second])
+            if True == record:
+                self.recordCNOTInLines(first,second)
             qc,qr=self.insertVdag(qc,qr,second,third,record)
+            if True == record:
+                self.recordCNOTInLines(first,second)
             qc.cx(qr[first],qr[second])
         else:
             qc.ccx(first,second,third)
-        if True == record:
-            self.recordToffoliGateInLines(first,second,third)
-            self.modifyWeights(chr(ord("a")+first),chr(ord("a")+second))
-            self.modifyWeights(chr(ord("a")+second),chr(ord("a")+third))
-            self.modifyWeights(chr(ord("a")+first),chr(ord("a")+third))
+        # if True == record:
+        #     self.recordToffoliGateInLines(first,second,third,useIBMToffoli)
+        #     self.modifyWeights(chr(ord("a")+first),chr(ord("a")+second))
+        #     self.modifyWeights(chr(ord("a")+second),chr(ord("a")+third))
+        #     self.modifyWeights(chr(ord("a")+first),chr(ord("a")+third))
         return qc,qr
 
 

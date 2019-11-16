@@ -52,7 +52,7 @@ def prepareIBMQLayout(qReg,layout,debug = False):
     for i in range(0,len(layout)):
         logical = ord(layout[chr(i+ord("a"))])-ord("a")
         physical = qReg[i]
-        ibmLayout[logical]=physical
+        ibmLayout[physical]=logical
     #print("tempDictionary",ibmLayout)
     #print("items are",ibmLayout.items())
     if True == debug:
@@ -89,7 +89,7 @@ def bigFunction(fileName,maxEpoch = 5,debug = False):
                 print("Current layout of ctg is:",ctg.layout)
             tempLayout = ctg.layout.copy()
             qr,cr,qc = ioClass.createCircuitAndSetInput(i)
-            ibmLayout = prepareIBMQLayout(qr,tempLayout)
+            ibmLayout = prepareIBMQLayout(qr,tempLayout,debug)
             qc,qr = ctg.readGatesFromIOClass(qr,qc, ioClass)
             if True == debug:
                 print("LINES AFTER WE've just read them",ctg.lines)
@@ -105,7 +105,7 @@ def bigFunction(fileName,maxEpoch = 5,debug = False):
             qc,qr = ctg.readFixedGatesFromCtg(qr,qc)
             if True == debug:
                 print("LINES AFTER READING FIXED GATES FROM CTG",ctg.lines)
-            ibmLayout = prepareIBMQLayout(qr,tempLayout)
+            ibmLayout = prepareIBMQLayout(qr,tempLayout,debug)
             tempCost = compileToSeeCost(qr,cr,qc,ioClass,ibmLayout,i)
 
             ibmCostHistory.append(tempCost)
@@ -115,7 +115,7 @@ def bigFunction(fileName,maxEpoch = 5,debug = False):
                 finalAnswer = deepcopy(ctg.lines)
                 finalLayout = deepcopy(tempLayout)
                 leastCost = tempCost
-            measureToVerifyOutputWtihChanges(ctg,ioClass,tempLayout,i,epoch)
+            measureToVerifyOutputWtihChanges(ctg,ioClass,tempLayout,i,epoch,debug)
             ctg.layOutQubits()
             epoch = epoch+1
     for i in range(0,len(costHistory)):
@@ -180,13 +180,15 @@ def measureToVerifyOutputWtihChanges(ctg,ioClass,tempLayout,i,epoch,debug = Fals
     for i in range(0,len(answers)):
         qr,cr,qc = ioClass.createCircuitAndSetInput(i)
         qc,qr = ctg.readFixedGatesFromCtg(qr,qc)
-        ibmLayout = prepareIBMQLayout(qr,tempLayout) 
+        if True == debug:
+            print("LINES AFTER READING FIXED GATES FROM CTG",ctg.lines)
+        ibmLayout = prepareIBMQLayout(qr,tempLayout,debug) 
         qc.measure(qr,cr)
         qc = transpile(qc,least_busy,initial_layout=ibmLayout)
         qobj = assemble(qc,shots=20)
         job = execute(qc,least_busy)
         stats_sim = job.result().get_counts()
-        error = ioClass.checkOutputs(stats_sim,i,False)
+        error = ioClass.checkOutputs(stats_sim,i,debug=debug)
         error_count = error_count+error
 
     if error != 0 :
@@ -198,11 +200,11 @@ def measureToVerifyOutputWtihChanges(ctg,ioClass,tempLayout,i,epoch,debug = Fals
 
 
 # In[4]:
-passes = ["3_17"]
+passes = ["testCVCV","toffoli","3_17"]
 doesNotPass = ["hwb4_52","parity","graycode6_47","0410184","ex1",]
-fileName=doesNotPass[2]
+fileName=doesNotPass[0]
 fileName = testDir+fileName
-bigFunction(fileName,maxEpoch=10)
+bigFunction(fileName,maxEpoch=10,debug=True)
 
 
 # %%
