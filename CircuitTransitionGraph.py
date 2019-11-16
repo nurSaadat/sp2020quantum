@@ -437,6 +437,7 @@ class CircuitTransitionGraph:
             oldLayout.pop(elem[0])
         iter = self.quantumComputerNumberOfQubits
         while len(oldLayout) != 0 and iter>0:
+            print("STARTING RANDOM QUBIT ASSIGNMENT, SHOULD NOT HAPPEN IN CIRCUITS THAT HAVE TWO QUBIT INTERACTION GATES BETWEEN ALL CONNECTIONS")
             randomQubit = "a"
             while randomQubit in used:
                 randomQubit = chr(ord("a")+random.randint(0, self.quantumComputerNumberOfQubits))

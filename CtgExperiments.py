@@ -201,8 +201,8 @@ def measureToVerifyOutputWtihChanges(ctg,ioClass,tempLayout,i,epoch,debug = Fals
 
 
 # In[4]:
-passes = ["toffoli","3_17"]
-doesNotPass = ["testCVCV","hwb4_52","parity","graycode6_47","0410184","ex1",]
+passes = ["toffoli","3_17","testCVCV"]
+doesNotPass = ["hwb4_52","parity","graycode6_47","0410184","ex1",]
 fileName=doesNotPass[0]
 fileName = testDir+fileName
 bigFunction(fileName,maxEpoch=10,debug=True)
