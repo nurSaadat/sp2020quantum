@@ -633,6 +633,10 @@ class CircuitTransitionGraph:
                     variables=tokens[1].split(" ")
                     t = ord(variables[0][0])-ord('a')
                     qc.x(qr[t])
+                if tokens[0]=="h":             
+                    variables=tokens[1].split(" ")
+                    t = ord(variables[0][0])-ord('a')
+                    qc.h(qr[t])                
                 if tokens[0]=="sw":             
                     variables=tokens[1].split(" ")
                     firstWire = ord(variables[0][0])-ord('a')
@@ -658,11 +662,11 @@ class CircuitTransitionGraph:
         self.lines = list()
         self.highestConnectivityNodes = []
 
-    def recordHinLines(self,first):
+    def recordHInLines(self,first):
         line = "h "+str(chr(first+ord("a")))
         self.lines.append(line)
 
-    def applySwap(self,qc,qr,first,second,record=True,useIBMSwaps = True):
+    def applySwap(self,qc,qr,first,second,record=True,useIBMSwaps = False):
         if False == useIBMSwaps:
             qc.cx(qr[first],qr[second])
             qc.h(qr[first])
@@ -671,6 +675,8 @@ class CircuitTransitionGraph:
             qc.h(qr[first])
             qc.h(qr[second])
             qc.cx(qr[first],qr[second])
+            if True == record:
+                self.recordSwapInLines(first,second,useIBMSwaps)
         else: 
             qc.swap(first,second)
             if True == record:
@@ -690,7 +696,6 @@ class CircuitTransitionGraph:
             self.recordHInLines(second)
             self.recordCNOTInLines(first,second)
             
-
     def recordCNOTInLines(self,first,second):
         line = "t2 "+str(chr(first+ord("a"))) + " "+ str(chr(second+ord("a")))
         self.lines.append(line)  
@@ -715,7 +720,6 @@ class CircuitTransitionGraph:
             self.lines.append(line)
 
     def recordVInLines(self,first,second):
-        "KAVAIII"
         line = "v "+str(chr(first+ord("a"))) + " "+ str(chr(second+ord("a")))
         self.lines.append(line)
 

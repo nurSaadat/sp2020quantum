@@ -50,7 +50,8 @@ def prepareIBMQLayout(qReg,layout,debug = False):
         print (" , current layout is")
         print(layout)
     for i in range(0,len(layout)):
-        print ("Layout item is",i)
+        if True == debug:
+            print ("Layout item is",i)
         logical = ord(layout[chr(i+ord("a"))])-ord("a")
         physical = qReg[i]
         ibmLayout[physical]=logical
@@ -90,7 +91,7 @@ def bigFunction(fileName,maxEpoch = 5,debug = False):
                 print("Current layout of ctg is:",ctg.layout)
             tempLayout = deepcopy(ctg.layout)
             qr,cr,qc = ioClass.createCircuitAndSetInput(i)
-            ibmLayout = prepareIBMQLayout(qr,tempLayout,debug)
+            ibmLayout = prepareIBMQLayout(qr,tempLayout)
             qc,qr = ctg.readGatesFromIOClass(qr,qc, ioClass)
             if True == debug:
                 print("LINES AFTER WE've just read them",ctg.lines)
@@ -106,7 +107,7 @@ def bigFunction(fileName,maxEpoch = 5,debug = False):
             qc,qr = ctg.readFixedGatesFromCtg(qr,qc)
             if True == debug:
                 print("LINES AFTER READING FIXED GATES FROM CTG",ctg.lines)
-            ibmLayout = prepareIBMQLayout(qr,tempLayout,debug)
+            ibmLayout = prepareIBMQLayout(qr,tempLayout)
             tempCost = compileToSeeCost(qr,cr,qc,ioClass,ibmLayout,i)
 
             ibmCostHistory.append(tempCost)
@@ -117,7 +118,7 @@ def bigFunction(fileName,maxEpoch = 5,debug = False):
                 finalLayout = deepcopy(tempLayout)
                 leastCost = tempCost
             measureToVerifyOutputWtihChanges(ctg,ioClass,tempLayout,i,epoch,debug)
-            ctg.layOutQubits(debug=True)
+            ctg.layOutQubits()
             epoch = epoch+1
     for i in range(0,len(costHistory)):
         for j in range(0,len(costHistory)):
@@ -144,7 +145,7 @@ def fixTheStuff(ctg,debug=False):
     else:
         ctg.getMissingConnections()
     #This one to fix the changes... fixthemissingedges connects stuff around. did not test though
-    ctg.fixMissingEdges(debug = True)
+    ctg.fixMissingEdges(debug)
     #print("FIxing the stuff")
     return ctg
 
@@ -183,13 +184,23 @@ def measureToVerifyOutputWtihChanges(ctg,ioClass,tempLayout,i,epoch,debug = Fals
         qc,qr = ctg.readFixedGatesFromCtg(qr,qc)
         if True == debug:
             print("LINES AFTER READING FIXED GATES FROM CTG",ctg.lines)
-        ibmLayout = prepareIBMQLayout(qr,tempLayout,debug) 
+        ibmLayout = prepareIBMQLayout(qr,tempLayout) 
         qc.measure(qr,cr)
         qc = transpile(qc,least_busy,initial_layout=ibmLayout)
+        if True == debug:
+            outputName = str(fileName)+"epoch"+str(epoch)+"input"+str(i)
+            pictureName ="./outputs/pictures/"+ outputName+".png"
+            textName = "./outputs/text/"+outputName+".txt"
+            draw = False
+            if True == draw:
+                qc.draw(filename=pictureName,output="latex")
+            f= open(textName,"w+")
+            f.write(qc.qasm())
+            f.close
         qobj = assemble(qc,shots=20)
         job = execute(qc,least_busy)
         stats_sim = job.result().get_counts()
-        error = ioClass.checkOutputs(stats_sim,i,debug=debug)
+        error = ioClass.checkOutputs(stats_sim,i)
         error_count = error_count+error
 
     if error != 0 :
@@ -201,11 +212,11 @@ def measureToVerifyOutputWtihChanges(ctg,ioClass,tempLayout,i,epoch,debug = Fals
 
 
 # In[4]:
-passes = ["toffoli","3_17","testCVCV"]
-doesNotPass = ["hwb4_52","parity","graycode6_47","0410184","ex1",]
+passes = ["toffoli","3_17","testCVCV","miller","fredkin_3","ex1"]
+doesNotPass = ["toffoli_double_2","decod24-v_142","0410184","hwb4_52","parity","graycode6_47"]
 fileName=doesNotPass[0]
-fileName = testDir+fileName
-bigFunction(fileName,maxEpoch=10,debug=True)
+fullFileName = testDir+fileName
+bigFunction(fullFileName,maxEpoch=10,debug=True)
 
 
 # %%

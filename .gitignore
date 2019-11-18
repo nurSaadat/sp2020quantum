@@ -4,3 +4,4 @@ codeTests/*
 latex_error.log
 CtgExperiments.ipynb
 .vscode/*
+outputs/

@@ -108,8 +108,8 @@ class InputOutputClass:
                     print ("BEFOR THE Error occurred without ANCILA",str(number) ,"FLIPPED IS: ", myString ,", WHE GOT THIS:",release,"ExpectedAnswerIS",expectedAnswer)
                 
                 if myString != expectedAnswer:
-                    print ("Error occurred",str(number) ,":", myString ,":",release)
-                    raise SystemError
+                    message =  "Error occurred at the "+str(number)+" input :"+myString+", we got:"+release+", while "+expectedAnswer +" was expected"
+                    raise SystemError(message)
                     return 1
         else:
             foundErrors = 0
