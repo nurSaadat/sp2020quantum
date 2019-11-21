@@ -519,7 +519,7 @@ class CircuitTransitionGraph:
         return cost
     
     def populateDefaultLayout(self):
-        for i in range(0,self.quantumComputerNumberOfQubits):
+        for i in range(0,self.size):
             letter = chr(ord("a")+i)
             self.layout[letter]=letter
         self.constructInverseLayout()

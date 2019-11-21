@@ -132,7 +132,6 @@ class InputOutputClass:
     def createCircuitAndSetInput(self,number,qubitsSize, debug=False):
         size = self.size
         size = size + self.ancilaSize
-        size = qubitsSize
         if True == debug:
             print("Size of the freshly read circuit is:",size)
         qr = QuantumRegister(size)
