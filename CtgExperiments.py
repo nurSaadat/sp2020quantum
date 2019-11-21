@@ -103,7 +103,7 @@ def bigFunction(fileName,maxEpoch = 5,debug = False):
             #This one needs to comply with changes you did
             #qc,qr = ctg.readFixedGatesFromCtg(qr,qc)
            
-            qr,cr,qc = ioClass.createCircuitAndSetInput(i)
+            qr,cr,qc = ioClass.createCircuitAndSetInput(i,qubitsSize)
             qc,qr = ctg.readFixedGatesFromCtg(qr,qc)
             if True == debug:
                 print("LINES AFTER READING FIXED GATES FROM CTG",ctg.lines)
@@ -180,7 +180,7 @@ def measureToVerifyOutputWtihChanges(ctg,ioClass,tempLayout,i,epoch,debug = Fals
     if True == debug:
         print ("Length of answers is:",len(answers))
     for i in range(0,len(answers)):
-        qr,cr,qc = ioClass.createCircuitAndSetInput(i)
+        qr,cr,qc = ioClass.createCircuitAndSetInput(i,qubitsSize)
         qc,qr = ctg.readFixedGatesFromCtg(qr,qc)
         # if True == debug:
         #     print("LINES AFTER READING FIXED GATES FROM CTG",ctg.lines)
