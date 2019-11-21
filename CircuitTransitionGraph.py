@@ -181,7 +181,12 @@ class CircuitTransitionGraph:
             if g1[i]!= g2[i]:
                 return 0
         return 1
-
+    # Given a connection, a->b that has no
+    # direct underlying physical connection
+    # and the last pair on the path that 
+    # actually connects two element,
+    # the function finds out what should be replaced
+    # into what
     def whatToReplace(self,item1,item2):
         if (item1[0] == item2[0]):
             return [item1[1],item2[1]]
@@ -202,22 +207,27 @@ class CircuitTransitionGraph:
                 replacement = replacement+element
         self.lines[index] = replacement
 
-    def surroundWithSwaps(self,index,replaceTo,thing):
+    def surroundWithSwaps(self,index,replaceTo,thing,debug = False):
         size = len(replaceTo)
-        # print("replaceTo",replaceTo)
-        # print("Thing to replace",thing)
-        # print("Size minus two is",size-2)
-        # print("The gate is at index",index)
-        # print("Length of self.lines is:",len(self.lines))
+        if True == debug:
+            print("replaceTo",self.formatLogicalPhysical(replaceTo))
+            print("Thing to replace",self.formatLogicalPhysical(thing))
+            print("Size minus two is",size-2)
+            print("The gate is at index",index)
+            print("Length of self.lines is:",len(self.lines))
         for i in range(size-2):
             currentElem = self.inverseLayout[replaceTo[i]]
             nextElem = self.inverseLayout[replaceTo[i+1]]
+            # if not (self.coupling[currentElem]==nextElem or self.coupling[nextElem]==currentElem):
+                # raise SystemError("There is no connections between elements in the layout to fix")
             swapString = "sw "+ currentElem + " " + nextElem
-            # print("SwapString is",swapString)
-            # print("ReplaceTo is:, self.layout is:",replaceTo, self.layout)
+            if True==debug:
+                print("SwapString is",swapString)
+                print("ReplaceTo is:",replaceTo," self.layout is:", self.layout)
             self.lines.insert(index+i+1,swapString)
             self.lines.insert(index+i,swapString)
-        #print("Line to correct is:",self.lines[index+size-2])
+        if True==debug:
+            print("Line to correct is:",self.lines[index+size-2])
         self.rebuildGate(thing,index+size-2)
 
     def fixTheSkeleton(self,element,replaceTo):
@@ -228,14 +238,16 @@ class CircuitTransitionGraph:
             self.sk[t] = nskElement
         #print("fixed skeleton",self.sk)
             
-    def fixMissingEdges(self,debug = False):
+    def fixMissingEdges(self,debug = True):
         for element in self.notMatching:
             if True == debug:
-                print(" The element that started this",element)
+                print(" The element that started this",self.formatLogicalPhysical(element))
                 print("self available coupling lines are:",self.coupling)
                 print("Not matching is",element," ",self.layout[element[0]],self.layout[element[1]])
                 print("Not fixed lines are",self.lines)
                 print( "Paths to",element[0],element[1])
+            if self.coupling[self.layout[element[0]]]==self.layout[element[1]] or   self.coupling[self.layout[element[1]]]==self.layout[element[0]]:
+                raise SystemError("Fixing something that we should not fix")
             self.findPathWithLayout(element[0],element[1])
             
             self.getPathAndStuff()
@@ -247,20 +259,18 @@ class CircuitTransitionGraph:
             self.bestPossibleEdge = self.selectLeastOccupied(self.possiblePath)
             bestPossibleEdge = self.bestPossibleEdge
             if True == debug:
-                print("Best possible edge is:",bestPossibleEdge)
+                print("Best possible path is:",bestPossibleEdge)
             #fix the possibilities: if the first is to , then insert the swap to from and the bestPossibleEdge
             lastPair = [self.inverseLayout[bestPossibleEdge[len(bestPossibleEdge)-2]],self.inverseLayout[bestPossibleEdge[len(bestPossibleEdge)-1]]]
             if True == debug:
-                print("Last pair is:",lastPair," Element is:",element)
+                print("Last pair is:",self.formatLogicalPhysical(lastPair)," Element is:",element)
             replaceTo =  self.whatToReplace(element,lastPair)
             ind = self.findIndexOfTheGateSkeleton(element)
             if True == debug:
-                print("Going to update the gate at the index",ind," Element is",element)
-            self.surroundWithSwaps(ind,bestPossibleEdge,replaceTo)
+                print("Going to update the gate at the index",ind," Element is",self.formatLogicalPhysical(element))
+            self.surroundWithSwaps(ind,bestPossibleEdge,replaceTo,True)
             if True == debug:
                 print("Corrected lines are:",self.lines)
-            #self.fixTheSkeleton(element,replaceTo)
-                print("What to replace is:",replaceTo,lastPair)
         if True == debug:
             print("Lines are:",self.lines," length of lines is:",len(self.lines))
 
@@ -303,6 +313,14 @@ class CircuitTransitionGraph:
         vTo = self.layout[vTo]
         current = self.layout[current]
         self.findPathHelper(current,vTo,[current])
+
+    def formatLogicalPhysical(self,elem):
+        result = "is "+ str(elem)+"\nPrintout:\n"
+        for element in elem:
+            result = result + "Logical: \t"+ element[0]+ "\t Physical: "+ self.layout[element[0]]+"\n"
+
+
+        return result
 
     def findPath(self,current,vTo):
         self.trace = []
@@ -437,7 +455,6 @@ class CircuitTransitionGraph:
             oldLayout.pop(elem[0])
         iter = self.quantumComputerNumberOfQubits
         while len(oldLayout) != 0 and iter>0:
-            print("STARTING RANDOM QUBIT ASSIGNMENT, SHOULD NOT HAPPEN IN CIRCUITS THAT HAVE TWO QUBIT INTERACTION GATES BETWEEN ALL CONNECTIONS")
             randomQubit = "a"
             while randomQubit in used:
                 randomQubit = chr(ord("a")+random.randint(0, self.quantumComputerNumberOfQubits))
@@ -502,7 +519,7 @@ class CircuitTransitionGraph:
         return cost
     
     def populateDefaultLayout(self):
-        for i in range(0,self.size):
+        for i in range(0,self.quantumComputerNumberOfQubits):
             letter = chr(ord("a")+i)
             self.layout[letter]=letter
         self.constructInverseLayout()

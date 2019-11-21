@@ -129,9 +129,10 @@ class InputOutputClass:
                 return 1
         return 0
     #returns quantum register and quantum circuit initializing to @param state (matching the pla file)
-    def createCircuitAndSetInput(self,number, debug=False):
+    def createCircuitAndSetInput(self,number,qubitsSize, debug=False):
         size = self.size
         size = size + self.ancilaSize
+        size = qubitsSize
         if True == debug:
             print("Size of the freshly read circuit is:",size)
         qr = QuantumRegister(size)

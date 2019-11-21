@@ -90,7 +90,7 @@ def bigFunction(fileName,maxEpoch = 5,debug = False):
             if True == debug:
                 print("Current layout of ctg is:",ctg.layout)
             tempLayout = deepcopy(ctg.layout)
-            qr,cr,qc = ioClass.createCircuitAndSetInput(i)
+            qr,cr,qc = ioClass.createCircuitAndSetInput(i,qubitsSize)
             ibmLayout = prepareIBMQLayout(qr,tempLayout)
             qc,qr = ctg.readGatesFromIOClass(qr,qc, ioClass)
             if True == debug:
@@ -145,7 +145,7 @@ def fixTheStuff(ctg,debug=False):
     else:
         ctg.getMissingConnections()
     #This one to fix the changes... fixthemissingedges connects stuff around. did not test though
-    ctg.fixMissingEdges(debug)
+    ctg.fixMissingEdges(True)
     #print("FIxing the stuff")
     return ctg
 
@@ -182,8 +182,8 @@ def measureToVerifyOutputWtihChanges(ctg,ioClass,tempLayout,i,epoch,debug = Fals
     for i in range(0,len(answers)):
         qr,cr,qc = ioClass.createCircuitAndSetInput(i)
         qc,qr = ctg.readFixedGatesFromCtg(qr,qc)
-        if True == debug:
-            print("LINES AFTER READING FIXED GATES FROM CTG",ctg.lines)
+        # if True == debug:
+        #     print("LINES AFTER READING FIXED GATES FROM CTG",ctg.lines)
         ibmLayout = prepareIBMQLayout(qr,tempLayout) 
         qc.measure(qr,cr)
         qc = transpile(qc,least_busy,initial_layout=ibmLayout)
