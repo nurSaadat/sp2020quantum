@@ -2,8 +2,8 @@
 # coding: utf-8
 # In[1]:
 
-#%load_ext autoreload
-#%autoreload 2
+%load_ext autoreload
+%reload_ext autoreload
 from qiskit import ClassicalRegister, QuantumRegister
 from qiskit import QuantumCircuit, execute,IBMQ
 from qiskit import BasicAer

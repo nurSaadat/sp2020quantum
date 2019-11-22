@@ -541,6 +541,7 @@ class CircuitTransitionGraph:
                 if not (str(i) in t):
                     t.append(str(i))
                 self.findPathHelper(i,vTo,t)
+                
     def lookUpInLayout(self,index):
         alpha_index =  chr(ord('a')+index)
         alpha_index = self.layout[alpha_index]
@@ -612,10 +613,27 @@ class CircuitTransitionGraph:
        
     def readFixedGatesFromCtg(self,qr,qc,useIBMToffoli = False, record = False,debug= False):
             lines = self.lines.copy()
+            # print(self.layout)
+            debug=True
             if True == debug:            
                 print("The lines after reset are:", lines)
             for lineRead in lines:
                 tokens = lineRead.split(" ",1)
+                if True == debug:   
+                    print(tokens[1])
+                variables=tokens[1].split(" ")
+                finalStr = ""
+                i = 0 
+                for elem in variables:
+                    if i == 0:
+                        finalStr=self.layout[elem]
+                        i=1
+                    else:
+                        finalStr=finalStr+" "+self.layout[elem]
+                tokens[1] = finalStr
+                if True == debug:   
+                    print(tokens[1])
+
                 little_token1 = tokens[0][0]
                 if little_token1=="t":
                     little_token2 = tokens[0][1]
