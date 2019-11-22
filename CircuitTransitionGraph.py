@@ -210,8 +210,8 @@ class CircuitTransitionGraph:
     def surroundWithSwaps(self,index,replaceTo,thing,debug = False):
         size = len(replaceTo)
         if True == debug:
-            print("replaceTo",self.formatLogicalPhysical(replaceTo))
-            print("Thing to replace",self.formatLogicalPhysical(thing))
+            print("The path that will be used", replaceTo)
+            print("In the lines, first element that needs to be changed",self.formatLogicalPhysical(thing[0]),", the selected replacement",self.formatLogicalPhysical(thing[1]))
             print("Size minus two is",size-2)
             print("The gate is at index",index)
             print("Length of self.lines is:",len(self.lines))
@@ -222,8 +222,7 @@ class CircuitTransitionGraph:
                 # raise SystemError("There is no connections between elements in the layout to fix")
             swapString = "sw "+ currentElem + " " + nextElem
             if True==debug:
-                print("SwapString is",swapString)
-                print("ReplaceTo is:",replaceTo," self.layout is:", self.layout)
+                print("SwapString is",self.formatLogicalPhysical([currentElem , nextElem]))
             self.lines.insert(index+i+1,swapString)
             self.lines.insert(index+i,swapString)
         if True==debug:
@@ -241,11 +240,11 @@ class CircuitTransitionGraph:
     def fixMissingEdges(self,debug = True):
         for element in self.notMatching:
             if True == debug:
-                print(" The element that started this",self.formatLogicalPhysical(element))
+                print("The element that started this",self.formatLogicalPhysical(element))
                 print("self available coupling lines are:",self.coupling)
                 print("Not matching is",element," ",self.layout[element[0]],self.layout[element[1]])
                 print("Not fixed lines are",self.lines)
-                print( "Paths to",element[0],element[1])
+                print("Paths to",element[0],element[1])
             if self.coupling[self.layout[element[0]]]==self.layout[element[1]] or   self.coupling[self.layout[element[1]]]==self.layout[element[0]]:
                 raise SystemError("Fixing something that we should not fix")
             self.findPathWithLayout(element[0],element[1])
@@ -267,7 +266,7 @@ class CircuitTransitionGraph:
             replaceTo =  self.whatToReplace(element,lastPair)
             ind = self.findIndexOfTheGateSkeleton(element)
             if True == debug:
-                print("Going to update the gate at the index",ind," Element is",self.formatLogicalPhysical(element))
+                print("Going to update the gate at the index",ind)
             self.surroundWithSwaps(ind,bestPossibleEdge,replaceTo,True)
             if True == debug:
                 print("Corrected lines are:",self.lines)
