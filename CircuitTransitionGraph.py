@@ -777,7 +777,7 @@ class CircuitTransitionGraph:
             tempIndex = tempIndex + 1
             passedCheck = True
             for element in elem:
-                if element not in self.layout.keys():
+                if element not in self.layout.values():
                      passedCheck = False
             if True == passedCheck:    
                 return tempIndex
@@ -802,6 +802,7 @@ class CircuitTransitionGraph:
         ## here the choice must be made
        
         indexx= self.checkPathInCtg(q)
+        print(q)
         print ("INDEXXX is",indexx)
         q = q[indexx]
         print ("The t is:",t," , q is:",q)
