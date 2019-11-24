@@ -3,7 +3,8 @@
 # In[1]:
 
 %load_ext autoreload
-%reload_ext autoreload
+%autoreload 2
+
 from qiskit import ClassicalRegister, QuantumRegister
 from qiskit import QuantumCircuit, execute,IBMQ
 from qiskit import BasicAer

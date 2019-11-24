@@ -614,25 +614,24 @@ class CircuitTransitionGraph:
     def readFixedGatesFromCtg(self,qr,qc,useIBMToffoli = False, record = False,debug= False):
             lines = self.lines.copy()
             # print(self.layout)
-            debug=True
             if True == debug:            
                 print("The lines after reset are:", lines)
             for lineRead in lines:
                 tokens = lineRead.split(" ",1)
-                if True == debug:   
-                    print(tokens[1])
-                variables=tokens[1].split(" ")
-                finalStr = ""
-                i = 0 
-                for elem in variables:
-                    if i == 0:
-                        finalStr=self.layout[elem]
-                        i=1
-                    else:
-                        finalStr=finalStr+" "+self.layout[elem]
-                tokens[1] = finalStr
-                if True == debug:   
-                    print(tokens[1])
+                # if True == debug:   
+                #     print(tokens[1])
+                # variables=tokens[1].split(" ")
+                # finalStr = ""
+                # i = 0 
+                # for elem in variables:
+                #     if i == 0:
+                #         finalStr=self.layout[elem]
+                #         i=1
+                #     else:
+                #         finalStr=finalStr+" "+self.layout[elem]
+                # tokens[1] = finalStr
+                # if True == debug:   
+                #     print(tokens[1])
 
                 little_token1 = tokens[0][0]
                 if little_token1=="t":
@@ -765,6 +764,23 @@ class CircuitTransitionGraph:
         line = "v+ "+str(chr(first+ord("a"))) + " "+ str(chr(second+ord("a")))
         self.lines.append(line)
 
+    def numericToAlpha(self,number):
+        return chr(ord('a')+number)
+
+    def alphaToNumeric(self,character):
+        return ord(character)-ord('a')
+
+    def checkPathInCtg(self,pathsArray):
+        ind = -1
+        tempIndex = -1
+        for elem in pathsArray:
+            tempIndex = tempIndex + 1
+            passedCheck = True
+            for element in elem:
+                if element not in self.layout.keys():
+                     passedCheck = False
+            if True == passedCheck:    
+                return tempIndex
     #TODO consider modifying weights bty multiple
     def insertSwaps(self,qc,qr,first,second,record = True):
         t =[]
@@ -775,13 +791,35 @@ class CircuitTransitionGraph:
                 t.insert(0,k)
         else:
             t = range(first,second)
-            
-        for i in t:
+        second = second + first
+        first = second - first
+        second = second - first    
+        f = self.numericToAlpha(first)
+        s = self.numericToAlpha(second)
+        tempTrace = deepcopy(self.trace)
+        self.findPathWithLayout(f,s)
+        q = deepcopy(self.possiblePath)
+        ## here the choice must be made
+       
+        indexx= self.checkPathInCtg(q)
+        print ("INDEXXX is",indexx)
+        q = q[indexx]
+        print ("The t is:",t," , q is:",q)
+        self.possiblePath = tempTrace
+        for i in range(0,len(q)):
+            q[i] = self.alphaToNumeric(q[i])
+        # for i in t:
+        #     if True == record:
+        #         k = chr(i+ord('a'))
+        #         k2 = chr(i+ord('a')+1)
+        #         self.modifyWeights(k,k2)
+        #     qc,qr = self.applySwap(qc,qr,i,i+1,record)
+        for i in range(0,len(q)-1):
             if True == record:
                 k = chr(i+ord('a'))
                 k2 = chr(i+ord('a')+1)
                 self.modifyWeights(k,k2)
-            qc,qr = self.applySwap(qc,qr,i,i+1,record)
+            qc,qr = self.applySwap(qc,qr,q[i],q[i+1],record)
         return qc,qr
 
     #this function applies controlled v gate to the circuit. the target MUST be control + 1
