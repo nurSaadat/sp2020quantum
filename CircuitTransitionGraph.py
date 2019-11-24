@@ -808,6 +808,7 @@ class CircuitTransitionGraph:
         print ("The t is:",t," , q is:",q)
         self.possiblePath = tempTrace
         for i in range(0,len(q)):
+            q[i] = self.inverseLayout[q[i]]
             q[i] = self.alphaToNumeric(q[i])
         # for i in t:
         #     if True == record:
