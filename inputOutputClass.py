@@ -108,8 +108,8 @@ class InputOutputClass:
                     print ("BEFOR THE Error occurred without ANCILA",str(number) ,"FLIPPED IS: ", myString ,", WHE GOT THIS:",release,"ExpectedAnswerIS",expectedAnswer)
                 
                 if myString != expectedAnswer:
-                    message =  "Error occurred at the "+str(number)+" input :"+myString+", we got:"+release+", while "+expectedAnswer +" was expected"
-                    raise SystemError(message)
+                    message =  "Error occurred at the "+str(number)+" input :"+list(self.kMap.keys())[number]+", we got:"+myString +", while "+expectedAnswer +" was expected"
+                    print(message)
                     return 1
         else:
             foundErrors = 0
