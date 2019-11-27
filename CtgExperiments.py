@@ -213,7 +213,7 @@ def measureToVerifyOutputWtihChanges(ctg,ioClass,tempLayout,i,epoch,debug = Fals
 
 
 # In[4]:
-passes = ["toffoli","3_17","testCVCV","miller","fredkin_3","ex1","toffoli"]
+passes = ["ex1","testCVCV","3_17","toffoli","testCVCV","miller","fredkin_3","ex1","toffoli"]
 doesNotPass = ["toffoli_double_2","decod24-v_142","0410184","hwb4_52","parity","graycode6_47"]
 fileName=doesNotPass[0]
 fullFileName = testDir+fileName

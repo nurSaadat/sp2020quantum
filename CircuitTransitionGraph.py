@@ -782,7 +782,7 @@ class CircuitTransitionGraph:
             if True == passedCheck:    
                 return tempIndex
     #TODO consider modifying weights bty multiple
-    def insertSwaps(self,qc,qr,first,second,record = True):
+    def insertSwaps(self,qc,qr,first,second,record = True,debug=True):
         t =[]
         if first == second:
             return qc,qr
@@ -802,28 +802,27 @@ class CircuitTransitionGraph:
         ## here the choice must be made
        
         indexx= self.checkPathInCtg(q)
-        print(q)
-        print ("INDEXXX is",indexx)
+        if True == debug:
+            print(q)
+            print ("INDEXXX is",indexx)
         q = q[indexx]
-        q.reverse()
-        print ("The t is:",t," , q is:",q)
+        # q.reverse()
+        if True == debug:
+            print ("The t is:",t," , q is:",q)
         self.possiblePath = tempTrace
         for i in range(0,len(q)):
             q[i] = self.inverseLayout[q[i]]
             q[i] = self.alphaToNumeric(q[i])
         for i in t:
-            # if True == record:
-            #     k = chr(i+ord('a'))
-            #     k2 = chr(i+ord('a')+1)
-            #     self.modifyWeights(k,k2)
-            # qc,qr = self.applySwap(qc,qr,i,i+1,record)
-            print("I and I+1 are",i,i+1)
+            if True == debug:
+                print("I and I+1 are",i,i+1)
         for i in range(0,len(q)-1):
             if True == record:
                 k = chr(i+ord('a'))
                 k2 = chr(i+ord('a')+1)
                 self.modifyWeights(k,k2)
-            print("on the contrary,q[i] and q[i+1] are",q[i],q[i+1])
+            if True == debug:
+                print("on the contrary,q[i] and q[i+1] are",q[i],q[i+1])
             qc,qr = self.applySwap(qc,qr,q[i],q[i+1],record)
         return qc,qr
 
