@@ -30,8 +30,8 @@ class CircuitTransitionGraph:
         return self.size
         
     def modifyWeights(self,first,second,record = True):
-     #   first = self.layout[first]
-    #    second = self.layout[second]
+        # first = self.inverseLayout[first]
+        # second = self.inverseLayout[second]
         if True == record:
             self.v.add(first)
             self.v.add(second)
@@ -237,7 +237,7 @@ class CircuitTransitionGraph:
             self.sk[t] = nskElement
         #print("fixed skeleton",self.sk)
             
-    def fixMissingEdges(self,debug = True):
+    def fixMissingEdges(self,debug = False):
         for element in self.notMatching:
             if True == debug:
                 print("The element that started this",self.formatLogicalPhysical(element))
@@ -267,7 +267,7 @@ class CircuitTransitionGraph:
             ind = self.findIndexOfTheGateSkeleton(element)
             if True == debug:
                 print("Going to update the gate at the index",ind)
-            self.surroundWithSwaps(ind,bestPossibleEdge,replaceTo,True)
+            self.surroundWithSwaps(ind,bestPossibleEdge,replaceTo,debug)
             if True == debug:
                 print("Corrected lines are:",self.lines)
         if True == debug:
@@ -782,7 +782,7 @@ class CircuitTransitionGraph:
             if True == passedCheck:    
                 return tempIndex
     #TODO consider modifying weights bty multiple
-    def insertSwaps(self,qc,qr,first,second,record = True,debug=True):
+    def insertSwaps(self,qc,qr,first,second,record = True,debug=False):
         t =[]
         if first == second:
             return qc,qr
@@ -806,7 +806,7 @@ class CircuitTransitionGraph:
             print(q)
             print ("INDEXXX is",indexx)
         q = q[indexx]
-        # q.reverse()
+        q.reverse()
         if True == debug:
             print ("The t is:",t," , q is:",q)
         self.possiblePath = tempTrace
@@ -818,8 +818,8 @@ class CircuitTransitionGraph:
                 print("I and I+1 are",i,i+1)
         for i in range(0,len(q)-1):
             if True == record:
-                k = chr(i+ord('a'))
-                k2 = chr(i+ord('a')+1)
+                k = chr(q[i]+ord('a'))
+                k2 = chr(q[i+1]+ord('a'))
                 self.modifyWeights(k,k2)
             if True == debug:
                 print("on the contrary,q[i] and q[i+1] are",q[i],q[i+1])

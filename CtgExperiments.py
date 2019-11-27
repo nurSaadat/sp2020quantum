@@ -98,7 +98,7 @@ def bigFunction(fileName,maxEpoch = 5,debug = False):
                 print("LINES AFTER WE've just read them",ctg.lines)
             if epoch==0:
                 defaultIBMCost = measureFidelityWithoutChanges(qr,cr,qc)
-            ctg = fixTheStuff(ctg)
+            ctg = fixTheStuff(ctg,debug)
             if True == debug:
                 print("LINES AFTER FIXING",ctg.lines)
             #This one needs to comply with changes you did
@@ -146,7 +146,7 @@ def fixTheStuff(ctg,debug=False):
     else:
         ctg.getMissingConnections()
     #This one to fix the changes... fixthemissingedges connects stuff around. did not test though
-    ctg.fixMissingEdges(True)
+    ctg.fixMissingEdges(debug)
     #print("FIxing the stuff")
     return ctg
 
@@ -214,10 +214,11 @@ def measureToVerifyOutputWtihChanges(ctg,ioClass,tempLayout,i,epoch,debug = Fals
 
 # In[4]:
 passes = ["ex1","testCVCV","3_17","toffoli","testCVCV","miller","fredkin_3","ex1","toffoli"]
-doesNotPass = ["toffoli_double_2","decod24-v_142","0410184","hwb4_52","parity","graycode6_47"]
-fileName=doesNotPass[0]
-fullFileName = testDir+fileName
-bigFunction(fullFileName,maxEpoch=10,debug=True)
+doesNotPass = ["hwb4_52","ex1","toffoli_double_2","decod24-v_142","0410184","parity","graycode6_47"]
+for elem in passes:
+    fileName = elem
+    fullFileName = testDir+elem
+    bigFunction(fullFileName,maxEpoch=10,debug=False)
 
 
 # %%
