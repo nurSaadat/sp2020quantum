@@ -359,6 +359,7 @@ class CircuitTransitionGraph:
         qubitConnectionsCount = {}
         usedConnectionsSet = set()
         for element in self.sk:
+            # element = str(self.layout[element[0]])+str(self.layout[element[1]])
             usedConnectionsSet.add(element)
             qubitConnectionsCount[element[0]]=qubitConnectionsCount.get(element[0],0)+1
             qubitConnectionsCount[element[1]]=qubitConnectionsCount.get(element[1],0)+1
@@ -566,17 +567,17 @@ class CircuitTransitionGraph:
                 target = ord(variables[2][0])-ord('a')
                 qc,qr = self.insertToffoliGate(qc,qr,first,second,target,record=record,useIBMToffoli=useIBMToffoli)
                 #qc.ccx(qr[first],qr[second],qr[target])
-            if tokens[0]=="v": 
+            elif tokens[0]=="v": 
                 variables=tokens[1].split(" ")
                 control = ord(variables[0][0])-ord('a')
                 target = ord(variables[1][0])-ord('a')
                 qc,qr = self.insertV(qc,qr,control,target,record=record)
-            if tokens[0]=="v+":
+            elif tokens[0]=="v+":
                 variables=tokens[1].split(" ")
                 control = ord(variables[0][0])-ord('a')
                 target = ord(variables[1][0])-ord('a')
                 qc,qr = self.insertVdag(qc,qr,control,target,record=record)
-            if tokens[0]=="t2":       
+            elif tokens[0]=="t2":       
                 variables=tokens[1].split(" ")
                 control = ord(variables[0][0])-ord('a')
                 target = ord(variables[1][0])-ord('a')
@@ -584,22 +585,22 @@ class CircuitTransitionGraph:
                     self.recordCNOTInLines(control,target)
                     self.modifyWeights(variables[0][0],variables[1][0])
                 qc.cx(qr[control],qr[target])
-            if tokens[0]=="t1":      
+            elif tokens[0]=="t1":      
                 self.lines.append(lineRead)            
                 variables=tokens[1].split(" ")
                 control = ord(variables[0][0])-ord('a')
                 qc.x(qr[control])
-            if tokens[0]=="x":   
+            elif tokens[0]=="x":   
                 self.lines.append(lineRead)          
                 variables=tokens[1].split(" ")
                 t = ord(variables[0][0])-ord('a')
                 qc.x(qr[t])
-            if tokens[0]=="sw":   
+            elif tokens[0]=="sw":   
                 variables=tokens[1].split(" ")
                 firstWire = ord(variables[0][0])-ord('a')
                 secondWire = ord(variables[1][0])-ord('a')
                 qc,qr = self.insertSwaps(qc,qr,firstWire,secondWire,record=record)
-            if little_token1=="t" and int(little_token2) > 3:
+            elif little_token1=="t" and int(little_token2) > 3:
                 controls = list()
                 variables=tokens[1].split(" ")
                 last = ord(variables[len(variables)-1][0])-ord('a')
@@ -643,43 +644,42 @@ class CircuitTransitionGraph:
                     target = ord(variables[2][0])-ord('a')
                     qc,qr = self.insertToffoliGate(qc,qr,first,second,target,useIBMToffoli,record)
                     #qc.ccx(qr[first],qr[second],qr[target])
-                if tokens[0]=="v": 
+                elif tokens[0]=="v": 
                     variables=tokens[1].split(" ")
                     control = ord(variables[0][0])-ord('a')
                     target = ord(variables[1][0])-ord('a')
                     qc,qr = self.insertV(qc,qr,control,target,record)
-                if tokens[0]=="v+":             
+                elif tokens[0]=="v+":             
                     variables=tokens[1].split(" ")
                     control = ord(variables[0][0])-ord('a')
                     target = ord(variables[1][0])-ord('a')
                     qc,qr = self.insertVdag(qc,qr,control,target,record)
                     
-                if tokens[0]=="t2":             
+                elif tokens[0]=="t2":             
                     variables=tokens[1].split(" ")
                     if True == record:
                         self.modifyWeights(variables[0][0],variables[1][0])
                     control = ord(variables[0][0])-ord('a')
                     target = ord(variables[1][0])-ord('a')
                     qc.cx(qr[control],qr[target])
-
-                if tokens[0]=="t1":             
+                elif tokens[0]=="t1":             
                     variables=tokens[1].split(" ")
                     control = ord(variables[0][0])-ord('a')
                     qc.x(qr[control])
-                if tokens[0]=="x":             
+                elif tokens[0]=="x":             
                     variables=tokens[1].split(" ")
                     t = ord(variables[0][0])-ord('a')
                     qc.x(qr[t])
-                if tokens[0]=="h":             
+                elif tokens[0]=="h":             
                     variables=tokens[1].split(" ")
                     t = ord(variables[0][0])-ord('a')
                     qc.h(qr[t])                
-                if tokens[0]=="sw":             
+                elif tokens[0]=="sw":             
                     variables=tokens[1].split(" ")
                     firstWire = ord(variables[0][0])-ord('a')
                     secondWire = ord(variables[1][0])-ord('a')
                     qc,qr = self.insertSwaps(qc,qr,firstWire,secondWire,record)
-                if little_token1=="t" and int(little_token2) > 3:
+                elif little_token1=="t" and int(little_token2) > 3:
                     controls = list()
                     variables=tokens[1].split(" ")
                     last = ord(variables[len(variables)-1][0])-ord('a')
@@ -773,14 +773,26 @@ class CircuitTransitionGraph:
     def checkPathInCtg(self,pathsArray):
         ind = -1
         tempIndex = -1
+        length = -1
         for elem in pathsArray:
             tempIndex = tempIndex + 1
             passedCheck = True
             for element in elem:
                 if element not in self.layout.values():
                      passedCheck = False
+                     break
             if True == passedCheck:    
-                return tempIndex
+                if ind == -1:
+                    length = len(elem)
+                    ind = tempIndex
+                elif length>len(elem):
+                    index = tempIndex
+        if ind == -1:
+            raise SystemError("Could not find the desired path for swap!")
+        if length == -1:
+            raise SystemError("Could not record the length of the desired path for swap!")
+        return ind
+
     #TODO consider modifying weights bty multiple
     def insertSwaps(self,qc,qr,first,second,record = True,debug=False):
         t =[]
@@ -806,7 +818,6 @@ class CircuitTransitionGraph:
             print(q)
             print ("INDEXXX is",indexx)
         q = q[indexx]
-        q.reverse()
         if True == debug:
             print ("The t is:",t," , q is:",q)
         self.possiblePath = tempTrace

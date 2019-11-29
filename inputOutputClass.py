@@ -109,7 +109,7 @@ class InputOutputClass:
                 
                 if myString != expectedAnswer:
                     message =  "Error occurred at the "+str(number)+" input :"+list(self.kMap.keys())[number]+", we got:"+myString +", while "+expectedAnswer +" was expected"
-                    raise SystemError(message)
+                    print(message)
                     return 1
         else:
             foundErrors = 0

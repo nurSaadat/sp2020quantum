@@ -118,7 +118,7 @@ def bigFunction(fileName,maxEpoch = 5,debug = False):
                 finalAnswer = deepcopy(ctg.lines)
                 finalLayout = deepcopy(tempLayout)
                 leastCost = tempCost
-            measureToVerifyOutputWtihChanges(ctg,ioClass,tempLayout,i,epoch,debug)
+            measureToVerifyOutputWtihChanges(ctg,ioClass,tempLayout,i,epoch)
             ctg.layOutQubits()
             epoch = epoch+1
     for i in range(0,len(costHistory)):
@@ -181,10 +181,12 @@ def measureToVerifyOutputWtihChanges(ctg,ioClass,tempLayout,i,epoch,debug = Fals
     if True == debug:
         print ("Length of answers is:",len(answers))
     for i in range(0,len(answers)):
+        if True ==debug:
+            print("Testing input ",i)
         qr,cr,qc = ioClass.createCircuitAndSetInput(i,qubitsSize)
         qc,qr = ctg.readFixedGatesFromCtg(qr,qc)
-        # if True == debug:
-        #     print("LINES AFTER READING FIXED GATES FROM CTG",ctg.lines)
+        if True == debug:
+            print("LINES AFTER READING FIXED GATES FROM CTG",ctg.lines)
         ibmLayout = prepareIBMQLayout(qr,tempLayout) 
         qc.measure(qr,cr)
         qc = transpile(qc,least_busy,initial_layout=ibmLayout)
@@ -213,11 +215,11 @@ def measureToVerifyOutputWtihChanges(ctg,ioClass,tempLayout,i,epoch,debug = Fals
 
 
 # In[4]:
-passes = ["ex1","testCVCV","3_17","toffoli","testCVCV","miller","fredkin_3","ex1","toffoli"]
-doesNotPass = ["hwb4_52","ex1","toffoli_double_2","decod24-v_142","0410184","parity","graycode6_47"]
+passes = ["ex1","hwb4_52","testCVCV","3_17","toffoli","miller","fredkin_3","ex1","toffoli"]
+doesNotPass = ["hwb4_52","testCVCV","decod24-v_142","ex1","toffoli_double_2","testCVCV","decod24-v_142","0410184","parity","graycode6_47"]
 for elem in passes:
     fileName = elem
-    fullFileName = testDir+elem
+    fullFileName = testDir+fileName
     bigFunction(fullFileName,maxEpoch=10,debug=False)
 
 
