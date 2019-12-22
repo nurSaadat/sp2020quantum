@@ -28,7 +28,8 @@ class CircuitTransitionGraph:
 
     def getSize(self):
         return self.size
-        
+
+    #increments weight by one for a paur first, second
     def modifyWeights(self,first,second,record = True):
         # first = self.inverseLayout[first]
         # second = self.inverseLayout[second]
@@ -40,6 +41,7 @@ class CircuitTransitionGraph:
                 first = second
                 second = temp
             key = str(first)+str(second)
+            #increments weight by one for a paur first, second
             self.weights[key]=self.weights.get(key,0)+1
             self.sk.append(key)
 
@@ -51,7 +53,9 @@ class CircuitTransitionGraph:
         for i in self.sk:
             qubitFrom =self.layout[i[0]]
             qubitTo = self.layout[i[1]]
+            #we should try to make it with layout
             if (t.get(qubitFrom)!= None):
+                #if not directly connected
                 if (qubitTo not in t[qubitFrom]):
                     tPair = [i[0],i[1]]
                     self.notMatching.append(tPair)
@@ -66,6 +70,7 @@ class CircuitTransitionGraph:
      
     def setSize(self,size):
         self.size = size
+        #Default alphabetical logical to physical mapping
         self.populateDefaultLayout()
 
  #   def buildPaths(self):
@@ -101,7 +106,8 @@ class CircuitTransitionGraph:
        # for i in self.coupling.get(fro):
         #    possibleNodes.append(i)
         #return possibleNodes
-    
+
+    #Returns if physical edge exists 
     def edgeExist(self,a,b):
         if b in self.coupling.get(a):
             return 1
@@ -173,6 +179,7 @@ class CircuitTransitionGraph:
 
 
     def checkSkeletonEquivalence(self, g1,g2):
+        #there could be an issue with this ordering  - loosing directional information perhaps
         g2.sort()
         g1.sort()
         if len(g2) > len(g1):
@@ -187,12 +194,16 @@ class CircuitTransitionGraph:
     # actually connects two element,
     # the function finds out what should be replaced
     # into what
+    # Check this function as it specifies 
+
+    #THERE IS A BUG - GEORGE WILL FIXX SWAP II
     def whatToReplace(self,item1,item2):
         if (item1[0] == item2[0]):
             return [item1[1],item2[1]]
         else:
             return [item1[0],item2[0]]
 
+    #Rewrite one bit of a gate from lines and replace it
     def rebuildGate(self,replaceTo,index):
         lineToCorrect = self.lines[index]
         tokens = lineToCorrect.split()
@@ -223,19 +234,22 @@ class CircuitTransitionGraph:
             swapString = "sw "+ currentElem + " " + nextElem
             if True==debug:
                 print("SwapString is",self.formatLogicalPhysical([currentElem , nextElem]))
+            #Insert SWAP to circuit (lines) 
+            #Check if the initial SWAP is not altering all qubits of this gate
             self.lines.insert(index+i+1,swapString)
             self.lines.insert(index+i,swapString)
         if True==debug:
             print("Line to correct is:",self.lines[index+size-2])
         self.rebuildGate(thing,index+size-2)
 
-    def fixTheSkeleton(self,element,replaceTo):
-        skElement = str(element[0])+str(element[1])
-        nskElement = str(replaceTo[0])+str(replaceTo[1])
-        if self.sk.index(skElement):
-            t = self.sk.index(skElement)
-            self.sk[t] = nskElement
-        #print("fixed skeleton",self.sk)
+#    #Not used
+#    def fixTheSkeleton(self,element,replaceTo):
+#        skElement = str(element[0])+str(element[1])
+#        nskElement = str(replaceTo[0])+str(replaceTo[1])
+#        if self.sk.index(skElement):
+#            t = self.sk.index(skElement)
+#            self.sk[t] = nskElement
+#        #print("fixed skeleton",self.sk)
             
     def fixMissingEdges(self,debug = False):
         for element in self.notMatching:
@@ -801,11 +815,17 @@ class CircuitTransitionGraph:
         if second<first:
             for k in range(second,first):
                 t.insert(0,k)
+#                second = second + first
+#                first = second - first
+#                second = second - first    
         else:
             t = range(first,second)
-        second = second + first
-        first = second - first
-        second = second - first    
+#        second = second + first
+#        first = second - first
+#        second = second - first    
+        temp = first
+        first = second
+        second = temp
         f = self.numericToAlpha(first)
         s = self.numericToAlpha(second)
         tempTrace = deepcopy(self.trace)
