@@ -291,7 +291,7 @@ class CircuitTransitionGraph:
             ind = self.findIndexOfTheGateSkeleton(element)
             if True == debug:
                 print("Going to update the gate at the index",ind)
-            #here is a problem because there is not iterative process along the path that can be longer than three
+            #Seems fixed but check this ----#here is a problem because there is not iterative process along the path that can be longer than three
             self.surroundWithSwaps(ind,bestPossibleEdge,replaceTo,debug)
             if True == debug:
                 print("Corrected lines are:",self.lines)

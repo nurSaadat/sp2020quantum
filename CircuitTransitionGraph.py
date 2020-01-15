@@ -291,13 +291,14 @@ class CircuitTransitionGraph:
             ind = self.findIndexOfTheGateSkeleton(element)
             if True == debug:
                 print("Going to update the gate at the index",ind)
-            #here is a problem because there is not iterative process along the path that can be longer than three
+            #Seems fixed but check this ----#here is a problem because there is not iterative process along the path that can be longer than three
             self.surroundWithSwaps(ind,bestPossibleEdge,replaceTo,debug)
             if True == debug:
                 print("Corrected lines are:",self.lines)
         if True == debug:
             print("Lines are:",self.lines," length of lines is:",len(self.lines))
 
+    #when reading info from quanum computer - trnasforms coupling from their forma to our (from numbers to letters)
     def transformCoupling(self,maList,qubitsSize):
         self.quantumComputerNumberOfQubits = qubitsSize
         for element in  maList:
@@ -314,6 +315,7 @@ class CircuitTransitionGraph:
             self.coupling[chr(element[1]+ord("a"))].add(chr(element[0]+ord("a")))
         return self.couplingAsList
     
+    #Not used - format change
     def setCoupling(self,maList):
         for element in  maList:
             key = str(chr(element[0]+ord("a")))+str(chr(element[1]+ord("a")))
@@ -321,13 +323,14 @@ class CircuitTransitionGraph:
         return self.couplingAsList
     
     
-    
+    #not used 
     def findCurrentCost(self):
     	self.cost = 0
     	for element in self.weights:
     		self.cost = self.cost+element
         # print (self.cost)
 
+    
     def findPathWithLayout(self,current,vTo):
         self.trace = []
         self.weightsForPath = []
@@ -347,6 +350,7 @@ class CircuitTransitionGraph:
             result = result + "Logical: \t"+ element[0]+ "\t Physical: "+ self.layout[element[0]]+"\n"
         return result
 
+    #not used
     def findPath(self,current,vTo):
         self.trace = []
         self.weightsForPath = []
@@ -359,12 +363,12 @@ class CircuitTransitionGraph:
         #for i in range(0,len(self.trace)-1):
         #   key = str(self.trace[i]) + str(self.trace[i+1])
 
-
+    #useless
     def getPathAndStuff(self):
         #print("Trace is")
         #print(self.possiblePath)
         return self.trace,self.weightsForPath
-
+!!!!!!!!!!!!!!!!!!FINIS HERE!!!!!!!!!!!!!!!!!!!!!!!
     def findHighestConnectivityNodesInCoupling(self):
         while len(self.coupling)>0:
             maximumConnections = 0
