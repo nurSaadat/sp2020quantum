@@ -132,6 +132,7 @@ class CircuitTransitionGraph:
             if len(element)<=minSize:
                 matches = 1
                 for elem in element:
+                    #Check if the physica qubit is mapped to logical
                     if not self.inverseLayout.get(elem,None):
                         #print("GOTCHA:",element)
                         matches = 0
@@ -197,6 +198,8 @@ class CircuitTransitionGraph:
     # Check this function as it specifies 
 
     #THERE IS A BUG - GEORGE WILL FIXX SWAP II
+    #Return non matching elements
+    #Insert protection for swapping if element [0] are same and element[1] are same
     def whatToReplace(self,item1,item2):
         if (item1[0] == item2[0]):
             return [item1[1],item2[1]]
@@ -252,6 +255,7 @@ class CircuitTransitionGraph:
 #        #print("fixed skeleton",self.sk)
             
     def fixMissingEdges(self,debug = False):
+        #gates that do not match physical configuration (a-d) but not a-d coupling
         for element in self.notMatching:
             if True == debug:
                 print("The element that started this",self.formatLogicalPhysical(element))
@@ -259,16 +263,20 @@ class CircuitTransitionGraph:
                 print("Not matching is",element," ",self.layout[element[0]],self.layout[element[1]])
                 print("Not fixed lines are",self.lines)
                 print("Paths to",element[0],element[1])
+                #Half could be removed
             if self.coupling[self.layout[element[0]]]==self.layout[element[1]] or   self.coupling[self.layout[element[1]]]==self.layout[element[0]]:
                 raise SystemError("Fixing something that we should not fix")
+            #find paths between logical qubits
             self.findPathWithLayout(element[0],element[1])
             
-            self.getPathAndStuff()
+            #not used
+            #self.getPathAndStuff()
             # Select first element record noise
             # Select second element record noise
             # Select .... elements record noise
             if True == debug:
                 print("SELF POSSIBLE PATH IS",self.possiblePath)
+                #Returns the layout path shortest 
             self.bestPossibleEdge = self.selectLeastOccupied(self.possiblePath)
             bestPossibleEdge = self.bestPossibleEdge
             if True == debug:
@@ -277,10 +285,13 @@ class CircuitTransitionGraph:
             lastPair = [self.inverseLayout[bestPossibleEdge[len(bestPossibleEdge)-2]],self.inverseLayout[bestPossibleEdge[len(bestPossibleEdge)-1]]]
             if True == debug:
                 print("Last pair is:",self.formatLogicalPhysical(lastPair)," Element is:",element)
+            #par to be replaced - swapped 
             replaceTo =  self.whatToReplace(element,lastPair)
+            #index of the line in the circuit-line array
             ind = self.findIndexOfTheGateSkeleton(element)
             if True == debug:
                 print("Going to update the gate at the index",ind)
+            #here is a problem because there is not iterative process along the path that can be longer than three
             self.surroundWithSwaps(ind,bestPossibleEdge,replaceTo,debug)
             if True == debug:
                 print("Corrected lines are:",self.lines)
@@ -323,16 +334,17 @@ class CircuitTransitionGraph:
         self.found = 0
         self.possiblePath = []
         self.cost = 0       
+        #physical mapping
         vTo = self.layout[vTo]
+        #physical mapping
         current = self.layout[current]
         self.findPathHelper(current,vTo,[current])
 
+    #Prints 
     def formatLogicalPhysical(self,elem):
         result = "is "+ str(elem)+"\nPrintout:\n"
         for element in elem:
             result = result + "Logical: \t"+ element[0]+ "\t Physical: "+ self.layout[element[0]]+"\n"
-
-
         return result
 
     def findPath(self,current,vTo):
@@ -346,6 +358,7 @@ class CircuitTransitionGraph:
         self.findPathHelper(current,vTo,[current])
         #for i in range(0,len(self.trace)-1):
         #   key = str(self.trace[i]) + str(self.trace[i+1])
+
 
     def getPathAndStuff(self):
         #print("Trace is")
@@ -547,6 +560,7 @@ class CircuitTransitionGraph:
             self.possiblePath.append(trace)
             return
         #print(self.coupling.get(current))
+        #take all couplings of IBM
         for i in self.coupling.get(current):
             element = str(i)
             if not (element in trace):
