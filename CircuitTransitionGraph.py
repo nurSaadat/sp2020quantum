@@ -368,11 +368,13 @@ class CircuitTransitionGraph:
         #print("Trace is")
         #print(self.possiblePath)
         return self.trace,self.weightsForPath
-!!!!!!!!!!!!!!!!!!FINIS HERE!!!!!!!!!!!!!!!!!!!!!!!
+
+    # nodes with highest connectivty on hardware
     def findHighestConnectivityNodesInCoupling(self):
         while len(self.coupling)>0:
             maximumConnections = 0
             maximumElementList = []
+            #each element is a pair key - list of outgoing connections
             for element in self.coupling:
                 if len(self.coupling[element])>maximumConnections:
                     maximumElementList = []
