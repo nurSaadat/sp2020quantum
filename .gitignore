@@ -5,3 +5,4 @@ latex_error.log
 CtgExperiments.ipynb
 .vscode/*
 outputs/
+.idea/
