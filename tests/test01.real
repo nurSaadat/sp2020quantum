@@ -1,9 +1,9 @@
 # Function: cnotU
 .version 1.0
 .numvars 2
-.variables a b c
-.inputs a b c
-.outputs a b c
+.variables a b
+.inputs a b
+.outputs a b
 .constants ---
 .garbage ---
 .begin
