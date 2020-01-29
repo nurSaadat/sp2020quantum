@@ -41,6 +41,7 @@ class SimpleCTG:
         self.variables: List[str] = []
         self.inputs: List[str] = []
         self.outputs: List[str] = []
+        self.constants: Optional[str] = None
         self.garbage: Optional[str] = None
         self.gates: List[SimpleCTG.Gate] = []
 
@@ -70,6 +71,8 @@ class SimpleCTG:
                     self.inputs = variables
                 elif line.startswith('.outputs'):
                     self.outputs = variables
+                elif line.startswith('.constants'):
+                    self.constants = parts[1].strip()
                 elif line.startswith('.garbage'):
                     self.garbage = parts[1].strip()
                 elif line.startswith('.begin') or line.startswith('.end'):
@@ -215,8 +218,29 @@ class SimpleCTG:
         self.reset_variable(control)
 
     # This function implements CCNOT (TOFFOLI) gate
-    # The Circuit from Wikipedia is used (https://en.wikipedia.org/wiki/Toffoli_gate#Related_logic_gates)
     def ccnot(self, first_control: str, second_control: str, target: str):
+        if self.circuit is None:
+            return
+
+        if self.use_builtin_functions:
+            return self.circuit.ccx(
+                self.variable_to_logical[first_control],
+                self.variable_to_logical[second_control],
+                self.variable_to_logical[target])
+
+        self.move_variable(second_control, target)
+        self.circuit.ch(self.variable_to_logical[second_control], self.variable_to_logical[target])
+        self.reset_variable(second_control)
+        self.move_variable(first_control, target)
+        self.circuit.cz(self.variable_to_logical[first_control], self.variable_to_logical[target])
+        self.reset_variable(first_control)
+        self.move_variable(second_control, target)
+        self.circuit.ch(self.variable_to_logical[second_control], self.variable_to_logical[target])
+        self.reset_variable(second_control)
+
+    # This function implements CCNOT (TOFFOLI) gate with 6 NOT gates
+    # The Circuit from Wikipedia is used (https://en.wikipedia.org/wiki/Toffoli_gate#Related_logic_gates)
+    def ccnot_6_not_gates(self, first_control: str, second_control: str, target: str):
         if self.circuit is None:
             return
 
@@ -386,7 +410,7 @@ class SimpleCTG:
         self.circuit.add_register(ClassicalRegister(len(self.outputs)))
 
         if self.debugging:
-            print('[INFO] Setting inputs...')
+            print('[INFO] Setting constants values...')
 
         for i, v in enumerate(self.inputs):
             if v == '1':
@@ -426,7 +450,8 @@ class SimpleCTG:
         return [self.logical_to_physical[q] for q in range(qubits_size)]
 
 
-def test(ctg: SimpleCTG, input_file: str, output_file: str, simple_mapping=True, debugging=True):
+def test(ctg: SimpleCTG, input_file: str, output_file: str, simple_mapping=True, debugging=True, limit_100=True,
+         draw_circuit=False):
     os.makedirs('./outputs/simple_ctg/', exist_ok=True)
 
     ctg.set_input(input_file)
@@ -437,7 +462,7 @@ def test(ctg: SimpleCTG, input_file: str, output_file: str, simple_mapping=True,
     ctg.construct()
     ibm_layout = ctg.ibm_layout()
 
-    variables_to_measure = [ctg.variable_to_logical[v] for v in ctg.variables]  # should be ctg.outputs
+    variables_to_measure = [ctg.variable_to_logical[v] for v in ctg.outputs]
 
     ctg.circuit.measure(variables_to_measure, list(range(len(variables_to_measure))))
     compiled = Q_transpile(ctg.circuit, ctg.backend, initial_layout=ibm_layout)
@@ -452,8 +477,10 @@ def test(ctg: SimpleCTG, input_file: str, output_file: str, simple_mapping=True,
         qasm_file.write(qasm)
         qasm_file.close()
 
-    # Draw the circuit
-    # ctg.circuit.draw(filename='./outputs/simple_ctg/{}.png'.format(file_name), output='mpl')
+    if draw_circuit:
+        if debugging:
+            print('[INFO] Drawing the circuit....')
+        ctg.circuit.draw(filename='./outputs/simple_ctg/{}.png'.format(file_name), output='mpl')
 
     simulator = Aer.get_backend('qasm_simulator')
     circuit = QuantumCircuit()
@@ -468,7 +495,7 @@ def test(ctg: SimpleCTG, input_file: str, output_file: str, simple_mapping=True,
         test_file.close()
         for index, line in enumerate(lines):
             if not line.startswith('.') and not line.startswith('#'):
-                if index > 100:
+                if limit_100 and index > 100:
                     print('[WARNING] TOO MANY INPUTS! Aborting....')
                     return
                 parts = line.replace('\t', ' ').split(' ')
@@ -483,36 +510,26 @@ def test(ctg: SimpleCTG, input_file: str, output_file: str, simple_mapping=True,
 
                 test_circuit.measure(variables_to_measure, list(range(len(variables_to_measure))))
                 job = Q_execute(test_circuit, simulator)
-                result = list(job.result().get_counts()).pop().strip()
-                final_result = result
-                if ctg.garbage is not None:
-                    final_result = ''
-                    for i, v in enumerate(ctg.garbage):
-                        if i >= len(result):
-                            break
-                        if v == '-':
-                            final_result += result[i]
-
-                final_result = final_result[::-1]
+                result = list(job.result().get_counts()).pop().strip()[::-1]
 
                 if debugging:
-                    print('[INFO] Test number {}: {} | {}'.format(index, final_result, output), end='\r')
-                if final_result != output:
-                    raise Exception('WA for {}: expected {}, found {}'.format(parts[0].strip(), output, final_result))
+                    print('[INFO] Test number {}: {} | {}'.format(index, result, output), end='\r')
+                if result != output:
+                    raise Exception('WA for {}: expected {}, found {}'.format(parts[0].strip(), output, result))
 
 
 def test_all(ctg: SimpleCTG):
     # parity task has 16 qubits and it has wrong inputs in the parity.pla
-    # 4mod5-v0_18 has no .pla file
-    exclude = ["parity", "ex1", "sym6_63", "4mod5-v0_18"]  # they have garbage, what is garbage ?????
+    # testCV is incorrect
+    exclude = ["parity", "testCV"]
 
     test_files = os.listdir('./tests/')
 
-    for test_file_name in test_files:
-        if test_file_name.endswith('.real') and test_file_name.split('.')[0] + '.pla' in test_files and test_file_name not in exclude:
-            print('-------------------- {} --------------------'.format(test_file_name))
+    for file_name in test_files:
+        if file_name.endswith('.real') and file_name.split('.')[0] + '.pla' in test_files and file_name not in exclude:
+            print('-------------------- {} --------------------'.format(file_name))
             try:
-                test(ctg, './tests/' + test_file_name, './tests/{}.pla'.format(test_file_name.split('.')[0]))
+                test(ctg, './tests/' + file_name, './tests/{}.pla'.format(file_name.split('.')[0]))
             except Exception as e:
                 print('[ERROR] {}'.format(e))
             print('\n')
@@ -524,6 +541,6 @@ try:
     simple_ctg = SimpleCTG('ibmq_16_melbourne', debugging=True)
     simple_ctg.initialize('ibm-q', 'open', 'main')
     # test_all(simple_ctg)
-    test(simple_ctg, './tests/0410184.real', './tests/0410184.pla')
+    test(simple_ctg, './tests/toffoli.real', './tests/toffoli.pla', limit_100=False)
 except Exception as e:
     print('[ERROR] {}'.format(e))
