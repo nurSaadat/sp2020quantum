@@ -1,11 +1,14 @@
+"""SimpleCTG.py: Implements Circuit Transition Graph"""
+
+__author__ = "Dzhamshed Khaitov"
+__email__ = "dzhamshed.khaitov@nu.edu.kz"
+
 import os
 import heapq
 from copy import deepcopy
 from typing import List, Optional, Dict
-from qiskit import IBMQ, QuantumCircuit, QuantumRegister, ClassicalRegister, Aer, execute as Q_execute
-from qiskit.compiler import transpile as Q_transpile, assemble as Q_assemble
-
-TOKEN = 'a68da99e8beff93e23a7faf4a998b541e0f1eae2b7aa91e68395b1a4bcc026584ff06708430650017cbfde95329e938a01aadb52bed51fa55f22bfe12f4f7fed'
+from qiskit import IBMQ, QuantumCircuit, QuantumRegister, ClassicalRegister, Aer, execute as qiskit_execute
+from qiskit.compiler import transpile as qiskit_transpile  # , assemble as Q_assemble
 
 
 class SimpleCTG:
@@ -18,6 +21,9 @@ class SimpleCTG:
         def __repr__(self):
             return self.name + ' ' + ' '.join(self.variables)
 
+    # machin_name: specify which IBM server to use, if not specified then one with the biggest coupling map is used
+    # builtin_funcs: specify whether use qiskit's swap and/or ccx functions by listing them. Ex: ['swap', 'ccx']
+    # debugging: to be more verbose and print information on each steps
     def __init__(self, machine_name: Optional[str] = None, builtin_funcs: Optional[List[str]] = None, debugging=False):
         # Quantum machine information
         self.machine_name = machine_name
@@ -90,7 +96,7 @@ class SimpleCTG:
             print('[INFO] Finished parsing file {}\n'.format(input_file))
 
     # Using Dijkstra algorithm find shortest path between vertex and to.
-    # This function finds shortest paths between all qubits
+    # This function finds shortest paths between all physical qubits with O(MlogN*N) complexity (M-edges, N-vertices)
     def __shortest_paths__(self):
         for vertex in range(0, self.qubits_num):
             distances = {vertex: 0}
@@ -106,6 +112,7 @@ class SimpleCTG:
                         distances[to] = d + 1
                         heapq.heappush(queue, (d + 1, to))
                         parent[to] = v
+            # paths[0][5] = [2, 4, 3] means there's shortest path from 0 to 5 as 0->2->4->3->5
             self.paths[vertex] = {}
             for to in range(0, self.qubits_num):
                 if vertex == to or to not in distances:
@@ -117,6 +124,7 @@ class SimpleCTG:
                     v = parent[v]
                 self.paths[vertex][to] = list(reversed(path))
 
+    # Add a physical qubit as ancilla to the circuit
     def __add_ancilla__(self, physical_qubit: int):
         ancillas_size = sum([1 if key.startswith('ancilla') else 0 for key in self.variable_to_logical])
         variable = 'ancilla' + str(ancillas_size)
@@ -170,8 +178,8 @@ class SimpleCTG:
         if interchange:
             self.swap(a, b)
 
-    # This function swaps two qubits
-    # Qubits should be physically connected!
+    # This function swaps two variables using 3 controlled-not gates
+    # Variables should be physically connected!
     def swap(self, a: str, b: str):
         if self.circuit is None:
             return
@@ -254,6 +262,7 @@ class SimpleCTG:
                 self.variable_to_logical[target]
             )
 
+        # Copy the initial position of all variables for returning them back at initial position after inserting gate
         variable_positions = deepcopy(self.logical_to_variable)
 
         self.circuit.h(self.variable_to_logical[target])
@@ -278,6 +287,8 @@ class SimpleCTG:
         self.circuit.cx(self.variable_to_logical[first_control], self.variable_to_logical[second_control])
 
         # return variables to initial positions
+        # p is logical position of variable v in ascending order,
+        # so it first returns back variable with 0 initial position, after variable with 1 initial position, so on..
         for p, v in variable_positions.items():
             self.move_variable(v, self.logical_to_variable[p], True)
 
@@ -287,25 +298,31 @@ class SimpleCTG:
         sc = controllers.pop(0)
         resets = []
         while len(controllers) > 0:
+            # If the ccnot has more than 2 control qubits then wee need insert ancilla qubits
             ancilla = self.__nearest_free_ancilla__(sc, [t[2] for t in resets])
+            # Insert ccnot gate
             self.ccnot(fc, sc, ancilla)
+            # And save it, because we need to return it back at the end
             resets.append((fc, sc, ancilla))
             fc = ancilla
             sc = controllers.pop(0)
         self.ccnot(fc, sc, target)
+
         # Reset all of the ancillas to initial state
+        # Insert all of the ccnot gate in reverse order, except the last one (all the ccnot gates with ancilla qubits)
         for tpl in reversed(resets):
             self.ccnot(tpl[0], tpl[1], tpl[2])
 
     # Initialize the IBMQ account and select the backend (quantum machine)
     def initialize(self, hub: Optional[str] = None, group: Optional[str] = None, project: Optional[str] = None):
 
+        # If the machine name defined then get that
         if self.machine_name is not None:
             if self.debugging:
                 print('[INFO] Getting the {} information...'.format(self.machine_name))
 
             self.backend = IBMQ.get_provider(hub, group, project).get_backend(self.machine_name)
-
+        # Otherwise search for the quantum machine with the biggest coupling map
         else:
             if self.debugging:
                 print('[INFO] Fetching list of backends...')
@@ -313,9 +330,9 @@ class SimpleCTG:
             backends = IBMQ.get_provider(hub, group, project).backends()
 
             if self.debugging:
-                print('[INFO] Searching for the backend with the most coupling map...')
+                print('[INFO] Searching for the backend with the biggest coupling map...')
 
-            # Search for the backend with the most coupling map
+            # Search for the backend with the biggest coupling map
             for backend in backends:
                 coupling_map = backend.configuration().coupling_map
 
@@ -330,6 +347,7 @@ class SimpleCTG:
         self.couples = configs.coupling_map
         self.qubits_num = configs.n_qubits
 
+        # Construct a graph where connections[0][1] means physical qubits 0 and 1 are connected
         for couple in self.couples:
             if couple[0] not in self.connections:
                 self.connections[couple[0]] = {}
@@ -340,6 +358,8 @@ class SimpleCTG:
             print('[INFO] coupling map is {}\n'.format(self.couples))
             print('[INFO] Finding shortest paths between all qubits')
 
+        # Find shortest path between all of the qubits
+        # It's needed for connecting two qubits by swaps
         self.__shortest_paths__()
         self.initialized = True
 
@@ -347,6 +367,9 @@ class SimpleCTG:
     def set_input(self, input_file: str):
         self.gates = []
         self.__parse_input__(input_file)
+
+        if len(self.variables) != len(self.inputs):
+            raise Exception('Number of inputs must be same as number of variables')
 
     # Sets the physical qubits to variables mapping
     # Example: [(a, 0), (b, 1)] means variable a is mapped to physical qubit 0 and variable b to physical qubit 1
@@ -377,7 +400,7 @@ class SimpleCTG:
         if self.debugging:
             print('[INFO] Finished variables to physical mapping')
 
-    # The main function
+    # The main function that constructs the circuit
     def construct(self):
         if not self.initialized:
             raise Exception('Initialization is required')
@@ -402,6 +425,7 @@ class SimpleCTG:
         self.logical_to_physical = {}
         self.physical_to_logical = {}
         size = 0
+        # Set all of the mappings: variable <-> logical layer <-> physical layer
         for v in self.mapping:
             self._mapping[v] = self.mapping[v]
             self.circuit.add_register(QuantumRegister(1, name=v))
@@ -416,6 +440,8 @@ class SimpleCTG:
         if self.debugging:
             print('[INFO] Setting constants values...')
 
+        # The size of input is always same as the size of variables
+        # Ex: variables: a b c d and input: a 0 c 1 means variables b and d are constants
         for i, v in enumerate(self.inputs):
             if v == '1':
                 self.circuit.x(self.variable_to_logical[self.variables[i]])
@@ -460,24 +486,33 @@ class SimpleCTG:
         return [self.logical_to_physical[q] for q in range(qubits_size)]
 
 
+# Test a given file
 def test(ctg: SimpleCTG, input_file: str, output_file: str, simple_mapping=True, debugging=True, limit_100=True,
          draw_circuit=False):
+
+    # Create directory outpus/simple_ctg/ if it doesn't exist
     os.makedirs('./outputs/simple_ctg/', exist_ok=True)
 
+    # Set the input
     ctg.set_input(input_file)
 
     if simple_mapping:
+        # Set variable to physical mapping sequentially, thus a -> 0, b -> 1, c -> 2, etc.
         ctg.set_mapping([(v, i) for i, v in enumerate(ctg.variables)])
         if debugging:
             print('[INFO] Mapping is', ctg.mapping)
 
+    # Construct the circuit
     ctg.construct()
+
+    # Get the layout as IBM specifies
     ibm_layout = ctg.ibm_layout()
 
+    # Get the logical positions of the output variables
     variables_to_measure = [ctg.variable_to_logical[v] for v in ctg.outputs]
 
     ctg.circuit.measure(variables_to_measure, list(range(len(variables_to_measure))))
-    compiled = Q_transpile(ctg.circuit, ctg.backend, initial_layout=ibm_layout)
+    compiled = qiskit_transpile(ctg.circuit, ctg.backend, initial_layout=ibm_layout)
     # assembled = Q_assemble(compiled)
     qasm = compiled.qasm()
     # if debugging:
@@ -495,6 +530,9 @@ def test(ctg: SimpleCTG, input_file: str, output_file: str, simple_mapping=True,
         ctg.circuit.draw(filename='./outputs/simple_ctg/{}.png'.format(file_name), output='mpl')
 
     simulator = Aer.get_backend('qasm_simulator')
+
+    # Create a new circuit with the same amount of quantum and classical registers
+    # This is needed to set the initial states of the variables by inserting not gates
     circuit = QuantumCircuit()
     for register in ctg.circuit.qregs:
         circuit.add_register(register)
@@ -507,6 +545,7 @@ def test(ctg: SimpleCTG, input_file: str, output_file: str, simple_mapping=True,
         test_file.close()
         for index, line in enumerate(lines):
             if not line.startswith('.') and not line.startswith('#'):
+                # If test file has too many lines then abort testing, because it takes too much time
                 if limit_100 and index > 100:
                     print('[WARNING] TOO MANY INPUTS! Aborting....')
                     return
@@ -514,31 +553,44 @@ def test(ctg: SimpleCTG, input_file: str, output_file: str, simple_mapping=True,
                 inputs = list(parts[0].strip())
                 output = parts[1].strip()
 
+                # Copy the circuit so that we could use it in the next input without changing anything
                 test_circuit = circuit.copy()
+
+                # Set the input. Insert not gates for the variables that have 1 as initial state
                 for v in ctg.inputs:
                     if v != '0' and v != '1' and len(inputs) > 0 and inputs.pop(0) == '1':
                         test_circuit.x(ctg.variable_to_logical[v])
+
+                # Append the original circuit
                 test_circuit.extend(ctg.circuit)
 
                 test_circuit.measure(variables_to_measure, list(range(len(variables_to_measure))))
-                job = Q_execute(test_circuit, simulator)
+                job = qiskit_execute(test_circuit, simulator)
+
+                # The result is in reverse order, so [::-1] reverses the resulting string
                 result = list(job.result().get_counts()).pop().strip()[::-1]
 
                 if debugging:
-                    print('[RESULT] Line number {}: {} | {}'.format(index, result, output), end='\r')
+                    print('[RESULT] Line number {}: {} | {}'.format(index, result, output), end='\r', flush=True)
                 if result != output:
                     raise Exception('WA for {}: expected {}, found {}'.format(parts[0].strip(), output, result))
 
+        if debugging:
+            print('[RESULT] Successfully passed all of the tests!!!')
+
 
 def test_all(ctg: SimpleCTG):
-    # parity task has 16 qubits and it has wrong inputs in the parity.pla
-    # 0410184 is too long, but it passes all of them
-    exclude = ["parity.real", "0410184.real"]
+    # parity task has 16 qubits which cannot be mapped to quantum machine as it has only 15 qubits
+    # 0410184 has too many inputs, but all of the inputs are passed
+    # testCV and random_fu are wrong. They have wrong input output
+    exclude = ["parity.real", "0410184.real", "testCV.real", "random_fu.real"]
     not_passed = []
 
+    # Take all of the files from tests directory and run them
     test_files = sorted(os.listdir('./tests/'))
 
     for file_name in test_files:
+        # Check if the file .real has also .pla file
         if file_name.endswith('.real') and file_name.split('.')[0] + '.pla' in test_files and file_name not in exclude:
             print('-------------------- {} --------------------'.format(file_name))
             try:
@@ -548,15 +600,26 @@ def test_all(ctg: SimpleCTG):
                 print('\n[ERROR] {}\n'.format(e))
                 not_passed.append(file_name)
 
-    print('[NOT PASSED]', not_passed)
+    if len(not_passed) > 0:
+        print('[NOT PASSED]', not_passed)
 
 
 try:
+
+    # Put your IBM token here or set it as None if the credentials are stored on the disk
+    # Otherwise just use mine for now ;)
+    TOKEN = 'a68da99e8beff93e23a7faf4a998b541e0f1eae2b7aa91e68395b1a4bcc026584ff06708430650017cbfde95329e938a01aadb52bed51fa55f22bfe12f4f7fed'
+
     print('[INFO] Signing in...')
-    IBMQ.enable_account(TOKEN)
+    if TOKEN is not None:
+        IBMQ.enable_account(TOKEN)
+    else:
+        IBMQ.load_account()
     simple_ctg = SimpleCTG('ibmq_16_melbourne', debugging=False)
     simple_ctg.initialize('ibm-q', 'open', 'main')
+
+    # Uncomment this to test all of the files in the tests directroy
     # test_all(simple_ctg)
-    test(simple_ctg, 'tests/test01.real', './tests/test01.pla', limit_100=False, draw_circuit=True)
+    test(simple_ctg, 'tests/0410184.real', './tests/0410184.pla', limit_100=False, draw_circuit=False)
 except Exception as ex:
     print('\n[ERROR] {}'.format(ex))
