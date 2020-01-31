@@ -8,7 +8,7 @@
 .numvars 6
 .variables  a b c d e f
 .inputs  0 b c d e f
-.outputs  a b c d e f
+.outputs  a
 .constants 0-----
 .garbage 11111-
 .begin
