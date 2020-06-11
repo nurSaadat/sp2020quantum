@@ -5,6 +5,7 @@ __email__ = "dzhamshed.khaitov@nu.edu.kz"
 
 import os
 import heapq
+import misc
 from copy import deepcopy
 from typing import List, Optional, Dict
 from qiskit import IBMQ, QuantumCircuit, QuantumRegister, ClassicalRegister, Aer, execute as qiskit_execute
@@ -388,7 +389,7 @@ class SimpleCTG:
             self.mapping[t[0]] = t[1]
         if ancilla_mapping:
             for t in ancilla_mapping:
-                if t[0].startswith('ancilla'):
+                if not t[0].startswith('ancilla'):
                     raise Exception('Ancilla variable name must start with "ancilla" (Ex: ancilla0)')
                 if t[0] in self.mapping:
                     raise Exception('Variable {} is mapped more than once'.format(t[0]))
@@ -450,8 +451,12 @@ class SimpleCTG:
             if self.debugging:
                 print('[INFO] Inserting gate: {}'.format(gate))
 
-            if gate.name == 'h':
+            if gate.name == 'h' or gate.name == 'H':
                 self.circuit.h(self.variable_to_logical[gate.variables[0]])
+            elif gate.name == 'T':
+                self.circuit.t(self.variable_to_logical[gate.variables[0]])
+            elif gate.name == 'T+' or gate.name == 'T*':
+                self.circuit.tdg(self.variable_to_logical[gate.variables[0]])
             elif gate.name == 'x' or gate.name == 't1':
                 self.circuit.x(self.variable_to_logical[gate.variables[0]])
             elif gate.name.startswith('t') and len(gate.variables) > 2:
@@ -487,7 +492,7 @@ class SimpleCTG:
 
 
 # Test a given file
-def test(ctg: SimpleCTG, input_file: str, output_file: str, simple_mapping=True, debugging=True, limit_100=True,
+def test(ctg: SimpleCTG, input_file: str, output_file: str, simple_mapping=False, debugging=True, limit_100=True,
          draw_circuit=False):
 
     # Create directory outpus/simple_ctg/ if it doesn't exist
@@ -496,23 +501,39 @@ def test(ctg: SimpleCTG, input_file: str, output_file: str, simple_mapping=True,
     # Set the input
     ctg.set_input(input_file)
 
-    if simple_mapping:
-        # Set variable to physical mapping sequentially, thus a -> 0, b -> 1, c -> 2, etc.
-        ctg.set_mapping([(v, i) for i, v in enumerate(ctg.variables)])
-        if debugging:
-            print('[INFO] Mapping is', ctg.mapping)
+    # Set variable to physical mapping sequentially, thus a -> 0, b -> 1, c -> 2, etc.
+    mapping = [(v, i) for i, v in enumerate(ctg.variables)]
+    ancilla_mapping = None
+
+    layout = None
+
+    if not simple_mapping:
+        weighted_graph = misc.Mapping()
+        weighted_graph.set_nodes_physical(ctg.couples)
+        weighted_graph.physical_add_edges(ctg.couples)
+        weighted_graph.construct_ctg(ctg.variables, ctg.gates)
+        weighted_graph.isomorph(ctg.paths)
+        mapping, ancilla_mapping = weighted_graph.get_mapping()
+        if weighted_graph.physical_degree_is_less():
+            layout = weighted_graph.get_physical_qubits()
+
+    # Set mappings
+    ctg.set_mapping(mapping, ancilla_mapping)
+    if debugging:
+        print('[INFO] Mapping is', ctg.mapping)
 
     # Construct the circuit
     ctg.construct()
 
-    # Get the layout as IBM specifies
-    ibm_layout = ctg.ibm_layout()
+    if layout is None:
+        # Get the layout as IBM specifies
+        layout = ctg.ibm_layout()
 
     # Get the logical positions of the output variables
     variables_to_measure = [ctg.variable_to_logical[v] for v in ctg.outputs]
 
     ctg.circuit.measure(variables_to_measure, list(range(len(variables_to_measure))))
-    compiled = qiskit_transpile(ctg.circuit, ctg.backend, initial_layout=ibm_layout)
+    compiled = qiskit_transpile(ctg.circuit, ctg.backend, initial_layout=layout)
     # assembled = Q_assemble(compiled)
     qasm = compiled.qasm()
     # if debugging:
@@ -619,7 +640,7 @@ try:
     simple_ctg.initialize('ibm-q', 'open', 'main')
 
     # Uncomment this to test all of the files in the tests directroy
-    # test_all(simple_ctg)
-    test(simple_ctg, 'tests/0410184.real', './tests/0410184.pla', limit_100=False, draw_circuit=False)
+    test_all(simple_ctg)
+    # test(simple_ctg, 'tests/hwb6.real', './tests/hwb6.pla', limit_100=False, draw_circuit=False)
 except Exception as ex:
     print('\n[ERROR] {}'.format(ex))
