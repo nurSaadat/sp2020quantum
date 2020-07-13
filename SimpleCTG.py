@@ -9,7 +9,7 @@ import misc
 from copy import deepcopy
 from typing import List, Optional, Dict
 from qiskit import IBMQ, QuantumCircuit, QuantumRegister, ClassicalRegister, Aer, execute as qiskit_execute
-from qiskit.compiler import transpile as qiskit_transpile  # , assemble as Q_assemble
+from qiskit.compiler import transpile as qiskit_transpile, assemble as Q_assemble
 
 
 class SimpleCTG:
@@ -92,8 +92,8 @@ class SimpleCTG:
             print('[INFO] Number of variables {}'.format(self.variables_num))
             print('[INFO] Input variables {}'.format(self.inputs))
             print('[INFO] Output variables {}'.format(self.outputs))
-            print('[INFO] GATES:')
-            [print(gate) for gate in self.gates]
+            # print('[INFO] GATES:')
+            # [print(gate) for gate in self.gates]
             print('[INFO] Finished parsing file {}\n'.format(input_file))
 
     # Using Dijkstra algorithm find shortest path between vertex and to.
@@ -492,7 +492,9 @@ class SimpleCTG:
 
 
 # Test a given file
-def test(ctg: SimpleCTG, input_file: str, output_file: str, simple_mapping=False, debugging=True, limit_100=True,
+### Simple mapping == True is IBM layout ###
+### Simple mapping == False is our layout ###
+def test(ctg: SimpleCTG, input_file: str, output_file: str, simple_mapping=True, debugging=True, limit_100=True,
          draw_circuit=False):
 
     # Create directory outpus/simple_ctg/ if it doesn't exist
@@ -506,12 +508,16 @@ def test(ctg: SimpleCTG, input_file: str, output_file: str, simple_mapping=False
     ancilla_mapping = None
 
     layout = None
+    logical_circuit = None
 
     if not simple_mapping:
         weighted_graph = misc.Mapping()
         weighted_graph.set_nodes_physical(ctg.couples)
         weighted_graph.physical_add_edges(ctg.couples)
         weighted_graph.construct_ctg(ctg.variables, ctg.gates)
+        
+        logical_circuit = list(weighted_graph.logical_graph.edges())
+
         weighted_graph.isomorph(ctg.paths)
         mapping, ancilla_mapping = weighted_graph.get_mapping()
         if weighted_graph.physical_degree_is_less():
@@ -533,12 +539,15 @@ def test(ctg: SimpleCTG, input_file: str, output_file: str, simple_mapping=False
     variables_to_measure = [ctg.variable_to_logical[v] for v in ctg.outputs]
 
     ctg.circuit.measure(variables_to_measure, list(range(len(variables_to_measure))))
-    compiled = qiskit_transpile(ctg.circuit, ctg.backend, initial_layout=layout)
-    # assembled = Q_assemble(compiled)
+    ### Change optimization level here ###
+    compiled = qiskit_transpile(ctg.circuit, ctg.backend, initial_layout=layout, optimization_level=1)
+    assembled = Q_assemble(compiled)
     qasm = compiled.qasm()
-    # if debugging:
-    #     print('[RESULT] cost: {}'.format(len(assembled.experiments[0].instructions)))
-    #     print('[RESULT] qasm:\n{}\n'.format(qasm))
+    if debugging:
+        print('[RESULT] cost: {}'.format(len(assembled.experiments[0].instructions)))
+        print('[RESULT] qasm:\n{}'.format(qasm))
+        if not simple_mapping:
+            print('[RESULT] swap: {}'.format(weighted_graph.count_swap(ctg.mapping, ctg.paths, logical_circuit)))
 
     file_name = input_file.split('/')[-1].split('.')[0]
     with open('./outputs/simple_ctg/{}.txt'.format(file_name), 'w+') as qasm_file:
@@ -624,12 +633,30 @@ def test_all(ctg: SimpleCTG):
     if len(not_passed) > 0:
         print('[NOT PASSED]', not_passed)
 
+    ################# uncomment for bench folder #####################
+    # test_files = sorted(os.listdir('./bench/done/'))
+
+    # for file_name in test_files:
+    #     # Check if the file .real has also .pla file
+        
+    #     print('-------------------- {} --------------------'.format(file_name))
+    #     try:       
+    #         test(ctg, './bench/done/' + file_name, './bench/pla/{}.pla'.format(file_name.split('.')[0]))
+    #         print('\n')
+    #     except Exception as e:
+    #         print('\n[ERROR] {}\n'.format(e))
+    #         not_passed.append(file_name)
+
+
 
 try:
+    # Uncomment for individual file entry
+    # filename = input("Enter file name without .real: ")
 
     # Put your IBM token here or set it as None if the credentials are stored on the disk
     # Otherwise just use mine for now ;)
-    TOKEN = 'a68da99e8beff93e23a7faf4a998b541e0f1eae2b7aa91e68395b1a4bcc026584ff06708430650017cbfde95329e938a01aadb52bed51fa55f22bfe12f4f7fed'
+    # TOKEN = 'a68da99e8beff93e23a7faf4a998b541e0f1eae2b7aa91e68395b1a4bcc026584ff06708430650017cbfde95329e938a01aadb52bed51fa55f22bfe12f4f7fed'
+    TOKEN = 'd3ea16a94139c07aac8b34dc0a5d4d999354b232118788f43abe6c1414ce9b92a89194d5e7488a0fc8bce644b08927e85c4f127cd973cb32e76fc0d1a766758b'
 
     print('[INFO] Signing in...')
     if TOKEN is not None:
@@ -641,6 +668,7 @@ try:
 
     # Uncomment this to test all of the files in the tests directroy
     test_all(simple_ctg)
-    # test(simple_ctg, 'tests/hwb6.real', './tests/hwb6.pla', limit_100=False, draw_circuit=False)
+    # Uncomment for individual file entry
+    # test(simple_ctg, './tests/' + filename + '.real', './tests/'+ filename +'.pla', limit_100=False, draw_circuit=False)
 except Exception as ex:
     print('\n[ERROR] {}'.format(ex))

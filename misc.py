@@ -52,7 +52,7 @@ class Mapping:
         if self.logical_graph.has_edge(*e[:2]):
             self.logical_graph[node1][node2]['weight'] += 1
         else:
-            self.logical_graph.add_weighted_edges_from([e])
+            self.logical_graph.add_weighted_edges_from([e])   
 
     # returns True if physical degree is less than logical
     def physical_degree_is_less(self):
@@ -224,6 +224,22 @@ class Mapping:
                     self.logical_add_weight(gate.variables[0], gate.variables[1])
                 else:
                     print("[INFO] Error inserting gates to ctg. Unknown gate {}".format(gate))
+
+    def count_swap(self, mapping, physical_paths, ctg):
+        numswap = 0
+
+        # print(mapping)
+        # print(physical_paths)
+        # print(ctg)
+
+        for edge in ctg:
+            node1 = mapping[edge[0]]
+            node2 = mapping[edge[1]]
+            if len(physical_paths[node1][node2]) != 0:
+                numswap += (len(physical_paths[node1][node2])) * 2
+
+        return numswap
+
 
 
 def main():
