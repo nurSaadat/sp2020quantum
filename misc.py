@@ -1,3 +1,8 @@
+"""SimpleCTG.py: Implements Circuit Transition Graph"""
+
+__author__ = "Saadat Nursultan"
+__email__ = "saadat.nursultan@nu.edu.kz"
+
 import random
 import networkx as nx
 import numpy as np
@@ -48,10 +53,13 @@ class Mapping:
 
     # adds undirected weighted edge to the logical graph if it doesn't exist
     def logical_add_weight(self, node1: str, node2: str, weight=1):
+        # create edge notaion
         e = (node1, node2, weight)
         if self.logical_graph.has_edge(*e[:2]):
-            self.logical_graph[node1][node2]['weight'] += 1
+            # add weight value to the weight
+            self.logical_graph[node1][node2]['weight'] += weight
         else:
+            # create a new edge
             self.logical_graph.add_weighted_edges_from([e])   
 
     # returns True if physical degree is less than logical
@@ -90,44 +98,47 @@ class Mapping:
         if subgraph_is_iso:
             # generate isomorphic mapping
             happy = [(j, i) for i, j in GM.mapping.items()]
-        else:
-            # to store edges to restore later
-            edges_list = {}
-            # to store unconnected vertices
-            stray_vertices = []
-            # to make a priority
-            degree_list = sorted(self.logical_graph.degree(weight="weight"), key=lambda node_deg_pair: node_deg_pair[1])
+        else:     
+            # list of disconnecting edges
+            disconnecting_edges = []
 
             # reduce ctg until the mapping is found
-            while (subgraph_is_iso == False):
-                node = degree_list.pop(0)[0]
+            while not subgraph_is_iso:
+                # sort edges in non-increasing order (queue)
+                edges_list = sorted(self.logical_graph.edges.data('weight'), key=lambda node_node_weight: node_node_weight[2])
 
-                # should store all the edges with it
-                edges_list[node] = list(self.logical_graph.edges(node, data=True))
+                # remove disconnecting edges
+                for e in disconnecting_edges:
+                    edges_list.remove(e)
 
-                # save the node
-                stray_vertices.append(node)
+                # take the edge with the least weight
+                edge_weight = edges_list.pop(0)
+                
+                print( self.logical_graph.edges.data('weight') )
+                print( "removed ", edge_weight[0], edge_weight[1] )
 
-                self.logical_graph.remove_node(node)
+                # remove the edge with the least weight
+                self.logical_graph.remove_edge(edge_weight[0], edge_weight[1])
+
+                # if the graph is disconnected, return the edge back
+                if not nx.is_connected(self.logical_graph):
+                    self.logical_add_weight(edge_weight[0], edge_weight[1], edge_weight[2])
+                    disconnecting_edges.append(edge_weight)
+                # else adjust weights on the alternative path
+                else:
+                    alternative_path = nx.shortest_path(self.logical_graph, source=edge_weight[0], target=edge_weight[1], weight='weight')
+                    # add 2 * (weight of removed edge) to every edge on the alternative path
+                    for i in range(len(alternative_path) - 1):
+                        # fetch edge weight
+                        temp_weight = self.logical_graph.get_edge_data(alternative_path[i], alternative_path[i+1],'weight')['weight']
+                        self.logical_add_weight(alternative_path[i], alternative_path[i+1], temp_weight * 2)       
+                    
                 GM = isomorphism.GraphMatcher(self.physical_graph, self.logical_graph)
                 subgraph_is_iso = GM.subgraph_is_isomorphic()
 
+            # print( self.logical_graph )
+            
             happy = [(j, i) for i, j in GM.mapping.items()]
-            taken = [val for letter, val in happy]
-
-            while stray_vertices:
-                node_to_append = stray_vertices.pop()
-                the_fattest_edge = sorted(edges_list[node_to_append], key=lambda edge: edge[2]["weight"]).pop()
-                idx = [letter for letter, val in happy].index(the_fattest_edge[1])
-                mapped_node = happy[idx]
-                shorter = {k: v for k, v in
-                           sorted(shortest_paths[mapped_node[1]].items(), key=lambda item: len(item[1]))}
-                for phys_nod in shorter:
-                    if phys_nod not in taken:
-                        happy.append((node_to_append, phys_nod))
-                        taken.append(phys_nod)
-                        break
-
             happy = sorted(happy, key=lambda el: el[0])
 
         self.map = happy
@@ -211,15 +222,6 @@ class Mapping:
                 elif gate.name == 'v+':
                     self.logical_add_weight(gate.variables[1], gate.variables[0])
                     self.logical_add_weight(gate.variables[1], gate.variables[0])
-                #                elif gate.name == 'H' or gate.name == 'h':
-                #                    self.logical_add_weight(gate.variables[1], gate.variables[0])
-                #                    self.logical_add_weight(gate.variables[1], gate.variables[0])
-                #                elif gate.name == 'T':
-                #                    self.logical_add_weight(gate.variables[1], gate.variables[0])
-                #                    self.logical_add_weight(gate.variables[1], gate.variables[0])
-                #                elif gate.name == 'T+' or gate.name == 'T*':
-                #                    self.logical_add_weight(gate.variables[1], gate.variables[0])
-                #                    self.logical_add_weight(gate.variables[1], gate.variables[0])
                 elif gate.name == 'cx' or gate.name == 't2' or gate.name == 'sw':
                     self.logical_add_weight(gate.variables[0], gate.variables[1])
                 else:
