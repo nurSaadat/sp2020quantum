@@ -3,12 +3,14 @@
 __author__ = "Saadat Nursultan"
 __email__ = "saadat.nursultan@nu.edu.kz"
 
-import random
+import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
+import random
 import sys
 from typing import List, Dict
 from networkx.algorithms import isomorphism
+# import networkx.algorithms.isomorphism as iso
 
 
 class Mapping:
@@ -90,14 +92,66 @@ class Mapping:
         physical_qubits = [pair[1] for pair in self.map]
         return physical_qubits
 
+    # This function takes an edge-to-edge mapping (e.g. found by using graph matcher 
+    # on the line graph representations of two graphs) and converts it into node-to-node mapping
+    def lineGraphRemapping(self, lineGraphMapping):
+        mappingFound = set()
+        mappingTaken = set()
+        mapping = list()
+        potentialyFound = set()
+        
+        for edgeMapping in lineGraphMapping:
+            edgeG1, edgeG2 = edgeMapping
+            for nodeG1 in edgeG1:
+                if nodeG1 not in mappingFound:
+                    for nodeG2 in edgeG2:
+                        if (nodeG1, nodeG2) not in potentialyFound:
+                            potentialyFound.add((nodeG1, nodeG2))
+                        else:
+                            mappingFound.add(nodeG1)
+                            mappingTaken.add(nodeG2)
+                            mapping.append((nodeG1, nodeG2))
+                            break
+        for remaning in potentialyFound:
+            nodeG1, nodeG2 = remaning
+            if (nodeG1 not in mappingFound) and (nodeG2 not in mappingTaken):
+                mappingTaken.add(nodeG2)
+                mapping.append(remaning)
+        
+        return mapping
+
     # returns isomorphic mapping
     def isomorph(self, shortest_paths):
-        GM = isomorphism.GraphMatcher(self.physical_graph, self.logical_graph)
-        subgraph_is_iso = GM.subgraph_is_isomorphic()
+
+        ### TODO: Learn how to draw graph using nx and plt ###
+        elarge = [(u, v) for (u, v, d) in self.logical_graph.edges(data=True) if d["weight"] > 5]
+        esmall = [(u, v) for (u, v, d) in self.logical_graph.edges(data=True) if d["weight"] <= 5]
+
+        pos = nx.spring_layout(self.logical_graph)  # positions for all nodes
+
+        # nodes
+        nx.draw_networkx_nodes(self.logical_graph, pos, node_size=700)
+
+        # edges
+        nx.draw_networkx_edges(self.logical_graph, pos, edgelist=elarge, width=6)
+        nx.draw_networkx_edges(
+            self.logical_graph, pos, edgelist=esmall, width=6, alpha=0.5, edge_color="b", style="dashed"
+        )
+
+        # labels
+        nx.draw_networkx_labels(self.logical_graph, pos, font_size=20, font_family="sans-serif")
+
+        plt.axis("off")
+        plt.show()
+
+        # transform graphs
+        GM = isomorphism.GraphMatcher(nx.line_graph(self.physical_graph), nx.line_graph(self.logical_graph))
+        subgraph_is_iso = GM.subgraph_is_isomorphic()   
 
         if subgraph_is_iso:
             # generate isomorphic mapping
             happy = [(j, i) for i, j in GM.mapping.items()]
+            happy = self.lineGraphRemapping(happy)
         else:     
             # list of disconnecting edges
             disconnecting_edges = []
@@ -106,13 +160,29 @@ class Mapping:
             while not subgraph_is_iso:
                 # sort edges in non-increasing order (queue)
                 edges_list = sorted(self.logical_graph.edges.data('weight'), key=lambda node_node_weight: node_node_weight[2])
-
+                
                 # remove disconnecting edges
                 for e in disconnecting_edges:
                     edges_list.remove(e)
 
-                # take the edge with the least weight
-                edge_weight = edges_list.pop(0)
+                # look if there other edges with the same weight
+                weights_list = [ (u, v, wt) for (u, v, wt) in self.logical_graph.edges.data('weight') if wt == edges_list[0][2] ]
+                
+                if len(weights_list) > 1:
+                    # select the edge wich will reduce the overall graph degree
+                    to_be_popped_edge = weights_list.pop(0)
+                    maximal_degree = max(self.logical_graph.degree(to_be_popped_edge[0], weight='weight'), self.logical_graph.degree(to_be_popped_edge[1], weight='weight'))
+                    for e in weights_list:
+                        curr_deg = max(self.logical_graph.degree(e[0], weight='weight'), self.logical_graph.degree(e[1], weight='weight'))
+                        if curr_deg > maximal_degree:
+                            maximal_degree = curr_deg
+                            to_be_popped_edge = e
+
+                    edge_weight = to_be_popped_edge   
+
+                else:
+                    # take the edge with the least weight
+                    edge_weight = edges_list.pop(0)
                 
                 print( self.logical_graph.edges.data('weight') )
                 print( "removed ", edge_weight[0], edge_weight[1] )
@@ -129,18 +199,20 @@ class Mapping:
                     alternative_path = nx.shortest_path(self.logical_graph, source=edge_weight[0], target=edge_weight[1], weight='weight')
                     # add 2 * (weight of removed edge) to every edge on the alternative path
                     for i in range(len(alternative_path) - 1):
-                        # fetch edge weight
-                        temp_weight = self.logical_graph.get_edge_data(alternative_path[i], alternative_path[i+1],'weight')['weight']
-                        self.logical_add_weight(alternative_path[i], alternative_path[i+1], temp_weight * 2)       
-                    
-                GM = isomorphism.GraphMatcher(self.physical_graph, self.logical_graph)
+                        self.logical_add_weight(alternative_path[i], alternative_path[i+1], edge_weight[2] * 2)       
+
+                # check for isomorphism   
+                GM = isomorphism.GraphMatcher(nx.line_graph(self.physical_graph), nx.line_graph(self.logical_graph))
                 subgraph_is_iso = GM.subgraph_is_isomorphic()
+
 
             # print( self.logical_graph )
             
             happy = [(j, i) for i, j in GM.mapping.items()]
-            happy = sorted(happy, key=lambda el: el[0])
-
+            happy = self.lineGraphRemapping(happy)
+            
+        happy = sorted(happy, key=lambda el: el[0])
+        print("HAPPPPPPYYYYYYYYYYY", happy)
         self.map = happy
 
     def construct_ctg(self, variables, gates):
@@ -276,7 +348,7 @@ def main():
 
     print(graphs)
 
-    graphs.test_function()
+    graphs.isomorph()
 
     print(graphs)
 

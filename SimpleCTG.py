@@ -617,58 +617,57 @@ def test_all(ctg: SimpleCTG):
     not_passed = []
 
     # Take all of the files from tests directory and run them
-    # test_files = sorted(os.listdir('./tests/'))
-
-    # for file_name in test_files:
-    #     # Check if the file .real has also .pla file
-    #     if file_name.endswith('.real') and file_name.split('.')[0] + '.pla' in test_files and file_name not in exclude:
-    #         print('-------------------- {} --------------------'.format(file_name))
-    #         try:
-    #             test(ctg, './tests/' + file_name, './tests/{}.pla'.format(file_name.split('.')[0]))
-    #             print('\n')
-    #         except Exception as e:
-    #             print('\n[ERROR] {}\n'.format(e))
-    #             not_passed.append(file_name)
-
-    # if len(not_passed) > 0:
-    #     print('[NOT PASSED]', not_passed)
-
-    ################ uncomment for bench folder #####################
-    test_files = sorted(os.listdir('./bench/done/'))
+    test_files = sorted(os.listdir('./tests/'))
 
     for file_name in test_files:
         # Check if the file .real has also .pla file
+        if file_name.endswith('.real') and file_name.split('.')[0] + '.pla' in test_files and file_name not in exclude:
+            print('-------------------- {} --------------------'.format(file_name))
+            try:
+                test(ctg, './tests/' + file_name, './tests/{}.pla'.format(file_name.split('.')[0]))
+                print('\n')
+            except Exception as e:
+                print('\n[ERROR] {}\n'.format(e))
+                not_passed.append(file_name)
+
+    if len(not_passed) > 0:
+        print('[NOT PASSED]', not_passed)
+
+    ################ uncomment for bench folder #####################
+    # test_files = sorted(os.listdir('./bench/done/'))
+
+    # for file_name in test_files:
+    #     # Check if the file .real has also .pla file
         
-        print('-------------------- {} --------------------'.format(file_name))
-        try:       
-            test(ctg, './bench/done/' + file_name, './bench/pla/{}.pla'.format(file_name.split('.')[0]))
-            print('\n')
-        except Exception as e:
-            print('\n[ERROR] {}\n'.format(e))
-            not_passed.append(file_name)
+    #     print('-------------------- {} --------------------'.format(file_name))
+    #     try:       
+    #         test(ctg, './bench/done/' + file_name, './bench/pla/{}.pla'.format(file_name.split('.')[0]))
+    #         print('\n')
+    #     except Exception as e:
+    #         print('\n[ERROR] {}\n'.format(e))
+    #         not_passed.append(file_name)
 
 
 
-try:
-    # Uncomment for individual file entry
-    filename = input("Enter file name without .real: ")
+# try:
+# Uncomment for individual file entry
+filename = input("Enter file name without .real: ")
 
-    # Put your IBM token here or set it as None if the credentials are stored on the disk
-    # Otherwise just use mine for now ;)
-    # TOKEN = 'a68da99e8beff93e23a7faf4a998b541e0f1eae2b7aa91e68395b1a4bcc026584ff06708430650017cbfde95329e938a01aadb52bed51fa55f22bfe12f4f7fed'
-    TOKEN = 'd3ea16a94139c07aac8b34dc0a5d4d999354b232118788f43abe6c1414ce9b92a89194d5e7488a0fc8bce644b08927e85c4f127cd973cb32e76fc0d1a766758b'
+# Put your IBM token here or set it as None if the credentials are stored on the disk
+TOKEN = 'd3ea16a94139c07aac8b34dc0a5d4d999354b232118788f43abe6c1414ce9b92a89194d5e7488a0fc8bce644b08927e85c4f127cd973cb32e76fc0d1a766758b'
 
-    print('[INFO] Signing in...')
-    if TOKEN is not None:
-        IBMQ.enable_account(TOKEN)
-    else:
-        IBMQ.load_account()
-    simple_ctg = SimpleCTG('ibmq_16_melbourne', debugging=False)
-    simple_ctg.initialize('ibm-q', 'open', 'main')
+print('[INFO] Signing in...')
+TOKEN = None
+if TOKEN is not None:
+    IBMQ.enable_account(TOKEN)
+else:
+    IBMQ.load_account()
+simple_ctg = SimpleCTG('ibmq_16_melbourne', debugging=False)
+simple_ctg.initialize('ibm-q', 'open', 'main')
 
-    # Uncomment this to test all of the files in the tests directroy
-    # test_all(simple_ctg)
-    # Uncomment for individual file entry
-    test(simple_ctg, './bench/done/' + filename + '.real', './bench/done/'+ filename +'.pla', limit_100=False, draw_circuit=False)
-except Exception as ex:
-    print('\n[ERROR] {}'.format(ex))
+# Uncomment this to test all of the files in the tests directroy
+# test_all(simple_ctg)
+# Uncomment for individual file entry
+test(simple_ctg, './tests/' + filename + '.real', './tests/'+ filename +'.pla', limit_100=False, draw_circuit=False)
+# except Exception as ex:
+#     print('\n[ERROR] {}'.format(ex))
