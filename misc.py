@@ -120,6 +120,31 @@ class Mapping:
         
         return mapping
 
+    # this function checks whether G1 contains a subgraph isomorphic to G2 by using Whitney isomorphism theorem
+    # returns boolean and isomorphism.GraphMatcher
+    def subgraphIsomorphismCheck(self, G1, G2):
+        # transform graphs into line graphs and check for subgraph isomorphism
+        # isomorphism.GraphMatcher tries to find an induced subgraph of G1, such that it is isomorphic to G2. Consequently, if G2 is non-induced subgraph of G1, the algorithm will return False
+        GM = isomorphism.GraphMatcher(nx.line_graph(G1), nx.line_graph(G2))
+        subgraph_is_iso = GM.subgraph_is_isomorphic()
+
+        # check for exceptions
+        # e.g. line graphs of K_3 triangle graph and K_1,3 claw graph are isomorphic, but the original graphs are not
+        if subgraph_is_iso:
+            edgeListG1 = []
+            edgeListG2 = []
+
+            for edgeMaping in GM.mapping.items():
+                edgeListG1.append(edgeMaping[0])
+                edgeListG2.append(edgeMaping[1])
+            
+            # let's construct the graphs the algorithm thinks are isomorphic and check them for a quick isomorphism.is_isomorphic
+            testG1 = nx.Graph(edgeListG1)
+            testG2 = nx.Graph(edgeListG2)
+            subgraph_is_iso = isomorphism.is_isomorphic(testG1, testG2)
+
+        return subgraph_is_iso, GM
+
     # returns isomorphic mapping
     def isomorph(self, shortest_paths):
 
@@ -144,9 +169,8 @@ class Mapping:
         plt.axis("off")
         plt.show()
 
-        # transform graphs
-        GM = isomorphism.GraphMatcher(nx.line_graph(self.physical_graph), nx.line_graph(self.logical_graph))
-        subgraph_is_iso = GM.subgraph_is_isomorphic()   
+        # check if already ismorphic
+        subgraph_is_iso, GM = self.subgraphIsomorphismCheck(self.physical_graph, self.logical_graph)
 
         if subgraph_is_iso:
             # generate isomorphic mapping
@@ -166,7 +190,7 @@ class Mapping:
                     edges_list.remove(e)
 
                 # look if there other edges with the same weight
-                weights_list = [ (u, v, wt) for (u, v, wt) in self.logical_graph.edges.data('weight') if wt == edges_list[0][2] ]
+                weights_list = [ (u, v, wt) for (u, v, wt) in edges_list if wt == edges_list[0][2] ]
                 
                 if len(weights_list) > 1:
                     # select the edge wich will reduce the overall graph degree
@@ -202,8 +226,7 @@ class Mapping:
                         self.logical_add_weight(alternative_path[i], alternative_path[i+1], edge_weight[2] * 2)       
 
                 # check for isomorphism   
-                GM = isomorphism.GraphMatcher(nx.line_graph(self.physical_graph), nx.line_graph(self.logical_graph))
-                subgraph_is_iso = GM.subgraph_is_isomorphic()
+                subgraph_is_iso, GM = self.subgraphIsomorphismCheck(self.physical_graph, self.logical_graph)
 
 
             # print( self.logical_graph )
