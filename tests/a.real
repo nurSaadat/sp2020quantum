@@ -1,0 +1,109 @@
+# Function: 3_17
+# Used Library: MCT (gates: 6, quantum costs: 14)
+# This file have been taken from RevLib (www.revlib.org).
+.version 1.0
+.numvars 3
+.variables a b c d e f g
+.inputs a b c d e f g
+.outputs a b c d e f g
+.constants ---
+.garbage ---
+.begin
+t2 a g
+t2 a g
+t2 a g
+t2 a g
+t2 a g
+t2 a g
+t2 a g
+t2 a g
+t2 a g
+t2 a g
+t2 a g
+t2 a g
+t2 a g
+t2 a g
+t2 a g
+t2 a g
+t2 a g
+t2 a g
+t2 b e
+t2 e d
+t2 g c
+t2 g c
+t2 g c
+t2 g c
+t2 e g
+t2 e g
+t2 e g
+t2 e g
+t2 e g
+t2 e g
+t2 e g
+t2 e g
+t2 e g
+t2 e g
+t2 e g
+t2 e g
+t2 e g
+t2 e g
+t2 e g
+t2 e g
+t2 e g
+t2 e g
+t2 e g
+t2 e g
+t2 e g
+t2 e g
+t2 e g
+t2 e g
+t2 e g
+t2 e g
+t2 e g
+t2 c f
+t2 c f
+t2 c f
+t2 c f
+t2 c f
+t2 c f
+t2 c f
+t2 c f
+t2 c f
+t2 c f
+t2 c f
+t2 c f
+t2 c f
+t2 c f
+t2 c f
+t2 c f
+t2 c f
+t2 c f
+t2 c f
+t2 c f
+t2 c f
+t2 c f
+t2 c f
+t2 c f
+t2 c f
+t2 c f
+t2 c f
+t2 c f
+t2 c f
+t2 c f
+t2 c f
+t2 c f
+t2 c f
+t2 c f
+t2 c f
+t2 c f
+t2 c f
+t2 c f
+t2 c f
+t2 c f
+t2 c f
+t2 c f
+t2 c f
+t2 c f
+t2 c f
+.end
+

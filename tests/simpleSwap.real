@@ -3,7 +3,7 @@
 .numvars 2
 .variables a b c
 .inputs a b c
-.outputs a b c
+.outputs a b
 .constants ---
 .garbage ---
 .begin
