@@ -151,6 +151,7 @@ class Mapping:
         if subgraph_is_iso:
             # generate isomorphic mapping
             happy = [(j, i) for i, j in GM.mapping.items()]
+            print("Happy before mapping in if: ", happy)
             happy = self.lineGraphRemapping(happy)
         else:     
             # list of disconnecting edges
@@ -209,10 +210,11 @@ class Mapping:
             # print( self.logical_graph )
             
             happy = [(j, i) for i, j in GM.mapping.items()]
+            print("Happy before mapping in else: ", happy)
             happy = self.lineGraphRemapping(happy)
             
         happy = sorted(happy, key=lambda el: el[0])
-        print("HAPPPPPPYYYYYYYYYYY", happy)
+        print("HappY afteer mapping: ", happy)
         self.map = happy
 
     def construct_ctg(self, variables, gates):

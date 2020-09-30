@@ -494,11 +494,12 @@ class SimpleCTG:
 # Test a given file
 ### Simple mapping == True is IBM layout ###
 ### Simple mapping == False is our layout ###
-def test(ctg: SimpleCTG, input_file: str, output_file: str, simple_mapping=False, debugging=True, limit_100=True,
+# def test(ctg: SimpleCTG, input_file: str, output_file: str, simple_mapping=False, debugging=True, limit_100=True,
+def test(ctg: SimpleCTG, input_file: str, simple_mapping=False, debugging=True, limit_100=True,
          draw_circuit=False):
 
     # Create directory outpus/simple_ctg/ if it doesn't exist
-    os.makedirs('./outputs/simple_ctg/', exist_ok=True)
+    # os.makedirs('./outputs/simple_ctg/', exist_ok=True)
 
     # Set the input
     ctg.set_input(input_file)
@@ -549,17 +550,16 @@ def test(ctg: SimpleCTG, input_file: str, output_file: str, simple_mapping=False
         if not simple_mapping:
             print('[RESULT] swap: {}'.format(weighted_graph.count_swap(ctg.mapping, ctg.paths, logical_circuit)))
 
-    file_name = input_file.split('/')[-1].split('.')[0]
-    with open('./outputs/simple_ctg/{}.txt'.format(file_name), 'w+') as qasm_file:
-        qasm_file.write(qasm)
-        qasm_file.close()
+    # file_name = input_file.split('/')[-1].split('.')[0]
+    # with open('./outputs/simple_ctg/{}.txt'.format(file_name), 'w+') as qasm_file:
+    #     qasm_file.write(qasm)
+    #     qasm_file.close()
 
-    if draw_circuit:
-        if debugging:
-            print('[INFO] Drawing the circuit....')
-        ctg.circuit.draw(filename='./outputs/simple_ctg/{}.png'.format(file_name), output='mpl')
-
-    simulator = Aer.get_backend('qasm_simulator')
+    ## TODO : change ##
+    # if draw_circuit:
+    #     if debugging:
+    #         print('[INFO] Drawing the circuit....')
+    #     ctg.circuit.draw(filename='./outputs/simple_ctg/{}.png'.format(file_name), output='mpl')
 
     # Create a new circuit with the same amount of quantum and classical registers
     # This is needed to set the initial states of the variables by inserting not gates
@@ -569,105 +569,47 @@ def test(ctg: SimpleCTG, input_file: str, output_file: str, simple_mapping=False
     for register in ctg.circuit.cregs:
         circuit.add_register(register)
 
-    # Testing
-    with open(output_file, 'r') as test_file:
-        lines = test_file.readlines()
-        test_file.close()
-        for index, line in enumerate(lines):
-            if not line.startswith('.') and not line.startswith('#'):
-                # If test file has too many lines then abort testing, because it takes too much time
-                if limit_100 and index > 100:
-                    print('[WARNING] TOO MANY INPUTS! Aborting....')
-                    return
-                parts = line.replace('\t', ' ').split(' ')
-                inputs = list(parts[0].strip())
-                output = parts[1].strip()
 
-                # Copy the circuit so that we could use it in the next input without changing anything
-                test_circuit = circuit.copy()
+def gui_interaction(circuit_file, layout_type: str, optimization_level: int, device: str, architecture: str ,
+                    num_of_iterations: int):
 
-                # Set the input. Insert not gates for the variables that have 1 as initial state
-                for v in ctg.inputs:
-                    if v != '0' and v != '1' and len(inputs) > 0 and inputs.pop(0) == '1':
-                        test_circuit.x(ctg.variable_to_logical[v])
+    # Put your IBM token here or set it as None if the credentials are stored on the disk
+    TOKEN = 'd3ea16a94139c07aac8b34dc0a5d4d999354b232118788f43abe6c1414ce9b92a89194d5e7488a0fc8bce644b08927e85c4f127cd973cb32e76fc0d1a766758b'
+    if TOKEN is not None:
+        IBMQ.enable_account(TOKEN)
+    else:
+        IBMQ.load_account()
 
-                # Append the original circuit
-                test_circuit.extend(ctg.circuit)
+    # Create instance of simple CTG
+    # if devise type is simulator then architecture then architecture variable is not used
+    # ibmq_qasm_simulator 
+    # else if device type is computer then architecture 
 
-                test_circuit.measure(variables_to_measure, list(range(len(variables_to_measure))))
-                job = qiskit_execute(test_circuit, simulator)
+    simple_ctg = SimpleCTG(architecture, debugging=False)
+    simple_ctg.initialize('ibm-q', 'open', 'main')
 
-                # The result is in reverse order, so [::-1] reverses the resulting string
-                result = list(job.result().get_counts()).pop().strip()[::-1]
-
-                if debugging:
-                    print('[RESULT] Line number {}: {} | {}'.format(index, result, output), end='\r', flush=True)
-                if result != output:
-                    raise Exception('WA for {}: expected {}, found {}'.format(parts[0].strip(), output, result))
-
-        if debugging:
-            print('[RESULT] Successfully passed all of the tests!!!')
-
-
-def test_all(ctg: SimpleCTG):
-    # parity task has 16 qubits which cannot be mapped to quantum machine as it has only 15 qubits
-    # 0410184 has too many inputs, but all of the inputs are passed
-    # testCV and random_fu are wrong. They have wrong input output
-    exclude = ["parity.real", "0410184.real", "testCV.real", "random_fu.real"]
-    not_passed = []
-
-    # Take all of the files from tests directory and run them
-    test_files = sorted(os.listdir('./tests/'))
-
-    for file_name in test_files:
-        # Check if the file .real has also .pla file
-        if file_name.endswith('.real') and file_name.split('.')[0] + '.pla' in test_files and file_name not in exclude:
-            print('-------------------- {} --------------------'.format(file_name))
-            try:
-                test(ctg, './tests/' + file_name, './tests/{}.pla'.format(file_name.split('.')[0]))
-                print('\n')
-            except Exception as e:
-                print('\n[ERROR] {}\n'.format(e))
-                not_passed.append(file_name)
-
-    if len(not_passed) > 0:
-        print('[NOT PASSED]', not_passed)
-
-    ################ uncomment for bench folder #####################
-    # test_files = sorted(os.listdir('./bench/done/'))
-
-    # for file_name in test_files:
-    #     # Check if the file .real has also .pla file
-        
-    #     print('-------------------- {} --------------------'.format(file_name))
-    #     try:       
-    #         test(ctg, './bench/done/' + file_name, './bench/pla/{}.pla'.format(file_name.split('.')[0]))
-    #         print('\n')
-    #     except Exception as e:
-    #         print('\n[ERROR] {}\n'.format(e))
-    #         not_passed.append(file_name)
+    ## TODO: what is limit and draw circuit##
+    test(simple_ctg, './tests/' + filename + '.real', limit_100=False, draw_circuit=False)
 
 
 
+
+## MAIN ##
 # try:
-# Uncomment for individual file entry
+# Set file name
 filename = input("Enter file name without .real: ")
 
 # Put your IBM token here or set it as None if the credentials are stored on the disk
 TOKEN = 'd3ea16a94139c07aac8b34dc0a5d4d999354b232118788f43abe6c1414ce9b92a89194d5e7488a0fc8bce644b08927e85c4f127cd973cb32e76fc0d1a766758b'
-
 print('[INFO] Signing in...')
-TOKEN = None
 if TOKEN is not None:
     IBMQ.enable_account(TOKEN)
 else:
     IBMQ.load_account()
+
 simple_ctg = SimpleCTG('ibmq_16_melbourne', debugging=False)
 simple_ctg.initialize('ibm-q', 'open', 'main')
 
-# Uncomment this to test all of the files in the tests directroy
-# test_all(simple_ctg)
-# Uncomment for individual file entry
-test(simple_ctg, './tests/' + filename + '.real', './tests/'+ filename +'.pla', limit_100=False, draw_circuit=False)
+test(simple_ctg, './tests/' + filename + '.real', limit_100=False, draw_circuit=False)
 # except Exception as ex:
 #     print('\n[ERROR] {}'.format(ex))
