@@ -11,7 +11,7 @@ import sys
 from typing import List, Dict
 from networkx.algorithms import isomorphism
 # import networkx.algorithms.isomorphism as iso
-
+import itertools
 
 class Mapping:
 
@@ -146,7 +146,7 @@ class Mapping:
         return subgraph_is_iso, GM
 
     # returns isomorphic mapping
-    def isomorph(self, shortest_paths):
+    def isomorphOptimistic(self, shortest_paths):
 
         ### TODO: Learn how to draw graph using nx and plt ###
         elarge = [(u, v) for (u, v, d) in self.logical_graph.edges(data=True) if d["weight"] > 5]
@@ -208,8 +208,8 @@ class Mapping:
                     # take the edge with the least weight
                     edge_weight = edges_list.pop(0)
                 
-                print( self.logical_graph.edges.data('weight') )
-                print( "removed ", edge_weight[0], edge_weight[1] )
+                # print( self.logical_graph.edges.data('weight') )
+                # print( "removed ", edge_weight[0], edge_weight[1] )
 
                 # remove the edge with the least weight
                 self.logical_graph.remove_edge(edge_weight[0], edge_weight[1])
@@ -233,6 +233,263 @@ class Mapping:
             
             happy = [(j, i) for i, j in GM.mapping.items()]
             happy = self.lineGraphRemapping(happy)
+            
+        happy = sorted(happy, key=lambda el: el[0])
+        print("HAPPPPPPYYYYYYYYYYY", happy)
+        self.map = happy
+
+    # tries to remove edges such that one, or more potential physical placements appeares
+    def figureOutWrongEdge(self, logical_node, permutations, use_permutations, physical_node_list, mapping, removed_edges):
+        
+        if not use_permutations:
+            # get all edges for the logical_node
+            edges = [ (u, v, wt) for (u, v, wt) in self.logical_graph.edges.data('weight') if (u == logical_node[0]) or (v == logical_node[0]) ]
+            edges = sorted(edges, key=lambda node_node_weight: node_node_weight[2])
+            # get all permutations to go through all possible combinations
+            # ussually a node will have up to 4 edges, so number of permutations should be low
+            permutations = list(itertools.permutations(edges))
+
+        try:
+            # prepare lists
+            potential_physical_nodes = []
+            edges_list = list(permutations.pop())
+
+            # run the while loop until there are any potential placement, or we pop from an empty list
+            while len(potential_physical_nodes) == 0:
+
+                # take the edge with the least weight
+                # if no more edges, then this will trigger the except
+                edge_weight = edges_list.pop(0)
+
+                # remove the edge with the least weight
+                self.logical_graph.remove_edge(edge_weight[0], edge_weight[1])
+
+                # if the graph is disconnected, return the edge back
+                if not nx.is_connected(self.logical_graph):
+                    self.logical_add_weight(edge_weight[0], edge_weight[1], edge_weight[2])
+                # else adjust weights on the alternative path
+                else:
+                    alternative_path = nx.shortest_path(self.logical_graph, source=edge_weight[0], target=edge_weight[1], weight='weight')
+                    # add 2 * (weight of removed edge) to every edge on the alternative path
+                    for i in range(len(alternative_path) - 1):
+                        self.logical_add_weight(alternative_path[i], alternative_path[i+1], edge_weight[2] * 2)
+                    # record removed edges for a potential rollback
+                    removed_edges.append([edge_weight, alternative_path])
+
+                    # recalculate the potential placements
+                    # prepare potential_physical_nodes for intersection operation
+                    potential_physical_nodes = physical_node_list.copy()
+                    parents = []
+                    # to what placed logical nodes the current node is connected?
+                    for lNode, pNode in mapping:
+                        if self.logical_graph.has_edge(logical_node[0], lNode):
+                            parents.append(pNode)
+                    # make potential physical node list according to the neiboring nodes to the just mapped physical node
+                    for parentNode in parents:
+                        potential = []
+                        for node, degree in physical_node_list:
+                            if self.physical_graph.has_edge(parentNode, node):
+                                potential.append((node, degree))
+                        potential_physical_nodes = sorted(list(set(potential_physical_nodes).intersection(potential)), key = lambda node_deg_pair: node_deg_pair[1])
+            
+            return potential_physical_nodes
+        except IndexError:
+            # return all removed edges
+            for edge_weight, alternative_path in removed_edges:
+                self.logical_add_weight(edge_weight[0], edge_weight[1], edge_weight[2])
+                # subtract 2 * (weight of removed edge) to every edge on the alternative path
+                for i in range(len(alternative_path) - 1):
+                    self.logical_add_weight(alternative_path[i], alternative_path[i+1], edge_weight[2] * (-2))
+            removed_edges.clear()
+
+            if len(permutations) > 0:
+                return self.figureOutWrongEdge(logical_node, permutations, True, physical_node_list, mapping, removed_edges)
+            else:
+                return []
+
+    # BFS-like algorithm to find placement of logical nodes onto physical nodes
+    # for the first run, the node_queue should contain the root node (usually a node with biggest degree)
+    def placeNodeOnNode(self, node_queue, potential_physical_nodes, use_potential, logical_node_list, physical_node_list, mapping):
+
+        # save the state
+        saved_node_queue = node_queue.copy()
+        saved_logical_node_list = logical_node_list.copy()
+        saved_physical_node_list = physical_node_list.copy()
+        saved_mapping = mapping.copy()
+
+        # if node_queue is empty, then we are done
+        if len(node_queue) == 0:
+            return True
+        # get the logical node
+        logical_node = node_queue.pop(0)
+
+        if not use_potential:
+
+            # if mapping is empty, then algorithm only just started
+            if len(mapping) == 0:
+                potential_physical_nodes = physical_node_list.copy()
+            # else find intersection of all neighboring nodes of already placed logical parents
+            else:
+                # prepare potential_physical_nodes for intersection operation
+                potential_physical_nodes = physical_node_list.copy()
+                parents = []
+                # to what placed logical nodes the current node is connected?
+                for lNode, pNode in mapping:
+                    if self.logical_graph.has_edge(logical_node[0], lNode):
+                        parents.append(pNode)
+                # make potential physical node list according to the neiboring nodes to the just mapped physical node
+                for parentNode in parents:
+                    potential = []
+                    for node, degree in physical_node_list:
+                        if self.physical_graph.has_edge(parentNode, node):
+                            potential.append((node, degree))
+                    potential_physical_nodes = sorted(list(set(potential_physical_nodes).intersection(potential)), key = lambda node_deg_pair: node_deg_pair[1])
+        # initiate a try/excpet block to cycle through all potential physical nodes in case of wrong placement
+        try:
+            # list of disconnecting edges
+            disconnecting_edges = []
+            # list of removed edges
+            removed_edges = [] 
+
+            # try to find more placements
+            if len(potential_physical_nodes) == 0:
+                potential_physical_nodes = self.figureOutWrongEdge(logical_node, [], False, physical_node_list, mapping, removed_edges)
+
+            # if there is no potential placements by this point, preveious node was placed wrong
+            if len(potential_physical_nodes) == 0:
+                return False
+
+            physical_node = potential_physical_nodes.pop()
+            physical_node_list.remove(physical_node)
+
+            # before comparing degrees, we need to update the degree of the logical_node because it could have been changed
+            logical_node = (logical_node[0], self.logical_graph.degree()[logical_node[0]])
+
+            # reduce edges until equal
+            # if the degree of the logical node is the same, or less than the degree of physical node, then no problems
+            while logical_node[1] > physical_node[1]:
+                edges_list = [ (u, v, wt) for (u, v, wt) in self.logical_graph.edges.data('weight') if (u == logical_node[0]) or (v == logical_node[0]) ]
+                edges_list = sorted(edges_list, key=lambda node_node_weight: node_node_weight[2])
+
+                # remove disconnecting edges
+                for e in disconnecting_edges:
+                    edges_list.remove(e)
+            
+                # take the edge with the least weight
+                # if no more edges, then this will trigger the except
+                edge_weight = edges_list.pop(0)
+
+                # remove the edge with the least weight
+                self.logical_graph.remove_edge(edge_weight[0], edge_weight[1])
+
+                # if the graph is disconnected, return the edge back
+                if not nx.is_connected(self.logical_graph):
+                    self.logical_add_weight(edge_weight[0], edge_weight[1], edge_weight[2])
+                    disconnecting_edges.append(edge_weight)
+                # else adjust weights on the alternative path
+                else:
+                    alternative_path = nx.shortest_path(self.logical_graph, source=edge_weight[0], target=edge_weight[1], weight='weight')
+                    # add 2 * (weight of removed edge) to every edge on the alternative path
+                    for i in range(len(alternative_path) - 1):
+                        self.logical_add_weight(alternative_path[i], alternative_path[i+1], edge_weight[2] * 2)
+                    # record removed edges for a potential rollback
+                    removed_edges.append([edge_weight, alternative_path])
+                    # update the node degree
+                    logical_node = (logical_node[0], self.logical_graph.degree()[logical_node[0]])
+                
+            # now nodes have the same degree
+            mapping.append((logical_node[0], physical_node[0]))
+
+            # now we need to go through all the neighbours
+            # in order to prevent errors with the for loop we will make a temporary copy of logical_node_list
+            temp_logical_node_list = logical_node_list.copy()
+            for node, degree in logical_node_list:
+                if self.logical_graph.has_edge(logical_node[0], node):
+                    temp_logical_node_list.remove((node, degree))
+                    node_queue.append((node, degree))
+
+            logical_node_list = temp_logical_node_list
+
+            # next, go through all nodes in the node_queue
+            if self.placeNodeOnNode(node_queue, [], False, logical_node_list, physical_node_list, mapping):
+                return True
+            else:
+                raise IndexError
+
+        except IndexError:
+            # return all removed edges
+            for edge_weight, alternative_path in removed_edges:
+                self.logical_add_weight(edge_weight[0], edge_weight[1], edge_weight[2])
+                # subtract 2 * (weight of removed edge) to every edge on the alternative path
+                for i in range(len(alternative_path) - 1):
+                    self.logical_add_weight(alternative_path[i], alternative_path[i+1], edge_weight[2] * (-2))
+
+            # if there are no more potential physical edges, then placement of the previous node is wrong
+            if len(potential_physical_nodes) > 0:
+                # if placeNodeOnNode returned True, then we need to record changes in the saved_mapping into mapping
+                if self.placeNodeOnNode(saved_node_queue, potential_physical_nodes, True, saved_logical_node_list, saved_physical_node_list, saved_mapping):
+                    mapping.clear()
+                    for item in saved_mapping:
+                        mapping.append(item)
+                    return True
+                else:
+                    return False
+            else:
+                return False
+
+    # returns isomorphic mapping
+    def isomorph(self, shortest_paths):
+
+        ### TODO: Learn how to draw graph using nx and plt ###
+        elarge = [(u, v) for (u, v, d) in self.logical_graph.edges(data=True) if d["weight"] > 5]
+        esmall = [(u, v) for (u, v, d) in self.logical_graph.edges(data=True) if d["weight"] <= 5]
+
+        pos = nx.spring_layout(self.logical_graph)  # positions for all nodes
+
+        # nodes
+        nx.draw_networkx_nodes(self.logical_graph, pos, node_size=700)
+
+        # edges
+        nx.draw_networkx_edges(self.logical_graph, pos, edgelist=elarge, width=6)
+        nx.draw_networkx_edges(
+            self.logical_graph, pos, edgelist=esmall, width=6, alpha=0.5, edge_color="b", style="dashed"
+        )
+
+        # labels
+        nx.draw_networkx_labels(self.logical_graph, pos, font_size=20, font_family="sans-serif")
+
+        plt.axis("off")
+        plt.show()
+
+        # check if already ismorphic
+        subgraph_is_iso, GM = self.subgraphIsomorphismCheck(self.physical_graph, self.logical_graph)
+
+        if subgraph_is_iso:
+            # generate isomorphic mapping
+            happy = [(j, i) for i, j in GM.mapping.items()]
+            happy = self.lineGraphRemapping(happy)
+        else:
+            # sort all nodes by their degree 
+            logical_degree_list = sorted(self.logical_graph.degree(), key=lambda node_deg_pair: node_deg_pair[1])
+            physical_degree_list = sorted(self.physical_graph.degree(), key=lambda node_deg_pair: node_deg_pair[1])
+            # copy the physical degree list as a list of potential physical node placements
+            potential_physical_nodes = physical_degree_list.copy()
+            # list for mapping
+            mapping = []
+            # pop nodes with the biggest degree
+            logical_node = logical_degree_list.pop()
+
+            # let's work like in BFS
+            # queue of nodes to be done
+            node_queue = [logical_node]
+            # start the algorithm
+            result = self.placeNodeOnNode(node_queue, [], False, logical_degree_list, physical_degree_list, mapping)
+
+            if result:
+                happy = mapping
+            else:
+                raise NotImplementedError("Mapping not found")
+
             
         happy = sorted(happy, key=lambda el: el[0])
         print("HAPPPPPPYYYYYYYYYYY", happy)
