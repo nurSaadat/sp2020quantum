@@ -6,11 +6,12 @@ __email__ = "dzhamshed.khaitov@nu.edu.kz"
 import os
 import heapq
 import misc
+import sys
+from io import StringIO
 from copy import deepcopy
 from typing import List, Optional, Dict
 from qiskit import IBMQ, QuantumCircuit, QuantumRegister, ClassicalRegister, Aer, execute as qiskit_execute
 from qiskit.compiler import transpile as qiskit_transpile, assemble as Q_assemble
-
 
 class SimpleCTG:
     # The gate class to store information of a gate in the circuit.
@@ -495,10 +496,9 @@ class SimpleCTG:
 ### Simple mapping == True is IBM layout ###
 ### Simple mapping == False is our layout ###
 # def test(ctg: SimpleCTG, input_file: str, output_file: str, simple_mapping=False, debugging=True, limit_100=True,
-def test(ctg: SimpleCTG, input_file: str, simple_mapping=False, debugging=True, limit_100=True,
-         draw_circuit=False):
+def test(ctg: SimpleCTG, input_file: str, simple_mapping=False, debugging=True, optimization_level=1, num_of_iterations=None):
 
-    # Create directory outpus/simple_ctg/ if it doesn't exist
+    # Create directory outputs/simple_ctg/ if it doesn't exist
     # os.makedirs('./outputs/simple_ctg/', exist_ok=True)
 
     # Set the input
@@ -519,7 +519,7 @@ def test(ctg: SimpleCTG, input_file: str, simple_mapping=False, debugging=True, 
         
         logical_circuit = list(weighted_graph.logical_graph.edges())
 
-        weighted_graph.isomorph(ctg.paths)
+        weighted_graph.isomorph(ctg.paths, input_file)
         mapping, ancilla_mapping = weighted_graph.get_mapping()
         if weighted_graph.physical_degree_is_less():
             layout = weighted_graph.get_physical_qubits()
@@ -570,46 +570,43 @@ def test(ctg: SimpleCTG, input_file: str, simple_mapping=False, debugging=True, 
         circuit.add_register(register)
 
 
-def gui_interaction(circuit_file, layout_type: str, optimization_level: int, device: str, architecture: str ,
+def gui_interaction(circuit_file: str, directory: str, layout_type: bool, optimization_level: int,  architecture: str ,
                     num_of_iterations: int):
+    
+    # save local copy to put back when done
+    stdout = sys.stdout
+    # create a special string
+    s = StringIO()
+    # redirect output
+    sys.stdout = s
 
-    # Put your IBM token here or set it as None if the credentials are stored on the disk
-    TOKEN = 'd3ea16a94139c07aac8b34dc0a5d4d999354b232118788f43abe6c1414ce9b92a89194d5e7488a0fc8bce644b08927e85c4f127cd973cb32e76fc0d1a766758b'
-    if TOKEN is not None:
-        IBMQ.enable_account(TOKEN)
-    else:
-        IBMQ.load_account()
-
-    # Create instance of simple CTG
-    # if devise type is simulator then architecture then architecture variable is not used
-    # ibmq_qasm_simulator 
-    # else if device type is computer then architecture 
-
+    # create SimpleCTG instance
     simple_ctg = SimpleCTG(architecture, debugging=False)
     simple_ctg.initialize('ibm-q', 'open', 'main')
 
-    ## TODO: what is limit and draw circuit##
-    test(simple_ctg, './tests/' + filename + '.real', limit_100=False, draw_circuit=False)
+    test(simple_ctg, directory + "/" + circuit_file, simple_mapping=layout_type, optimization_level=optimization_level, num_of_iterations=num_of_iterations)
+
+    return s.getvalue()
 
 
 
 
-## MAIN ##
-# try:
-# Set file name
-filename = input("Enter file name without .real: ")
+# ## MAIN ##
+# # try:
+# # Set file name
+# filename = input("Enter file name without .real: ")
 
-# Put your IBM token here or set it as None if the credentials are stored on the disk
-TOKEN = 'd3ea16a94139c07aac8b34dc0a5d4d999354b232118788f43abe6c1414ce9b92a89194d5e7488a0fc8bce644b08927e85c4f127cd973cb32e76fc0d1a766758b'
-print('[INFO] Signing in...')
-if TOKEN is not None:
-    IBMQ.enable_account(TOKEN)
-else:
-    IBMQ.load_account()
+# # Put your IBM token here or set it as None if the credentials are stored on the disk
+# TOKEN = 'd3ea16a94139c07aac8b34dc0a5d4d999354b232118788f43abe6c1414ce9b92a89194d5e7488a0fc8bce644b08927e85c4f127cd973cb32e76fc0d1a766758b'
+# print('[INFO] Signing in...')
+# if TOKEN is not None:
+#     IBMQ.enable_account(TOKEN)
+# else:
+#     IBMQ.load_account()
 
-simple_ctg = SimpleCTG('ibmq_16_melbourne', debugging=False)
-simple_ctg.initialize('ibm-q', 'open', 'main')
+# simple_ctg = SimpleCTG('ibmq_16_melbourne', debugging=False)
+# simple_ctg.initialize('ibm-q', 'open', 'main')
 
-test(simple_ctg, './tests/' + filename + '.real', limit_100=False, draw_circuit=False)
-# except Exception as ex:
-#     print('\n[ERROR] {}'.format(ex))
+# test(simple_ctg, './tests/' + filename + '.real', limit_100=False, draw_circuit=False)
+# # except Exception as ex:
+# #     print('\n[ERROR] {}'.format(ex))
