@@ -6,16 +6,29 @@ __email__ = 'saadat.nursultan@nu.edu.kz'
 import dearpygui.core as core
 import dearpygui.simple as simple
 import SimpleCTG 
+import time
 from qiskit import IBMQ
 
 backend_map = {}
-account_enabled = False
+core.add_value('server_on', False)
+
+
+def loadingAnimation(sender, data):
+    while (not core.get_value('server_on')):
+        core.draw_image('Drawing_1', 'load1.png', [0, 300])
+        time.sleep(1)
+        core.draw_image('Drawing_1', 'load2.png', [0, 300])
+        time.sleep(1)
+        core.draw_image('Drawing_1', 'load3.png', [0, 300])
+        time.sleep(1)
+        core.draw_image('Drawing_1', 'load4.png', [0, 300])
+        time.sleep(1)
 
 # activates IBM account so the backends list can be fetched
 def activateIBMAccount():
     TOKEN = 'd3ea16a94139c07aac8b34dc0a5d4d999354b232118788f43abe6c1414ce9b92a89194d5e7488a0fc8bce644b08927e85c4f127cd973cb32e76fc0d1a766758b'
     IBMQ.enable_account(TOKEN) 
-    account_enabled = True
+    core.set_value('server_on', True) 
 
 # fills the backend_map
 def getBackendsList(sender, data):
@@ -128,8 +141,13 @@ if __name__ == '__main__':
     # Connect to IBM
     core.run_async_function(getBackendsList, 0)
 
+    # Loading animation
+    core.add_drawing('Drawing_1', tip='loading', width=200, height=200, originx=20, originy=150)
+ 
+    # core.draw_image('Drawing_1', 'load1.png', [0, 0])
+
     # Title
-    core.add_text('Please wait for 10 sec for backends to load', color=[52, 73, 235])
+    core.add_text('Quantum visualization machine ver 1.0.0', color=[52, 73, 235])
     core.add_spacing(name='##space1', count=5)
 
     # Parameters group
@@ -187,4 +205,5 @@ if __name__ == '__main__':
         # core.draw_line('Output circuit', [0, 100], [300, 100], [255, 0, 0, 255], 1, tag='circuit line')
     core.show_logger()
     core.start_dearpygui()
+    core.run_async_function(loadingAnimation, 0)
     

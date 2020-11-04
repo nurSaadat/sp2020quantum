@@ -429,6 +429,7 @@ class SimpleCTG:
         size = 0
         # Set all of the mappings: variable <-> logical layer <-> physical layer
         for v in self.mapping:
+            print(v)
             self._mapping[v] = self.mapping[v]
             self.circuit.add_register(QuantumRegister(1, name=v))
             self.variable_to_logical[v] = size
@@ -508,7 +509,6 @@ def test(ctg: SimpleCTG, input_file: str, simple_mapping=False, debugging=True, 
     mapping = [(v, i) for i, v in enumerate(ctg.variables)]
     ancilla_mapping = None
 
-    layout = None
     logical_circuit = None
 
     if not simple_mapping:
@@ -521,8 +521,6 @@ def test(ctg: SimpleCTG, input_file: str, simple_mapping=False, debugging=True, 
 
         weighted_graph.isomorph(ctg.paths, input_file)
         mapping, ancilla_mapping = weighted_graph.get_mapping()
-        if weighted_graph.physical_degree_is_less():
-            layout = weighted_graph.get_physical_qubits()
 
     # Set mappings
     ctg.set_mapping(mapping, ancilla_mapping)
@@ -532,16 +530,21 @@ def test(ctg: SimpleCTG, input_file: str, simple_mapping=False, debugging=True, 
     # Construct the circuit
     ctg.construct()
 
-    if layout is None:
-        # Get the layout as IBM specifies
-        layout = ctg.ibm_layout()
+    # Get the layout as IBM specifies
+    layout = ctg.ibm_layout()
 
     # Get the logical positions of the output variables
     variables_to_measure = [ctg.variable_to_logical[v] for v in ctg.outputs]
 
     ctg.circuit.measure(variables_to_measure, list(range(len(variables_to_measure))))
     ### Change optimization level here ###
-    compiled = qiskit_transpile(ctg.circuit, ctg.backend, initial_layout=layout, optimization_level=1)
+
+    print("[DEBUG]", ctg.backend)
+    print("[DEBUG]\n", ctg.circuit)
+    print("[DEBUG]", layout)
+    print("[DEBUG]", optimization_level)
+
+    compiled = qiskit_transpile(ctg.circuit, ctg.backend, initial_layout=layout, optimization_level=optimization_level)
     assembled = Q_assemble(compiled)
     qasm = compiled.qasm()
     if debugging:
@@ -573,12 +576,14 @@ def test(ctg: SimpleCTG, input_file: str, simple_mapping=False, debugging=True, 
 def gui_interaction(circuit_file: str, directory: str, layout_type: bool, optimization_level: int,  architecture: str ,
                     num_of_iterations: int):
     
-    # save local copy to put back when done
-    stdout = sys.stdout
-    # create a special string
+    # # save local copy to put back when done
+    # stdout = sys.stdout
+    # # create a special string
     s = StringIO()
-    # redirect output
-    sys.stdout = s
+    # # redirect output
+    # sys.stdout = s
+
+    print('[STOP]')
 
     # create SimpleCTG instance
     simple_ctg = SimpleCTG(architecture, debugging=False)
