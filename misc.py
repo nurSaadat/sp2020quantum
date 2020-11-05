@@ -236,24 +236,35 @@ class Mapping:
             happy = self.lineGraphRemapping(happy)
             
         happy = sorted(happy, key=lambda el: el[0])
-        print("HAPPPPPPYYYYYYYYYYY", happy)
+        # print("HAPPPPPPYYYYYYYYYYY", happy)
         self.map = happy
-    
-    def buildReducedGraph(self, log_to_phys_map):
-        # divide edges into two categories
-        elarge = [(u, v) for (u, v, d) in self.logical_graph.edges(data=True) if d["weight"] > 10]
-        esmall = [(u, v) for (u, v, d) in self.logical_graph.edges(data=True) if d["weight"] <= 10]
+
+    def drawGraph(self, file_name):
+        elarge = [(u, v) for (u, v, d) in self.logical_graph.edges(data=True) if d["weight"] > 5]
+        esmall = [(u, v) for (u, v, d) in self.logical_graph.edges(data=True) if d["weight"] <= 5]
         # positions for all nodes
-        pos = nx.spring_layout(self.logical_graph)  
+        pos = nx.spring_layout(self.logical_graph) 
         # nodes
         nx.draw_networkx_nodes(self.logical_graph, pos, node_size=700)
         # edges
-        nx.draw_networkx_edges(self.logical_graph, pos, width=6)
+        nx.draw_networkx_edges(self.logical_graph, pos, edgelist=elarge, width=6)
+        nx.draw_networkx_edges(
+            self.logical_graph, pos, edgelist=esmall, width=6, alpha=0.5, edge_color="b", style="dashed"
+        )
         # labels
         nx.draw_networkx_labels(self.logical_graph, pos, font_size=20, font_family="sans-serif")
         plt.axis("off")
-        
-
+         # retrieve date
+        today = datetime.datetime.today()
+        # make outputs/ directory
+        os.makedirs('./outputs/', exist_ok=True)
+        # create file name
+        graph_image = './outputs/{}{}.jpeg'.format(file_name, today.strftime("%Y%m%d%H%M%S"))
+        # save graph
+        plt.savefig(graph_image)
+        # return the name
+        return graph_image
+    
     # tries to remove edges such that one, or more potential physical placements appeares
     def figureOutWrongEdge(self, logical_node, permutations, use_permutations, physical_node_list, mapping, removed_edges):
         
@@ -456,36 +467,8 @@ class Mapping:
     # returns isomorphic mapping
     def isomorph(self, shortest_paths, file_name):
 
-        elarge = [(u, v) for (u, v, d) in self.logical_graph.edges(data=True) if d["weight"] > 5]
-        esmall = [(u, v) for (u, v, d) in self.logical_graph.edges(data=True) if d["weight"] <= 5]
-
-        pos = nx.spring_layout(self.logical_graph)  # positions for all nodes
-
-        # nodes
-        nx.draw_networkx_nodes(self.logical_graph, pos, node_size=700)
-
-        # edges
-        nx.draw_networkx_edges(self.logical_graph, pos, edgelist=elarge, width=6)
-        nx.draw_networkx_edges(
-            self.logical_graph, pos, edgelist=esmall, width=6, alpha=0.5, edge_color="b", style="dashed"
-        )
-
-        # labels
-        nx.draw_networkx_labels(self.logical_graph, pos, font_size=20, font_family="sans-serif")
-
-        plt.axis("off")
-        # plt.show()
-
-        # retrieve date
-        today = datetime.datetime.today()
-        # split file path
-        directories = file_name.split("/")
-        # make figures directory
-        os.makedirs('./figures/', exist_ok=True)
-        # create file name
-        file_name = './figures/' + directories[-1][:-5] + today.strftime("%Y%m%d%H%M%S") + ".jpeg"
-        # save graph
-        plt.savefig(file_name)
+        # save graph image and get its name
+        logical_graph_name = self.drawGraph(file_name)
 
         # check if already ismorphic
         subgraph_is_iso, GM = self.subgraphIsomorphismCheck(self.physical_graph, self.logical_graph)
@@ -516,11 +499,13 @@ class Mapping:
             else:
                 raise NotImplementedError("Mapping not found")
 
-            
         happy = sorted(happy, key=lambda el: el[0])
         # print("HAPPPPPPYYYYYYYYYYY", happy)
         self.map = happy
-        self.buildReducedGraph(happy)
+
+        # save reduced graph image and get its name
+        reduced_graph_name = self.drawGraph(file_name)
+        return logical_graph_name, reduced_graph_name
 
     def construct_ctg(self, variables, gates):
         self.set_nodes_logical(variables)
@@ -620,7 +605,6 @@ class Mapping:
                 numswap += (len(physical_paths[node1][node2])) * 2
 
         return numswap
-
 
 
 def main():

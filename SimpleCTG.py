@@ -3,6 +3,7 @@
 __author__ = "Dzhamshed Khaitov"
 __email__ = "dzhamshed.khaitov@nu.edu.kz"
 
+import datetime
 import os
 import heapq
 import misc
@@ -429,7 +430,6 @@ class SimpleCTG:
         size = 0
         # Set all of the mappings: variable <-> logical layer <-> physical layer
         for v in self.mapping:
-            print(v)
             self._mapping[v] = self.mapping[v]
             self.circuit.add_register(QuantumRegister(1, name=v))
             self.variable_to_logical[v] = size
@@ -499,8 +499,14 @@ class SimpleCTG:
 # def test(ctg: SimpleCTG, input_file: str, output_file: str, simple_mapping=False, debugging=True, limit_100=True,
 def test(ctg: SimpleCTG, input_file: str, simple_mapping=False, debugging=True, optimization_level=1, num_of_iterations=None):
 
-    # Create directory outputs/simple_ctg/ if it doesn't exist
-    # os.makedirs('./outputs/simple_ctg/', exist_ok=True)
+    # Create directory outputs/ if it doesn't exist
+    os.makedirs('./outputs/', exist_ok=True)
+
+    # make feature keeper
+    feature_keeper = {}
+
+    # parse file name
+    file_name = input_file.split('/')[-1].split('.')[0]
 
     # Set the input
     ctg.set_input(input_file)
@@ -508,7 +514,6 @@ def test(ctg: SimpleCTG, input_file: str, simple_mapping=False, debugging=True, 
     # Set variable to physical mapping sequentially, thus a -> 0, b -> 1, c -> 2, etc.
     mapping = [(v, i) for i, v in enumerate(ctg.variables)]
     ancilla_mapping = None
-
     logical_circuit = None
 
     if not simple_mapping:
@@ -516,10 +521,10 @@ def test(ctg: SimpleCTG, input_file: str, simple_mapping=False, debugging=True, 
         weighted_graph.set_nodes_physical(ctg.couples)
         weighted_graph.physical_add_edges(ctg.couples)
         weighted_graph.construct_ctg(ctg.variables, ctg.gates)
-        
         logical_circuit = list(weighted_graph.logical_graph.edges())
-
-        weighted_graph.isomorph(ctg.paths, input_file)
+        logical_graph_name, reduced_graph_name = weighted_graph.isomorph(ctg.paths, file_name)
+        feature_keeper['logical_graph'] = logical_graph_name
+        feature_keeper['reduced_graph'] = reduced_graph_name
         mapping, ancilla_mapping = weighted_graph.get_mapping()
 
     # Set mappings
@@ -537,13 +542,11 @@ def test(ctg: SimpleCTG, input_file: str, simple_mapping=False, debugging=True, 
     variables_to_measure = [ctg.variable_to_logical[v] for v in ctg.outputs]
 
     ctg.circuit.measure(variables_to_measure, list(range(len(variables_to_measure))))
-    ### Change optimization level here ###
+ 
+    # print("[DEBUG]", ctg.backend)
+    # print("[DEBUG]\n", ctg.circuit)
 
-    print("[DEBUG]", ctg.backend)
-    print("[DEBUG]\n", ctg.circuit)
-    print("[DEBUG]", layout)
-    print("[DEBUG]", optimization_level)
-
+    # Transpile the circuit, set the optimization level  
     compiled = qiskit_transpile(ctg.circuit, ctg.backend, initial_layout=layout, optimization_level=optimization_level)
     assembled = Q_assemble(compiled)
     qasm = compiled.qasm()
@@ -553,16 +556,21 @@ def test(ctg: SimpleCTG, input_file: str, simple_mapping=False, debugging=True, 
         if not simple_mapping:
             print('[RESULT] swap: {}'.format(weighted_graph.count_swap(ctg.mapping, ctg.paths, logical_circuit)))
 
-    # file_name = input_file.split('/')[-1].split('.')[0]
-    # with open('./outputs/simple_ctg/{}.txt'.format(file_name), 'w+') as qasm_file:
-    #     qasm_file.write(qasm)
-    #     qasm_file.close()
+    # retrieve date
+    today = datetime.datetime.today()
 
-    ## TODO : change ##
-    # if draw_circuit:
-    #     if debugging:
-    #         print('[INFO] Drawing the circuit....')
-    #     ctg.circuit.draw(filename='./outputs/simple_ctg/{}.png'.format(file_name), output='mpl')
+    # save qasm to txt file 
+    qasm_name = './outputs/{}{}.txt'.format(file_name, today.strftime("%Y%m%d%H%M%S"))
+    feature_keeper['qasm_file'] = qasm_name
+
+    with open(qasm_name, 'w+') as qasm_file:
+        qasm_file.write(qasm)
+        qasm_file.close()
+    
+    # save circuit image
+    circuit_image_name = './outputs/{}{}.png'.format(file_name, today.strftime("%Y%m%d%H%M%S"))
+    feature_keeper['ibm_circuit'] = circuit_image_name
+    ctg.circuit.draw(filename=circuit_image_name, output='mpl')
 
     # Create a new circuit with the same amount of quantum and classical registers
     # This is needed to set the initial states of the variables by inserting not gates
@@ -572,32 +580,30 @@ def test(ctg: SimpleCTG, input_file: str, simple_mapping=False, debugging=True, 
     for register in ctg.circuit.cregs:
         circuit.add_register(register)
 
+    return feature_keeper
 
+# function called by gui 
 def gui_interaction(circuit_file: str, directory: str, layout_type: bool, optimization_level: int,  architecture: str ,
                     num_of_iterations: int):
     
     # # save local copy to put back when done
-    # stdout = sys.stdout
+    stdout = sys.stdout
     # # create a special string
     s = StringIO()
     # # redirect output
-    # sys.stdout = s
-
-    print('[STOP]')
+    sys.stdout = s
 
     # create SimpleCTG instance
-    simple_ctg = SimpleCTG(architecture, debugging=False)
+    simple_ctg = SimpleCTG(architecture, debugging=True)
     simple_ctg.initialize('ibm-q', 'open', 'main')
 
-    test(simple_ctg, directory + "/" + circuit_file, simple_mapping=layout_type, optimization_level=optimization_level, num_of_iterations=num_of_iterations)
+    circuit_features = test(simple_ctg, directory + "/" + circuit_file, simple_mapping=layout_type, optimization_level=optimization_level, num_of_iterations=num_of_iterations)
 
-    return s.getvalue()
-
-
+    return s.getvalue(), circuit_features
 
 
-# ## MAIN ##
-# # try:
+## MAIN ##
+# try:
 # # Set file name
 # filename = input("Enter file name without .real: ")
 
@@ -613,5 +619,5 @@ def gui_interaction(circuit_file: str, directory: str, layout_type: bool, optimi
 # simple_ctg.initialize('ibm-q', 'open', 'main')
 
 # test(simple_ctg, './tests/' + filename + '.real', limit_100=False, draw_circuit=False)
-# # except Exception as ex:
-# #     print('\n[ERROR] {}'.format(ex))
+# except Exception as ex:
+#     print('\n[ERROR] {}'.format(ex))
