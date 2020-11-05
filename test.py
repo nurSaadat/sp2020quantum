@@ -9,41 +9,37 @@ import SimpleCTG
 import time
 from qiskit import IBMQ
 
-backend_map = {}
+backend_dict = {}
 core.add_value('server_on', False)
 
-
-def loadingAnimation(sender, data):
+# fills progress bar
+def progressAsync(sender, data):
+    counter = 0.0
     while (not core.get_value('server_on')):
-        core.draw_image('Drawing_1', 'load1.png', [0, 300])
-        time.sleep(1)
-        core.draw_image('Drawing_1', 'load2.png', [0, 300])
-        time.sleep(1)
-        core.draw_image('Drawing_1', 'load3.png', [0, 300])
-        time.sleep(1)
-        core.draw_image('Drawing_1', 'load4.png', [0, 300])
-        time.sleep(1)
-
+        core.set_value('progress', value=counter)
+        counter += 0.001
+        time.sleep(0.001)
+  
 # activates IBM account so the backends list can be fetched
 def activateIBMAccount():
     TOKEN = 'd3ea16a94139c07aac8b34dc0a5d4d999354b232118788f43abe6c1414ce9b92a89194d5e7488a0fc8bce644b08927e85c4f127cd973cb32e76fc0d1a766758b'
     IBMQ.enable_account(TOKEN) 
     core.set_value('server_on', True) 
 
-# fills the backend_map
-def getBackendsList(sender, data):
+# fills the backend_dict
+def getBackendsAsync(sender, data):
     activateIBMAccount()
     backends = IBMQ.get_provider().backends()
     # add backend names with indexes, so it will be easier to retrieve them in radio button
     for i in range(len(backends)):
-        backend_map[i] = backends[i].name()
+        backend_dict[i] = backends[i].name()
 
 # resets all parameters to default
 def setDefault(sender, data):
     if core.get_value('device_type') == 0:
         core.add_spacing(name='##space9', count=2)
         core.add_text('Architecture name:', before='##space5')
-        core.add_radio_button('radio##3', items=list(backend_map.values())[1:], source='architecture', before='##space5')
+        core.add_radio_button('radio##3', items=list(backend_dict.values())[1:], source='architecture', before='##space5')
     core.set_value('device_type', 1)
     core.set_value('architecture', 1)
     core.set_value('layout_type', 1)
@@ -67,9 +63,9 @@ def process(sender, data):
 
     # chooses the device
     if core.get_value('device_type') == 0:
-        architecture = backend_map[0]
+        architecture = backend_dict[0]
     else:
-        architecture = backend_map[core.get_value('architecture') + 1]
+        architecture = backend_dict[core.get_value('architecture') + 1]
 
     core.log_debug(directory)
     core.log_debug(file_directory)
@@ -77,7 +73,6 @@ def process(sender, data):
     core.log_debug(opt_level)
     core.log_debug(architecture)
     core.log_debug(num_of_iter)
-
 
     infoStr = SimpleCTG.gui_interaction(file_directory, directory, layout_type, opt_level, architecture, num_of_iter)
     # core.add_text(infoStr)
@@ -89,7 +84,7 @@ def showArchitectureList(sender, data):
     if (my_var == 1):
         core.add_spacing(name='##space9', count=2)
         core.add_text('Architecture name:', before='##space5')
-        core.add_radio_button('radio##3', items=list(backend_map.values())[1:], source='architecture', before='##space5')
+        core.add_radio_button('radio##3', items=list(backend_dict.values())[1:], source='architecture', before='##space5')
     else:
         core.delete_item('##space9')
         core.delete_item('Architecture name:')
@@ -139,12 +134,13 @@ def applySelectedDirectory(sender, data):
 
 if __name__ == '__main__':
     # Connect to IBM
-    core.run_async_function(getBackendsList, 0)
+    core.run_async_function(getBackendsAsync, 0)
 
-    # Loading animation
-    core.add_drawing('Drawing_1', tip='loading', width=200, height=200, originx=20, originy=150)
- 
-    # core.draw_image('Drawing_1', 'load1.png', [0, 0])
+    # Progress bar
+    with simple.window('Please wait', no_scrollbar=True, height=60, width=350, x_pos=500, y_pos=200):
+        core.add_text('Close the window when the progressbar stops')
+        core.add_progress_bar('progress', value=0.0, overlay='Connecting to IBM...', width=400)
+        core.run_async_function(progressAsync, 0)
 
     # Title
     core.add_text('Quantum visualization machine ver 1.0.0', color=[52, 73, 235])
@@ -205,5 +201,4 @@ if __name__ == '__main__':
         # core.draw_line('Output circuit', [0, 100], [300, 100], [255, 0, 0, 255], 1, tag='circuit line')
     core.show_logger()
     core.start_dearpygui()
-    core.run_async_function(loadingAnimation, 0)
     
