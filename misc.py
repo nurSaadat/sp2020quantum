@@ -239,7 +239,7 @@ class Mapping:
         # print("HAPPPPPPYYYYYYYYYYY", happy)
         self.map = happy
 
-    def drawGraph(self, file_name):
+    def drawGraph(self, file_name, is_logical=True):
         elarge = [(u, v) for (u, v, d) in self.logical_graph.edges(data=True) if d["weight"] > 5]
         esmall = [(u, v) for (u, v, d) in self.logical_graph.edges(data=True) if d["weight"] <= 5]
         # positions for all nodes
@@ -258,10 +258,19 @@ class Mapping:
         today = datetime.datetime.today()
         # make outputs/ directory
         os.makedirs('./outputs/', exist_ok=True)
-        # create file name
-        graph_image = './outputs/{}{}.jpeg'.format(file_name, today.strftime("%Y%m%d%H%M%S"))
+        if (is_logical):
+            os.makedirs('./outputs/input/', exist_ok=True)
+            # create file name
+            graph_image = './outputs/input/{}{}.jpeg'.format(file_name, today.strftime("%Y%m%d%H%M%S"))
+        else:
+            os.makedirs('./outputs/reduced/', exist_ok=True)
+            # create file name
+            graph_image = './outputs/reduced/{}{}.jpeg'.format(file_name, today.strftime("%Y%m%d%H%M%S"))
+        
         # save graph
         plt.savefig(graph_image)
+        if (is_logical):
+            plt.clf()
         # return the name
         return graph_image
     
@@ -468,7 +477,7 @@ class Mapping:
     def isomorph(self, shortest_paths, file_name):
 
         # save graph image and get its name
-        logical_graph_name = self.drawGraph(file_name)
+        logical_graph_name = self.drawGraph(file_name, is_logical=True)
 
         # check if already ismorphic
         subgraph_is_iso, GM = self.subgraphIsomorphismCheck(self.physical_graph, self.logical_graph)
@@ -504,7 +513,7 @@ class Mapping:
         self.map = happy
 
         # save reduced graph image and get its name
-        reduced_graph_name = self.drawGraph(file_name)
+        reduced_graph_name = self.drawGraph(file_name, is_logical=False)
         return logical_graph_name, reduced_graph_name
 
     def construct_ctg(self, variables, gates):

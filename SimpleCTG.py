@@ -500,7 +500,8 @@ class SimpleCTG:
 def test(ctg: SimpleCTG, input_file: str, simple_mapping=False, debugging=True, optimization_level=1, num_of_iterations=None):
 
     # Create directory outputs/ if it doesn't exist
-    os.makedirs('./outputs/', exist_ok=True)
+    os.makedirs('./outputs/txt/', exist_ok=True)
+    os.makedirs('./outputs/circuit/', exist_ok=True)
 
     # make feature keeper
     feature_keeper = {}
@@ -546,7 +547,8 @@ def test(ctg: SimpleCTG, input_file: str, simple_mapping=False, debugging=True, 
     # print("[DEBUG]", ctg.backend)
     # print("[DEBUG]\n", ctg.circuit)
 
-    # Transpile the circuit, set the optimization level  
+    # Transpile the circuit https://towardsdatascience.com/what-is-a-quantum-circuit-transpiler-ba9a7853e6f9 
+    # set the optimization level  
     compiled = qiskit_transpile(ctg.circuit, ctg.backend, initial_layout=layout, optimization_level=optimization_level)
     assembled = Q_assemble(compiled)
     qasm = compiled.qasm()
@@ -560,7 +562,7 @@ def test(ctg: SimpleCTG, input_file: str, simple_mapping=False, debugging=True, 
     today = datetime.datetime.today()
 
     # save qasm to txt file 
-    qasm_name = './outputs/{}{}.txt'.format(file_name, today.strftime("%Y%m%d%H%M%S"))
+    qasm_name = './outputs/txt/{}{}.txt'.format(file_name, today.strftime("%Y%m%d%H%M%S"))
     feature_keeper['qasm_file'] = qasm_name
 
     with open(qasm_name, 'w+') as qasm_file:
@@ -568,7 +570,7 @@ def test(ctg: SimpleCTG, input_file: str, simple_mapping=False, debugging=True, 
         qasm_file.close()
     
     # save circuit image
-    circuit_image_name = './outputs/{}{}.png'.format(file_name, today.strftime("%Y%m%d%H%M%S"))
+    circuit_image_name = './outputs/circuit/{}{}.png'.format(file_name, today.strftime("%Y%m%d%H%M%S"))
     feature_keeper['ibm_circuit'] = circuit_image_name
     ctg.circuit.draw(filename=circuit_image_name, output='mpl')
 
