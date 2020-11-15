@@ -511,7 +511,7 @@ class Mapping:
         happy = sorted(happy, key=lambda el: el[0])
         # print("HAPPPPPPYYYYYYYYYYY", happy)
         self.map = happy
-
+       
         # save reduced graph image and get its name
         reduced_graph_name = self.drawGraph(file_name, is_logical=False)
         return logical_graph_name, reduced_graph_name
