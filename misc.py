@@ -240,6 +240,7 @@ class Mapping:
         self.map = happy
 
     def drawGraph(self, file_name, is_logical=True):
+        plt.figure(figsize=(6,4))
         elarge = [(u, v) for (u, v, d) in self.logical_graph.edges(data=True) if d["weight"] > 5]
         esmall = [(u, v) for (u, v, d) in self.logical_graph.edges(data=True) if d["weight"] <= 5]
         # positions for all nodes
@@ -261,11 +262,11 @@ class Mapping:
         if (is_logical):
             os.makedirs('./outputs/input/', exist_ok=True)
             # create file name
-            graph_image = './outputs/input/{}{}.jpeg'.format(file_name, today.strftime("%Y%m%d%H%M%S"))
+            graph_image = './outputs/input/{}_{}.jpeg'.format(file_name, today.strftime("%Y%m%d%H%M%S"))
         else:
             os.makedirs('./outputs/reduced/', exist_ok=True)
             # create file name
-            graph_image = './outputs/reduced/{}{}.jpeg'.format(file_name, today.strftime("%Y%m%d%H%M%S"))
+            graph_image = './outputs/reduced/{}_{}.jpeg'.format(file_name, today.strftime("%Y%m%d%H%M%S"))
         
         # save graph
         plt.savefig(graph_image)

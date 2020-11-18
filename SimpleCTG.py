@@ -6,6 +6,7 @@ __email__ = "dzhamshed.khaitov@nu.edu.kz"
 import datetime
 import os
 import heapq
+import matplotlib.pyplot as plt
 import misc
 import sys
 from io import StringIO
@@ -552,6 +553,10 @@ def test(ctg: SimpleCTG, input_file: str, simple_mapping=False, debugging=True, 
     compiled = qiskit_transpile(ctg.circuit, ctg.backend, initial_layout=layout, optimization_level=optimization_level)
     assembled = Q_assemble(compiled)
     qasm = compiled.qasm()
+
+    # for instruction in assembled.experiments[0].instructions:
+    #     print (instruction)
+
     if debugging:
         print('[RESULT] cost: {}'.format(len(assembled.experiments[0].instructions)))
         print('[RESULT] qasm:\n{}'.format(qasm))
@@ -562,7 +567,7 @@ def test(ctg: SimpleCTG, input_file: str, simple_mapping=False, debugging=True, 
     today = datetime.datetime.today()
 
     # save qasm to txt file 
-    qasm_name = './outputs/txt/{}{}.txt'.format(file_name, today.strftime("%Y%m%d%H%M%S"))
+    qasm_name = './outputs/txt/{}_{}.txt'.format(file_name, today.strftime("%Y%m%d%H%M%S"))
     feature_keeper['qasm_file'] = qasm_name
 
     with open(qasm_name, 'w+') as qasm_file:
@@ -570,9 +575,10 @@ def test(ctg: SimpleCTG, input_file: str, simple_mapping=False, debugging=True, 
         qasm_file.close()
     
     # save circuit image
-    circuit_image_name = './outputs/circuit/{}{}.png'.format(file_name, today.strftime("%Y%m%d%H%M%S"))
+    circuit_image_name = './outputs/circuit/{}_{}.png'.format(file_name, today.strftime("%Y%m%d%H%M%S"))
     feature_keeper['ibm_circuit'] = circuit_image_name
     ctg.circuit.draw(filename=circuit_image_name, output='mpl')
+    plt.clf()
 
     # Create a new circuit with the same amount of quantum and classical registers
     # This is needed to set the initial states of the variables by inserting not gates
@@ -588,11 +594,11 @@ def test(ctg: SimpleCTG, input_file: str, simple_mapping=False, debugging=True, 
 def gui_interaction(circuit_file: str, directory: str, layout_type: bool, optimization_level: int,  architecture: str ,
                     num_of_iterations: int):
     
-    # # save local copy to put back when done
+    # save local copy to put back when done
     stdout = sys.stdout
-    # # create a special string
+    # create a special string
     s = StringIO()
-    # # redirect output
+    # redirect output
     sys.stdout = s
 
     # create SimpleCTG instance

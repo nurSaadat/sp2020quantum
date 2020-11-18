@@ -12,6 +12,7 @@ from qiskit import IBMQ
 backend_dict = {}
 core.add_value('server_on', False)
 core.add_value('loading', False)
+core.add_value('prev_architecture', 0)
 
 # fills progress bar
 def progressAsync(sender, data):
@@ -106,22 +107,23 @@ def process(sender, data):
         )
 
     # core.log_debug(infoStr)
-    core.draw_image('input_circuit', circuit_features['logical_graph'], [0, 600], pmax=[200,600])
-    core.draw_image('output_circuit', circuit_features['reduced_graph'], [0, 600], pmax=[200, 600])
+    core.draw_image('input_circuit', circuit_features['logical_graph'], [0, 500], pmax=[200,500])
+    core.draw_image('output_circuit', circuit_features['reduced_graph'], [0, 500], pmax=[200, 500])
     core.set_value('Program output will be displayed here', infoStr)
 
 # makes architecture list dynamic
 def showArchitectureList(sender, data):
     my_var = core.get_value('device_type')
-    if (my_var == 1):
+    if (my_var == 1 and core.get_value('prev_architecture') != 1):
         core.add_spacing(name='##space9', count=2)
         core.add_text('Architecture name:', before='##space5')
         core.add_radio_button('radio##3', items=list(backend_dict.values())[1:], source='architecture', before='##space5')
-    else:
+        core.set_value('prev_architecture', 1)
+    elif (my_var == 0 and core.get_value('prev_architecture') != 0):
         core.delete_item('##space9')
         core.delete_item('Architecture name:')
         core.delete_item('radio##3')
-
+        core.set_value('prev_architecture', 0)
 
 def filePicker(sender, data):
     core.open_file_dialog(callback=applySelectedDirectory, extensions='.real')
@@ -190,15 +192,15 @@ if __name__ == '__main__':
     with simple.group('center group'):       
         # Input circuit preview
         core.add_text('Input circuit:', show=False)
-        core.add_drawing('input_circuit', width=700, height=600)
+        core.add_drawing('input_circuit', width=600, height=500)
         # Output circuit view
         core.add_text('Output circuit:', show=False)
-        core.add_drawing('output_circuit', width=700, height=600)
+        core.add_drawing('output_circuit', width=600, height=500)
 
     core.add_same_line(name='line##3', xoffset=1000)
     with simple.group('right group'):
         core.add_text('Program output:', show=False)
-        core.add_text('Program output will be displayed here', show=False)
+        core.add_text('Program output will be displayed here', show=False, wrap=440)
 
     # core.show_logger()
     core.start_dearpygui()
