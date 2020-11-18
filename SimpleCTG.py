@@ -3,14 +3,17 @@
 __author__ = "Dzhamshed Khaitov"
 __email__ = "dzhamshed.khaitov@nu.edu.kz"
 
+import datetime
 import os
 import heapq
+import matplotlib.pyplot as plt
 import misc
+import sys
+from io import StringIO
 from copy import deepcopy
 from typing import List, Optional, Dict
 from qiskit import IBMQ, QuantumCircuit, QuantumRegister, ClassicalRegister, Aer, execute as qiskit_execute
 from qiskit.compiler import transpile as qiskit_transpile, assemble as Q_assemble
-
 
 class SimpleCTG:
     # The gate class to store information of a gate in the circuit.
@@ -494,11 +497,18 @@ class SimpleCTG:
 # Test a given file
 ### Simple mapping == True is IBM layout ###
 ### Simple mapping == False is our layout ###
-def test(ctg: SimpleCTG, input_file: str, output_file: str, simple_mapping=False, debugging=True, limit_100=True,
-         draw_circuit=False):
+# def test(ctg: SimpleCTG, input_file: str, output_file: str, simple_mapping=False, debugging=True, limit_100=True,
+def test(ctg: SimpleCTG, input_file: str, simple_mapping=False, debugging=True, optimization_level=1, num_of_iterations=None):
 
-    # Create directory outpus/simple_ctg/ if it doesn't exist
-    os.makedirs('./outputs/simple_ctg/', exist_ok=True)
+    # Create directory outputs/ if it doesn't exist
+    os.makedirs('./outputs/txt/', exist_ok=True)
+    os.makedirs('./outputs/circuit/', exist_ok=True)
+
+    # make feature keeper
+    feature_keeper = {}
+
+    # parse file name
+    file_name = input_file.split('/')[-1].split('.')[0]
 
     # Set the input
     ctg.set_input(input_file)
@@ -506,8 +516,6 @@ def test(ctg: SimpleCTG, input_file: str, output_file: str, simple_mapping=False
     # Set variable to physical mapping sequentially, thus a -> 0, b -> 1, c -> 2, etc.
     mapping = [(v, i) for i, v in enumerate(ctg.variables)]
     ancilla_mapping = None
-
-    layout = None
     logical_circuit = None
 
     if not simple_mapping:
@@ -515,13 +523,11 @@ def test(ctg: SimpleCTG, input_file: str, output_file: str, simple_mapping=False
         weighted_graph.set_nodes_physical(ctg.couples)
         weighted_graph.physical_add_edges(ctg.couples)
         weighted_graph.construct_ctg(ctg.variables, ctg.gates)
-        
         logical_circuit = list(weighted_graph.logical_graph.edges())
-
-        weighted_graph.isomorph(ctg.paths)
+        logical_graph_name, reduced_graph_name = weighted_graph.isomorph(ctg.paths, file_name)
+        feature_keeper['logical_graph'] = logical_graph_name
+        feature_keeper['reduced_graph'] = reduced_graph_name
         mapping, ancilla_mapping = weighted_graph.get_mapping()
-        if weighted_graph.physical_degree_is_less():
-            layout = weighted_graph.get_physical_qubits()
 
     # Set mappings
     ctg.set_mapping(mapping, ancilla_mapping)
@@ -531,35 +537,48 @@ def test(ctg: SimpleCTG, input_file: str, output_file: str, simple_mapping=False
     # Construct the circuit
     ctg.construct()
 
-    if layout is None:
-        # Get the layout as IBM specifies
-        layout = ctg.ibm_layout()
+    # Get the layout as IBM specifies
+    layout = ctg.ibm_layout()
 
     # Get the logical positions of the output variables
     variables_to_measure = [ctg.variable_to_logical[v] for v in ctg.outputs]
 
     ctg.circuit.measure(variables_to_measure, list(range(len(variables_to_measure))))
-    ### Change optimization level here ###
-    compiled = qiskit_transpile(ctg.circuit, ctg.backend, initial_layout=layout, optimization_level=1)
+ 
+    # print("[DEBUG]", ctg.backend)
+    # print("[DEBUG]\n", ctg.circuit)
+
+    # Transpile the circuit https://towardsdatascience.com/what-is-a-quantum-circuit-transpiler-ba9a7853e6f9 
+    # set the optimization level  
+    compiled = qiskit_transpile(ctg.circuit, ctg.backend, initial_layout=layout, optimization_level=optimization_level)
     assembled = Q_assemble(compiled)
     qasm = compiled.qasm()
+
+    # for instruction in assembled.experiments[0].instructions:
+    #     print (instruction)
+
     if debugging:
         print('[RESULT] cost: {}'.format(len(assembled.experiments[0].instructions)))
         print('[RESULT] qasm:\n{}'.format(qasm))
         if not simple_mapping:
             print('[RESULT] swap: {}'.format(weighted_graph.count_swap(ctg.mapping, ctg.paths, logical_circuit)))
 
-    file_name = input_file.split('/')[-1].split('.')[0]
-    with open('./outputs/simple_ctg/{}.txt'.format(file_name), 'w+') as qasm_file:
+    # retrieve date
+    today = datetime.datetime.today()
+
+    # save qasm to txt file 
+    qasm_name = './outputs/txt/{}_{}.txt'.format(file_name, today.strftime("%Y%m%d%H%M%S"))
+    feature_keeper['qasm_file'] = qasm_name
+
+    with open(qasm_name, 'w+') as qasm_file:
         qasm_file.write(qasm)
         qasm_file.close()
-
-    if draw_circuit:
-        if debugging:
-            print('[INFO] Drawing the circuit....')
-        ctg.circuit.draw(filename='./outputs/simple_ctg/{}.png'.format(file_name), output='mpl')
-
-    simulator = Aer.get_backend('qasm_simulator')
+    
+    # save circuit image
+    circuit_image_name = './outputs/circuit/{}_{}.png'.format(file_name, today.strftime("%Y%m%d%H%M%S"))
+    feature_keeper['ibm_circuit'] = circuit_image_name
+    ctg.circuit.draw(filename=circuit_image_name, output='mpl')
+    plt.clf()
 
     # Create a new circuit with the same amount of quantum and classical registers
     # This is needed to set the initial states of the variables by inserting not gates
@@ -569,105 +588,44 @@ def test(ctg: SimpleCTG, input_file: str, output_file: str, simple_mapping=False
     for register in ctg.circuit.cregs:
         circuit.add_register(register)
 
-    # Testing
-    with open(output_file, 'r') as test_file:
-        lines = test_file.readlines()
-        test_file.close()
-        for index, line in enumerate(lines):
-            if not line.startswith('.') and not line.startswith('#'):
-                # If test file has too many lines then abort testing, because it takes too much time
-                if limit_100 and index > 100:
-                    print('[WARNING] TOO MANY INPUTS! Aborting....')
-                    return
-                parts = line.replace('\t', ' ').split(' ')
-                inputs = list(parts[0].strip())
-                output = parts[1].strip()
+    return feature_keeper
 
-                # Copy the circuit so that we could use it in the next input without changing anything
-                test_circuit = circuit.copy()
+# function called by gui 
+def gui_interaction(circuit_file: str, directory: str, layout_type: bool, optimization_level: int,  architecture: str ,
+                    num_of_iterations: int):
+    
+    # save local copy to put back when done
+    stdout = sys.stdout
+    # create a special string
+    s = StringIO()
+    # redirect output
+    sys.stdout = s
 
-                # Set the input. Insert not gates for the variables that have 1 as initial state
-                for v in ctg.inputs:
-                    if v != '0' and v != '1' and len(inputs) > 0 and inputs.pop(0) == '1':
-                        test_circuit.x(ctg.variable_to_logical[v])
+    # create SimpleCTG instance
+    simple_ctg = SimpleCTG(architecture, debugging=True)
+    simple_ctg.initialize('ibm-q', 'open', 'main')
 
-                # Append the original circuit
-                test_circuit.extend(ctg.circuit)
+    circuit_features = test(simple_ctg, directory + "/" + circuit_file, simple_mapping=layout_type, optimization_level=optimization_level, num_of_iterations=num_of_iterations)
 
-                test_circuit.measure(variables_to_measure, list(range(len(variables_to_measure))))
-                job = qiskit_execute(test_circuit, simulator)
-
-                # The result is in reverse order, so [::-1] reverses the resulting string
-                result = list(job.result().get_counts()).pop().strip()[::-1]
-
-                if debugging:
-                    print('[RESULT] Line number {}: {} | {}'.format(index, result, output), end='\r', flush=True)
-                if result != output:
-                    raise Exception('WA for {}: expected {}, found {}'.format(parts[0].strip(), output, result))
-
-        if debugging:
-            print('[RESULT] Successfully passed all of the tests!!!')
+    return s.getvalue(), circuit_features
 
 
-def test_all(ctg: SimpleCTG):
-    # parity task has 16 qubits which cannot be mapped to quantum machine as it has only 15 qubits
-    # 0410184 has too many inputs, but all of the inputs are passed
-    # testCV and random_fu are wrong. They have wrong input output
-    exclude = ["parity.real", "0410184.real", "testCV.real", "random_fu.real"]
-    not_passed = []
-
-    # Take all of the files from tests directory and run them
-    test_files = sorted(os.listdir('./tests/'))
-
-    for file_name in test_files:
-        # Check if the file .real has also .pla file
-        if file_name.endswith('.real') and file_name.split('.')[0] + '.pla' in test_files and file_name not in exclude:
-            print('-------------------- {} --------------------'.format(file_name))
-            try:
-                test(ctg, './tests/' + file_name, './tests/{}.pla'.format(file_name.split('.')[0]))
-                print('\n')
-            except Exception as e:
-                print('\n[ERROR] {}\n'.format(e))
-                not_passed.append(file_name)
-
-    if len(not_passed) > 0:
-        print('[NOT PASSED]', not_passed)
-
-    ################ uncomment for bench folder #####################
-    # test_files = sorted(os.listdir('./bench/done/'))
-
-    # for file_name in test_files:
-    #     # Check if the file .real has also .pla file
-        
-    #     print('-------------------- {} --------------------'.format(file_name))
-    #     try:       
-    #         test(ctg, './bench/done/' + file_name, './bench/pla/{}.pla'.format(file_name.split('.')[0]))
-    #         print('\n')
-    #     except Exception as e:
-    #         print('\n[ERROR] {}\n'.format(e))
-    #         not_passed.append(file_name)
-
-
-
+## MAIN ##
 # try:
-# Uncomment for individual file entry
-filename = input("Enter file name without .real: ")
+# # Set file name
+# filename = input("Enter file name without .real: ")
 
-# Put your IBM token here or set it as None if the credentials are stored on the disk
-TOKEN = 'd3ea16a94139c07aac8b34dc0a5d4d999354b232118788f43abe6c1414ce9b92a89194d5e7488a0fc8bce644b08927e85c4f127cd973cb32e76fc0d1a766758b'
+# # Put your IBM token here or set it as None if the credentials are stored on the disk
+# TOKEN = 'd3ea16a94139c07aac8b34dc0a5d4d999354b232118788f43abe6c1414ce9b92a89194d5e7488a0fc8bce644b08927e85c4f127cd973cb32e76fc0d1a766758b'
+# print('[INFO] Signing in...')
+# if TOKEN is not None:
+#     IBMQ.enable_account(TOKEN)
+# else:
+#     IBMQ.load_account()
 
-print('[INFO] Signing in...')
-TOKEN = None
-if TOKEN is not None:
-    IBMQ.enable_account(TOKEN)
-else:
-    IBMQ.load_account()
-simple_ctg = SimpleCTG('ibmq_16_melbourne', debugging=False)
-simple_ctg.initialize('ibm-q', 'open', 'main')
+# simple_ctg = SimpleCTG('ibmq_16_melbourne', debugging=False)
+# simple_ctg.initialize('ibm-q', 'open', 'main')
 
-# Uncomment this to test all of the files in the tests directroy
-# test_all(simple_ctg)
-# Uncomment for individual file entry
-test(simple_ctg, './tests/' + filename + '.real', './tests/'+ filename +'.pla', limit_100=False, draw_circuit=False)
+# test(simple_ctg, './tests/' + filename + '.real', limit_100=False, draw_circuit=False)
 # except Exception as ex:
 #     print('\n[ERROR] {}'.format(ex))

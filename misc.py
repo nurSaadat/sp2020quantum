@@ -1,11 +1,13 @@
-"""SimpleCTG.py: Implements Circuit Transition Graph"""
+"""misc.py: Implements isomorphism based quantum mapping algorithm"""
 
 __author__ = "Saadat Nursultan"
 __email__ = "saadat.nursultan@nu.edu.kz"
 
+import datetime
 import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
+import os
 import random
 import sys
 from typing import List, Dict
@@ -148,7 +150,6 @@ class Mapping:
     # returns isomorphic mapping
     def isomorphOptimistic(self, shortest_paths):
 
-        ### TODO: Learn how to draw graph using nx and plt ###
         elarge = [(u, v) for (u, v, d) in self.logical_graph.edges(data=True) if d["weight"] > 5]
         esmall = [(u, v) for (u, v, d) in self.logical_graph.edges(data=True) if d["weight"] <= 5]
 
@@ -235,9 +236,45 @@ class Mapping:
             happy = self.lineGraphRemapping(happy)
             
         happy = sorted(happy, key=lambda el: el[0])
-        print("HAPPPPPPYYYYYYYYYYY", happy)
+        # print("HAPPPPPPYYYYYYYYYYY", happy)
         self.map = happy
 
+    def drawGraph(self, file_name, is_logical=True):
+        plt.figure(figsize=(6,4))
+        elarge = [(u, v) for (u, v, d) in self.logical_graph.edges(data=True) if d["weight"] > 5]
+        esmall = [(u, v) for (u, v, d) in self.logical_graph.edges(data=True) if d["weight"] <= 5]
+        # positions for all nodes
+        pos = nx.spring_layout(self.logical_graph) 
+        # nodes
+        nx.draw_networkx_nodes(self.logical_graph, pos, node_size=700)
+        # edges
+        nx.draw_networkx_edges(self.logical_graph, pos, edgelist=elarge, width=6)
+        nx.draw_networkx_edges(
+            self.logical_graph, pos, edgelist=esmall, width=6, alpha=0.5, edge_color="b", style="dashed"
+        )
+        # labels
+        nx.draw_networkx_labels(self.logical_graph, pos, font_size=20, font_family="sans-serif")
+        plt.axis("off")
+         # retrieve date
+        today = datetime.datetime.today()
+        # make outputs/ directory
+        os.makedirs('./outputs/', exist_ok=True)
+        if (is_logical):
+            os.makedirs('./outputs/input/', exist_ok=True)
+            # create file name
+            graph_image = './outputs/input/{}_{}.jpeg'.format(file_name, today.strftime("%Y%m%d%H%M%S"))
+        else:
+            os.makedirs('./outputs/reduced/', exist_ok=True)
+            # create file name
+            graph_image = './outputs/reduced/{}_{}.jpeg'.format(file_name, today.strftime("%Y%m%d%H%M%S"))
+        
+        # save graph
+        plt.savefig(graph_image)
+        if (is_logical):
+            plt.clf()
+        # return the name
+        return graph_image
+    
     # tries to remove edges such that one, or more potential physical placements appeares
     def figureOutWrongEdge(self, logical_node, permutations, use_permutations, physical_node_list, mapping, removed_edges):
         
@@ -438,34 +475,16 @@ class Mapping:
                 return False
 
     # returns isomorphic mapping
-    def isomorph(self, shortest_paths):
+    def isomorph(self, shortest_paths, file_name):
 
-        ### TODO: Learn how to draw graph using nx and plt ###
-        elarge = [(u, v) for (u, v, d) in self.logical_graph.edges(data=True) if d["weight"] > 5]
-        esmall = [(u, v) for (u, v, d) in self.logical_graph.edges(data=True) if d["weight"] <= 5]
-
-        pos = nx.spring_layout(self.logical_graph)  # positions for all nodes
-
-        # nodes
-        nx.draw_networkx_nodes(self.logical_graph, pos, node_size=700)
-
-        # edges
-        nx.draw_networkx_edges(self.logical_graph, pos, edgelist=elarge, width=6)
-        nx.draw_networkx_edges(
-            self.logical_graph, pos, edgelist=esmall, width=6, alpha=0.5, edge_color="b", style="dashed"
-        )
-
-        # labels
-        nx.draw_networkx_labels(self.logical_graph, pos, font_size=20, font_family="sans-serif")
-
-        plt.axis("off")
-        plt.show()
+        # save graph image and get its name
+        logical_graph_name = self.drawGraph(file_name, is_logical=True)
 
         # check if already ismorphic
         subgraph_is_iso, GM = self.subgraphIsomorphismCheck(self.physical_graph, self.logical_graph)
 
         if subgraph_is_iso:
-            # generate isomorphic mapping
+            # generate isomorphic mapping 
             happy = [(j, i) for i, j in GM.mapping.items()]
             happy = self.lineGraphRemapping(happy)
         else:
@@ -490,10 +509,13 @@ class Mapping:
             else:
                 raise NotImplementedError("Mapping not found")
 
-            
         happy = sorted(happy, key=lambda el: el[0])
-        print("HAPPPPPPYYYYYYYYYYY", happy)
+        # print("HAPPPPPPYYYYYYYYYYY", happy)
         self.map = happy
+       
+        # save reduced graph image and get its name
+        reduced_graph_name = self.drawGraph(file_name, is_logical=False)
+        return logical_graph_name, reduced_graph_name
 
     def construct_ctg(self, variables, gates):
         self.set_nodes_logical(variables)
@@ -593,7 +615,6 @@ class Mapping:
                 numswap += (len(physical_paths[node1][node2])) * 2
 
         return numswap
-
 
 
 def main():
