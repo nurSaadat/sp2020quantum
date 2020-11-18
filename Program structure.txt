@@ -4,28 +4,10 @@ Root folder
 |SimpleCTG.py
 |misc.py
 |gui.py
-|-architecture (architecture graphs for gui)
-|-input 
-|-output
-|--cig (cig before and after reduction)
-|--mapping 
-|--statistics
-
-
-
-
-# Example of statistics file WIP
-<circuit>
-    <parameter>File name: </parameter>
-    <parameter>Layout type: </parameter>
-    <parameter>
-        Optimization level: </parameter>
-    <parameter>
-        Mapping: {'a': 14, 'b': 0, 'c': 1}
-    </parameter>
-    <parameter>Total number of gates:</parameter>
-    <parameter>Number of SWAP gates:</parameter>
-</circuit>
-
+|-outputs
+|--circuit
+|--input
+|--reduced
+|--txt
 
 gui.py -> SimpleCTG.py -> misc.py

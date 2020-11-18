@@ -102,15 +102,22 @@ def process(sender, data):
     # core.log_debug(architecture)
     # core.log_debug(num_of_iter)
 
-    infoStr, circuit_features = SimpleCTG.gui_interaction(
-        file_directory, directory, layout_type, opt_level, architecture, num_of_iter
-        )
+    try: 
+        infoStr, circuit_features = SimpleCTG.gui_interaction(
+            file_directory, directory, layout_type, opt_level, architecture, num_of_iter
+            )
+        core.configure_item('Program output will be displayed here', color=[255, 255, 255])
+        core.draw_image('input_circuit', circuit_features['logical_graph'], [0, 500], pmax=[200,500])
+        core.draw_image('output_circuit', circuit_features['reduced_graph'], [0, 500], pmax=[200, 500])
+        core.set_value('Program output will be displayed here', infoStr)
 
-    # core.log_debug(infoStr)
-    core.draw_image('input_circuit', circuit_features['logical_graph'], [0, 500], pmax=[200,500])
-    core.draw_image('output_circuit', circuit_features['reduced_graph'], [0, 500], pmax=[200, 500])
-    core.set_value('Program output will be displayed here', infoStr)
+    except Exception as ex:
+        core.configure_item('Program output will be displayed here', color=[255, 0, 0])
+        core.set_value('Program output will be displayed here', ex)
+        core.clear_drawing('input_circuit')
+        core.clear_drawing('output_circuit')
 
+  
 # makes architecture list dynamic
 def showArchitectureList(sender, data):
     my_var = core.get_value('device_type')
