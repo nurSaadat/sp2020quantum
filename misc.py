@@ -298,20 +298,23 @@ class Mapping:
                 # if no more edges, then this will trigger the except
                 edge_weight = edges_list.pop(0)
 
+                # the weight of the poped edge may have changed
+                real_weight = self.logical_graph[edge_weight[0]][edge_weight[1]]['weight']
+
                 # remove the edge with the least weight
                 self.logical_graph.remove_edge(edge_weight[0], edge_weight[1])
 
                 # if the graph is disconnected, return the edge back
                 if not nx.is_connected(self.logical_graph):
-                    self.logical_add_weight(edge_weight[0], edge_weight[1], edge_weight[2])
+                    self.logical_add_weight(edge_weight[0], edge_weight[1], real_weight)
                 # else adjust weights on the alternative path
                 else:
                     alternative_path = nx.shortest_path(self.logical_graph, source=edge_weight[0], target=edge_weight[1], weight='weight')
                     # add 2 * (weight of removed edge) to every edge on the alternative path
                     for i in range(len(alternative_path) - 1):
-                        self.logical_add_weight(alternative_path[i], alternative_path[i+1], edge_weight[2] * 2)
+                        self.logical_add_weight(alternative_path[i], alternative_path[i+1], real_weight * 2)
                     # record removed edges for a potential rollback
-                    removed_edges.append([edge_weight, alternative_path])
+                    removed_edges.append([(edge_weight[0], edge_weight[1], real_weight), alternative_path])
 
                     # recalculate the potential placements
                     # prepare potential_physical_nodes for intersection operation
