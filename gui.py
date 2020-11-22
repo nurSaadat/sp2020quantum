@@ -7,6 +7,7 @@ import dearpygui.core as core
 import dearpygui.simple as simple
 import SimpleCTG 
 import time
+import traceback
 from qiskit import IBMQ
 
 backend_dict = {}
@@ -113,7 +114,7 @@ def process(sender, data):
 
     except Exception as ex:
         core.configure_item('Program output will be displayed here', color=[255, 0, 0])
-        core.set_value('Program output will be displayed here', ex)
+        core.set_value('Program output will be displayed here', traceback.format_exc())
         core.clear_drawing('input_circuit')
         core.clear_drawing('output_circuit')
 
