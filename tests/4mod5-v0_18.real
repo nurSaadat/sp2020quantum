@@ -6,7 +6,7 @@
 .numvars 5
 .variables a b c d e
 .inputs a b c d 0
-.outputs g g g g e
+.outputs a b c d e
 .constants ----0
 .garbage 1111-
 .begin

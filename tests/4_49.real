@@ -4,7 +4,7 @@
 .version 1.0
 .numvars 4
 .variables a b c d
-#.inputs a b c d
+.inputs a b c d
 .outputs a b c d
 .constants ----
 .garbage ----
