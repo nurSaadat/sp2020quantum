@@ -451,8 +451,8 @@ class SimpleCTG:
                 self.circuit.x(self.variable_to_logical[self.variables[i]])
 
         for gate in self.gates:
-            if self.debugging:
-                print('[INFO] Inserting gate: {}'.format(gate))
+            # if self.debugging:
+            #     print('[INFO] Inserting gate: {}'.format(gate))
 
             if gate.name == 'h' or gate.name == 'H':
                 self.circuit.h(self.variable_to_logical[gate.variables[0]])
@@ -559,7 +559,7 @@ def test(ctg: SimpleCTG, input_file: str, simple_mapping=False, debugging=True, 
 
     if debugging:
         print('[RESULT] cost: {}'.format(len(assembled.experiments[0].instructions)))
-        print('[RESULT] qasm:\n{}'.format(qasm))
+        # print('[RESULT] qasm:\n{}'.format(qasm))
         if not simple_mapping:
             print('[RESULT] swap: {}'.format(weighted_graph.count_swap(ctg.mapping, ctg.paths, logical_circuit)))
 
@@ -575,9 +575,9 @@ def test(ctg: SimpleCTG, input_file: str, simple_mapping=False, debugging=True, 
         qasm_file.close()
     
     # save circuit image
-    circuit_image_name = './outputs/circuit/{}_{}.png'.format(file_name, today.strftime("%Y%m%d%H%M%S"))
-    feature_keeper['ibm_circuit'] = circuit_image_name
-    ctg.circuit.draw(filename=circuit_image_name, output='mpl')
+    # circuit_image_name = './outputs/circuit/{}_{}.png'.format(file_name, today.strftime("%Y%m%d%H%M%S"))
+    # feature_keeper['ibm_circuit'] = circuit_image_name
+    # ctg.circuit.draw(filename=circuit_image_name, output='mpl')
     plt.clf()
 
     # Create a new circuit with the same amount of quantum and classical registers
@@ -611,7 +611,7 @@ def gui_interaction(circuit_file: str, directory: str, layout_type: bool, optimi
 
 
 ## MAIN ##
-# try:
+# # try:
 # # Set file name
 # filename = input("Enter file name without .real: ")
 
@@ -626,6 +626,6 @@ def gui_interaction(circuit_file: str, directory: str, layout_type: bool, optimi
 # simple_ctg = SimpleCTG('ibmq_16_melbourne', debugging=False)
 # simple_ctg.initialize('ibm-q', 'open', 'main')
 
-# test(simple_ctg, './tests/' + filename + '.real', limit_100=False, draw_circuit=False)
-# except Exception as ex:
-#     print('\n[ERROR] {}'.format(ex))
+# test(simple_ctg, './tests/' + filename + '.real')
+# # except Exception as ex:
+# #     print('\n[ERROR] {}'.format(ex))
