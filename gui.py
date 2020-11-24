@@ -5,6 +5,7 @@ __email__ = 'saadat.nursultan@nu.edu.kz'
 
 import dearpygui.core as core
 import dearpygui.simple as simple
+import os
 import SimpleCTG 
 import time
 import traceback
@@ -14,6 +15,7 @@ backend_dict = {}
 core.add_value('server_on', False)
 core.add_value('loading', False)
 core.add_value('prev_architecture', 0)
+core.add_value('qasmFile', '')
 
 # fills progress bar
 def progressAsync(sender, data):
@@ -38,6 +40,7 @@ def getBackendsAsync(sender, data):
     core.set_value('server_on', True) 
     core.set_value('loading', True)
 
+# displaying all the elements after connecting to IBM
 def showButton(sender, data):
     if (core.get_value('server_on')):
         if (core.get_value('loading')):
@@ -96,27 +99,29 @@ def process(sender, data):
     else:
         architecture = backend_dict[core.get_value('architecture') + 1]
 
-    # core.log_debug(directory)
-    # core.log_debug(file_directory)
-    # core.log_debug(layout_type)
-    # core.log_debug(opt_level)
-    # core.log_debug(architecture)
-    # core.log_debug(num_of_iter)
-
     try: 
         infoStr, circuit_features = SimpleCTG.gui_interaction(
             file_directory, directory, layout_type, opt_level, architecture, num_of_iter
             )
+        # show program output
         core.configure_item('Program output will be displayed here', color=[255, 255, 255])
         core.draw_image('input_circuit', circuit_features['logical_graph'], [0, 500], pmax=[200,500])
         core.draw_image('output_circuit', circuit_features['reduced_graph'], [0, 500], pmax=[200, 500])
+        core.set_value('qasmFile', circuit_features['qasm_file'])
+        core.set_value('circuitImage', circuit_features['ibm_circuit'])
         core.set_value('Program output will be displayed here', infoStr)
-
+        core.configure_item('Open qasm file', show=True)
+        core.configure_item('Path to IBM circuit representation', show=True)
+        core.configure_item('circuitImage', value=core.get_value('circuitImage'))
     except Exception as ex:
+        # if error, then makes text red and removes features
         core.configure_item('Program output will be displayed here', color=[255, 0, 0])
         core.set_value('Program output will be displayed here', traceback.format_exc())
         core.clear_drawing('input_circuit')
         core.clear_drawing('output_circuit')
+        core.configure_item('Open qasm file', show=False)
+        core.configure_item('circuitImage', show=False)
+        core.configure_item('Path to IBM circuit representation', show=False)
 
   
 # makes architecture list dynamic
@@ -133,15 +138,24 @@ def showArchitectureList(sender, data):
         core.delete_item('radio##3')
         core.set_value('prev_architecture', 0)
 
+# opens file dialog window to choose .pla file
 def filePicker(sender, data):
     core.open_file_dialog(callback=applySelectedDirectory, extensions='.real')
 
+# sets the file name 
 def applySelectedDirectory(sender, data):
     directory = data[0]
     file_directory = data[1]
     core.set_value('directory', directory)
     core.set_value('file_directory', file_directory)
 
+def deleteWindowName(sender, data):
+    core.delete_item('Qasm code')
+
+def openQasm(sender, data):
+    with simple.window('Qasm code', width=400, height=600, on_close=deleteWindowName):
+        with open(core.get_value('qasmFile'), 'r') as f:
+            core.add_text(f.read())
 
 if __name__ == '__main__':
     # Connect to IBM
@@ -157,11 +171,7 @@ if __name__ == '__main__':
 
     # Title
     core.add_text('Quantum visualization machine ver 1.0.0', color=[52, 73, 235])
-    core.add_spacing(name='##space1', count=5)
-
-    # # Default settings button
-    # core.add_button('Set Default', callback=setDefault, width=100, parent='left group', before='line##3') 
-    
+    core.add_spacing(name='##space1', count=5)  
 
     # Parameters group
     with simple.group('left group', width=300):
@@ -190,12 +200,13 @@ if __name__ == '__main__':
         core.add_text('Number of iterations:', show=False)
         core.add_slider_int('##num_of_iter', default_value=100, min_value=1, max_value=100, tip='drag the slider to number of iterations', width=300, source='num_of_iter', show=False)
         core.add_spacing(name='##space8', count=3)
+        # Default settings button
         core.add_button('Set Default', callback=setDefault, show=False) 
         core.add_spacing(name='##space8', count=3)
         # Process button
         core.add_button('Process', callback=process, show=False)
 
-
+    # graph images
     core.add_same_line(name='line##3', xoffset=350)
     with simple.group('center group'):       
         # Input circuit preview
@@ -205,11 +216,24 @@ if __name__ == '__main__':
         core.add_text('Output circuit:', show=False)
         core.add_drawing('output_circuit', width=600, height=500)
 
+    # program output
     core.add_same_line(name='line##3', xoffset=1000)
     with simple.group('right group'):
+        core.add_button('Open qasm file', callback=openQasm, show=False)
+        core.add_text('Path to IBM circuit representation', show=False)
+        core.add_label_text('circuitImage')
         core.add_text('Program output:', show=False)
         core.add_text('Program output will be displayed here', show=False, wrap=440)
 
-    # core.show_logger()
+    opt_level = core.get_value('opt_level')
+    num_of_iter = core.get_value('num_of_iter')
+    layout_type = core.get_value('layout_type')
+    architecture = core.get_value('device_type')
+    core.log_debug(layout_type)
+    core.log_debug(opt_level)
+    core.log_debug(architecture)
+    core.log_debug(num_of_iter)
+
+    core.show_logger()
     core.start_dearpygui()
     

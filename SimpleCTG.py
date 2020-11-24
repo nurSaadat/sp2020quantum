@@ -545,23 +545,29 @@ def test(ctg: SimpleCTG, input_file: str, simple_mapping=False, debugging=True, 
 
     ctg.circuit.measure(variables_to_measure, list(range(len(variables_to_measure))))
  
-    # print("[DEBUG]", ctg.backend)
-    # print("[DEBUG]\n", ctg.circuit)
-
     # Transpile the circuit https://towardsdatascience.com/what-is-a-quantum-circuit-transpiler-ba9a7853e6f9 
     # set the optimization level  
     compiled = qiskit_transpile(ctg.circuit, ctg.backend, initial_layout=layout, optimization_level=optimization_level)
     assembled = Q_assemble(compiled)
     qasm = compiled.qasm()
 
-    # for instruction in assembled.experiments[0].instructions:
-    #     print (instruction)
+    print('[RESULT] cost: {}'.format(len(assembled.experiments[0].instructions)))
+    # print('[RESULT] qasm:\n{}'.format(qasm))
+    if not simple_mapping:
+        print('[RESULT] swap: {}'.format(weighted_graph.count_swap(ctg.mapping, ctg.paths, logical_circuit)))
 
-    if debugging:
-        print('[RESULT] cost: {}'.format(len(assembled.experiments[0].instructions)))
-        # print('[RESULT] qasm:\n{}'.format(qasm))
-        if not simple_mapping:
-            print('[RESULT] swap: {}'.format(weighted_graph.count_swap(ctg.mapping, ctg.paths, logical_circuit)))
+    # Use Aer's qasm_simulator
+    simulator = Aer.get_backend('qasm_simulator')
+
+    # Execute the circuit on the qasm simulator
+    job = qiskit_execute(ctg.circuit, simulator, shots=num_of_iterations)
+
+    # Grab results from the job
+    result = job.result()
+    
+    # Return counts
+    counts = result.get_counts(ctg.circuit)
+    print('[RESULT] counts {}'.format(counts))
 
     # retrieve date
     today = datetime.datetime.today()
@@ -575,9 +581,12 @@ def test(ctg: SimpleCTG, input_file: str, simple_mapping=False, debugging=True, 
         qasm_file.close()
     
     # save circuit image
-    # circuit_image_name = './outputs/circuit/{}_{}.png'.format(file_name, today.strftime("%Y%m%d%H%M%S"))
-    # feature_keeper['ibm_circuit'] = circuit_image_name
-    # ctg.circuit.draw(filename=circuit_image_name, output='mpl')
+    try:
+        circuit_image_name = './outputs/circuit/{}_{}.txt'.format(file_name, today.strftime("%Y%m%d%H%M%S"))
+        feature_keeper['ibm_circuit'] = circuit_image_name
+        ctg.circuit.draw(filename=circuit_image_name, vertical_compression='high', idle_wires=False, fold=75)
+    except Exception as ex:
+        feature_keeper['ibm_circuit'] = 'None'
     plt.clf()
 
     # Create a new circuit with the same amount of quantum and classical registers
@@ -602,7 +611,7 @@ def gui_interaction(circuit_file: str, directory: str, layout_type: bool, optimi
     sys.stdout = s
 
     # create SimpleCTG instance
-    simple_ctg = SimpleCTG(architecture, debugging=True)
+    simple_ctg = SimpleCTG(architecture)
     simple_ctg.initialize('ibm-q', 'open', 'main')
 
     circuit_features = test(simple_ctg, directory + "/" + circuit_file, simple_mapping=layout_type, optimization_level=optimization_level, num_of_iterations=num_of_iterations)
