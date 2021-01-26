@@ -1,11 +1,15 @@
+#!/usr/bin/env python
 """test.py: Implements graphical user interface"""
 
 __author__ = 'Saadat Nursultan'
 __email__ = 'saadat.nursultan@nu.edu.kz'
 
+# installing required libraries first
+import os
+os.system('pip install -r requirements.txt')
+
 import dearpygui.core as core
 import dearpygui.simple as simple
-import os
 import SimpleCTG 
 import time
 import traceback
@@ -234,6 +238,6 @@ if __name__ == '__main__':
     core.log_debug(architecture)
     core.log_debug(num_of_iter)
 
-    core.show_logger()
+    # core.show_logger()
     core.start_dearpygui()
     
