@@ -21,6 +21,10 @@ core.add_value('loading', False)
 core.add_value('prev_architecture', 0)
 core.add_value('qasmFile', '')
 
+# Callback for menu items
+def print_me(sender, data):
+        log_debug(f"Menu Item: {sender}")
+
 # fills progress bar
 def progressAsync(sender, data):
     counter = 0.0
@@ -153,13 +157,87 @@ def applySelectedDirectory(sender, data):
     core.set_value('directory', directory)
     core.set_value('file_directory', file_directory)
 
-def deleteWindowName(sender, data):
-    core.delete_item('Qasm code')
+# Removes the qasm window name 
+# TODO: make the function more general
+def deleteWindowName(data):
+    core.delete_item(data)
 
+# opens window with qasm code
 def openQasm(sender, data):
-    with simple.window('Qasm code', width=400, height=600, on_close=deleteWindowName):
+    with simple.window('Qasm code', width=400, height=600, on_close=deleteWindowName('Qasm code')):
         with open(core.get_value('qasmFile'), 'r') as f:
             core.add_text(f.read())
+
+def helpShowArchitectures(sender, data):
+    core.configure_item('helpArchitectures', show=True)
+    core.configure_item('helpShowInstructions', show=False)
+
+def helpShowInstructions(sender, data):
+    core.configure_item('helpShowInstructions', show=True)
+    core.configure_item('helpArchitectures', show=False)
+
+def openHelpWindow(sender, data):
+    with simple.window('Help##window', width=1000, height=600, on_close=deleteWindowName('Help##window')):
+        with simple.menu_bar("Help Menu Bar"):
+            core.add_menu_item("Architectures", callback=helpShowArchitectures)
+            core.add_menu_item("Instructions", callback=helpShowInstructions)
+
+        with simple.group('helpArchitectures', show="False"):        
+            core.add_drawing('armonk', width=72, height=75)
+            core.draw_image('armonk', './backends/img/armonk.png', [72, 72])
+            core.add_text('ibmq_armonk: 1 qubit.')
+            core.add_spacing(name='##space10', count=10)
+
+            core.add_drawing('athens', width=518, height=75)
+            core.draw_image('athens', './backends/img/athens-santiago.png', [0, 72])
+            core.add_text('ibmq_athens and ibmq_santiago: 5 qubits.')
+            core.add_spacing(name='##space10', count=10)
+
+            core.add_drawing('yorktown', width=373, height=400)
+            core.draw_image('yorktown', './backends/img/ibmqx2.png', [0, 400])
+            core.add_text('ibmqx2: 5 qubits.')
+            core.add_spacing(name='##space10', count=10)
+            
+            core.add_drawing('melb', width=1000, height=196)
+            core.draw_image('melb', './backends/img/melbourne.png', [0, 196])
+            core.add_text('ibmq_16_melbourne: 15 qubits.')
+            core.add_spacing(name='##space10', count=10)
+
+            core.add_drawing('vigo', width=373, height=400)
+            core.draw_image('vigo', './backends/img/vigo-ourence-valencia.png', [0, 400])
+            core.add_text('ibmq_vigo, ibmq_valencia, and ibmq_ourence: 5 qubits.')
+            core.add_spacing(name='##space10', count=10)
+
+        with simple.group('helpInstructions'):
+            core.add_text('In the Selector block a user can select optimization parameters:')
+            core.add_text('* the level of optimization provided by IBM Q (ranging from 0 to 3)')
+            core.add_text('* IBM Original layout or advanced SWAP placement')
+            core.add_text('* location of placement')
+            core.add_text('* number of iterations.')
+            
+            instruction_text = """In the Hardware & Circuit block the user can choose between testing the circuit on a quantum computer (IBM Q) and simulator (Qasm). The user also can choose quantum coupling (quantum computer architecture) - from IBM Q or Qasm. Finally, there will be a button to upload an input file.  After selection, the file name will be displayed in the Hardware & Circuit block and the circuit representation will be displayed in the Circuit before the reduction block. When pressing on the Process button the tool will find the optimal mapping of the circuit onto the quantum computer architecture. The resulting mapping will appear in the Circuit after the reduction block."""
+            count = 0
+            step = 120
+            while count < len(instruction_text):
+                core.add_text(instruction_text[count: count + step])
+                if instruction_text[count + step] != ' ' and instruction_text[count + step] != '-':
+                    core.add_same_line()
+                    core.add_text('-')
+                count += step
+
+def openAboutWindow(sender, data):
+    with simple.window('About##window', width=600, height=240, on_close=deleteWindowName('About##window')):
+        core.add_text('Developers:') 
+        core.add_text('* Valeriy Novossyolov [Computer Science senior student, Nazarbayev University]')
+        core.add_text('* Saadat Nursultan [Computer Science senior student, Nazarbayev University]')
+        core.add_spacing(name='##space10', count=5)
+        core.add_text('Adviser:') 
+        core.add_text('* Martin Lukac [Associate Professor, Dep. of Computer Science, Nazarbayev University]')
+        core.add_spacing(name='##space10', count=5)
+        core.add_text('Developed to support the scientific paper')
+        core.add_text("'Geometric Refactoring of Quantum and Reversible Circuits: Quantum Layout'")
+        core.add_text('by Martin Lukac, Saadat Nursultan, Georgiy Krylov and Oliver Keszocze')
+        
 
 if __name__ == '__main__':
     # Connect to IBM
@@ -176,6 +254,17 @@ if __name__ == '__main__':
     # Title
     core.add_text('Quantum visualization machine ver 1.0.0', color=[52, 73, 235])
     core.add_spacing(name='##space1', count=5)  
+
+    # Menu bar    
+    with simple.menu_bar("Main Menu Bar"):
+
+        with simple.menu("File"):
+
+            core.add_menu_item("Save", callback=print_me)
+            core.add_menu_item("Save As", callback=print_me)
+
+        core.add_menu_item("Help", callback=openHelpWindow)
+        core.add_menu_item("About", callback=openAboutWindow)
 
     # Parameters group
     with simple.group('left group', width=300):
@@ -206,7 +295,7 @@ if __name__ == '__main__':
         core.add_spacing(name='##space8', count=3)
         # Default settings button
         core.add_button('Set Default', callback=setDefault, show=False) 
-        core.add_spacing(name='##space8', count=3)
+        core.add_spacing(name='##space9', count=3)
         # Process button
         core.add_button('Process', callback=process, show=False)
 
