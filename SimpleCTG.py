@@ -15,6 +15,7 @@ from typing import List, Optional, Dict
 from qiskit import IBMQ, QuantumCircuit, QuantumRegister, ClassicalRegister, Aer, execute as qiskit_execute
 from qiskit.compiler import transpile as qiskit_transpile, assemble as Q_assemble
 
+
 class SimpleCTG:
     # The gate class to store information of a gate in the circuit.
     class Gate:
@@ -40,11 +41,16 @@ class SimpleCTG:
         # The circuit information
         # The layout is variable -> logical -> physical
         self.circuit: Optional[QuantumCircuit] = None
-        self._mapping: Dict[(str, int)] = {}  # maps variables to physical qubits. Ex: 'a'->0, 'b'->qr[1]
-        self.variable_to_logical: Dict[(str, int)] = {}  # maps variables to logical qubits. Ex: 'a'->qr[0], 'b'->qr[1]
-        self.logical_to_variable: Dict[(int, str)] = {}  # reverse of the variable_to_logical
-        self.logical_to_physical: Dict[(int, int)] = {}  # maps logical to physical qubits. Ex: qr[0]->0, qr[1]->1
-        self.physical_to_logical: Dict[(int, str)] = {}  # reverse of the logical_to_physical
+        # maps variables to physical qubits. Ex: 'a'->0, 'b'->qr[1]
+        self._mapping: Dict[(str, int)] = {}
+        # maps variables to logical qubits. Ex: 'a'->qr[0], 'b'->qr[1]
+        self.variable_to_logical: Dict[(str, int)] = {}
+        # reverse of the variable_to_logical
+        self.logical_to_variable: Dict[(int, str)] = {}
+        # maps logical to physical qubits. Ex: qr[0]->0, qr[1]->1
+        self.logical_to_physical: Dict[(int, int)] = {}
+        # reverse of the logical_to_physical
+        self.physical_to_logical: Dict[(int, str)] = {}
 
         # The input information
         self.mapping: Dict[(str, int)] = {}
@@ -73,7 +79,8 @@ class SimpleCTG:
             file.close()
             for line in lines:
                 parts = line.replace('\t', ' ').split(' ')
-                variables = list(filter(lambda item: len(item) > 0, [var.strip() for var in parts[1:]]))
+                variables = list(filter(lambda item: len(item) > 0, [
+                                 var.strip() for var in parts[1:]]))
                 if line.startswith('.numvars'):
                     self.variables_num = int(parts[1].strip())
                 elif line.startswith('.variables'):
@@ -89,7 +96,8 @@ class SimpleCTG:
                 elif line.startswith('.begin') or line.startswith('.end'):
                     is_gate = line.startswith('.begin')
                 elif is_gate:
-                    self.gates.append(SimpleCTG.Gate(parts[0].strip(), variables))
+                    self.gates.append(SimpleCTG.Gate(
+                        parts[0].strip(), variables))
 
         if self.debugging:
             print('[INFO] Number of variables {}'.format(self.variables_num))
@@ -130,7 +138,8 @@ class SimpleCTG:
 
     # Add a physical qubit as ancilla to the circuit
     def __add_ancilla__(self, physical_qubit: int):
-        ancillas_size = sum([1 if key.startswith('ancilla') else 0 for key in self.variable_to_logical])
+        ancillas_size = sum([1 if key.startswith('ancilla')
+                             else 0 for key in self.variable_to_logical])
         variable = 'ancilla' + str(ancillas_size)
         logical = len(self.circuit.qubits)
         self.circuit.add_register(QuantumRegister(1, name=variable))
@@ -150,7 +159,8 @@ class SimpleCTG:
     def __nearest_free_ancilla__(self, variable: str, reserved_qubits: List[str]):
         physical = self.logical_to_physical[self.variable_to_logical[variable]]
         ancilla = -1
-        reserved = [self.logical_to_physical[self.variable_to_logical[q]] for q in reserved_qubits]
+        reserved = [self.logical_to_physical[self.variable_to_logical[q]]
+                    for q in reserved_qubits]
         for q in range(self.qubits_num):
             if (q not in self.physical_to_logical or (self.__is_ancilla_(q) and q not in reserved)) and (
                     ancilla == -1 or len(self.paths[physical][ancilla]) > len(self.paths[physical][q])):
@@ -171,7 +181,8 @@ class SimpleCTG:
             return
 
         if physical_a not in self.paths or physical_b not in self.paths[physical_a]:
-            raise Exception('No path btw {} (physical {}) and {} (physical {})!!!'.format(a, physical_a, b, physical_b))
+            raise Exception('No path btw {} (physical {}) and {} (physical {})!!!'.format(
+                a, physical_a, b, physical_b))
 
         for v in self.paths[physical_a][physical_b]:
             # If a physical qubit is not in the initial mapping but it's needed to connect two qubits
@@ -206,27 +217,33 @@ class SimpleCTG:
         self.move_variable(control, target)
         self.circuit.tdg(self.variable_to_logical[control])
         self.circuit.h(self.variable_to_logical[target])
-        self.circuit.cx(self.variable_to_logical[target], self.variable_to_logical[control])
+        self.circuit.cx(
+            self.variable_to_logical[target], self.variable_to_logical[control])
         self.circuit.t(self.variable_to_logical[control])
         self.circuit.tdg(self.variable_to_logical[target])
-        self.circuit.cx(self.variable_to_logical[target], self.variable_to_logical[control])
+        self.circuit.cx(
+            self.variable_to_logical[target], self.variable_to_logical[control])
         self.circuit.h(self.variable_to_logical[target])
         # return to the initial position
-        self.move_variable(control, self.logical_to_variable[control_position], True)
+        self.move_variable(
+            control, self.logical_to_variable[control_position], True)
 
     # This function implements a Controlled-V+ gate
     def cvdg(self, control: str, target: str):
         control_position = self.variable_to_logical[control]
         self.move_variable(control, target)
         self.circuit.h(self.variable_to_logical[target])
-        self.circuit.cx(self.variable_to_logical[target], self.variable_to_logical[control])
+        self.circuit.cx(
+            self.variable_to_logical[target], self.variable_to_logical[control])
         self.circuit.t(self.variable_to_logical[target])
         self.circuit.tdg(self.variable_to_logical[control])
-        self.circuit.cx(self.variable_to_logical[target], self.variable_to_logical[control])
+        self.circuit.cx(
+            self.variable_to_logical[target], self.variable_to_logical[control])
         self.circuit.h(self.variable_to_logical[target])
         self.circuit.t(self.variable_to_logical[control])
         # return to the initial position
-        self.move_variable(control, self.logical_to_variable[control_position], True)
+        self.move_variable(
+            control, self.logical_to_variable[control_position], True)
 
     # This function implements CCNOT (TOFFOLI) gate
     def ccnot(self, first_control: str, second_control: str, target: str):
@@ -243,11 +260,14 @@ class SimpleCTG:
         variable_positions = deepcopy(self.logical_to_variable)
 
         self.move_variable(second_control, target)
-        self.circuit.ch(self.variable_to_logical[second_control], self.variable_to_logical[target])
+        self.circuit.ch(
+            self.variable_to_logical[second_control], self.variable_to_logical[target])
         self.move_variable(first_control, target)
-        self.circuit.cz(self.variable_to_logical[first_control], self.variable_to_logical[target])
+        self.circuit.cz(
+            self.variable_to_logical[first_control], self.variable_to_logical[target])
         self.move_variable(second_control, target)
-        self.circuit.ch(self.variable_to_logical[second_control], self.variable_to_logical[target])
+        self.circuit.ch(
+            self.variable_to_logical[second_control], self.variable_to_logical[target])
 
         # return variables to initial positions
         for p, v in variable_positions.items():
@@ -271,24 +291,30 @@ class SimpleCTG:
 
         self.circuit.h(self.variable_to_logical[target])
         self.move_variable(second_control, target)
-        self.circuit.cx(self.variable_to_logical[second_control], self.variable_to_logical[target])
+        self.circuit.cx(
+            self.variable_to_logical[second_control], self.variable_to_logical[target])
         self.circuit.tdg(self.variable_to_logical[target])
         self.move_variable(first_control, target)
-        self.circuit.cx(self.variable_to_logical[first_control], self.variable_to_logical[target])
+        self.circuit.cx(
+            self.variable_to_logical[first_control], self.variable_to_logical[target])
         self.circuit.t(self.variable_to_logical[target])
         self.move_variable(second_control, target)
-        self.circuit.cx(self.variable_to_logical[second_control], self.variable_to_logical[target])
+        self.circuit.cx(
+            self.variable_to_logical[second_control], self.variable_to_logical[target])
         self.circuit.tdg(self.variable_to_logical[target])
         self.move_variable(first_control, target)
-        self.circuit.cx(self.variable_to_logical[first_control], self.variable_to_logical[target])
+        self.circuit.cx(
+            self.variable_to_logical[first_control], self.variable_to_logical[target])
         self.circuit.t(self.variable_to_logical[target])
         self.circuit.t(self.variable_to_logical[second_control])
         self.circuit.h(self.variable_to_logical[target])
         self.move_variable(first_control, second_control)
-        self.circuit.cx(self.variable_to_logical[first_control], self.variable_to_logical[second_control])
+        self.circuit.cx(
+            self.variable_to_logical[first_control], self.variable_to_logical[second_control])
         self.circuit.t(self.variable_to_logical[first_control])
         self.circuit.tdg(self.variable_to_logical[second_control])
-        self.circuit.cx(self.variable_to_logical[first_control], self.variable_to_logical[second_control])
+        self.circuit.cx(
+            self.variable_to_logical[first_control], self.variable_to_logical[second_control])
 
         # return variables to initial positions
         # p is logical position of variable v in ascending order,
@@ -323,9 +349,11 @@ class SimpleCTG:
         # If the machine name defined then get that
         if self.machine_name is not None:
             if self.debugging:
-                print('[INFO] Getting the {} information...'.format(self.machine_name))
+                print('[INFO] Getting the {} information...'.format(
+                    self.machine_name))
 
-            self.backend = IBMQ.get_provider(hub, group, project).get_backend(self.machine_name)
+            self.backend = IBMQ.get_provider(
+                hub, group, project).get_backend(self.machine_name)
         # Otherwise search for the quantum machine with the biggest coupling map
         else:
             if self.debugging:
@@ -334,7 +362,8 @@ class SimpleCTG:
             backends = IBMQ.get_provider(hub, group, project).backends()
 
             if self.debugging:
-                print('[INFO] Searching for the backend with the biggest coupling map...')
+                print(
+                    '[INFO] Searching for the backend with the biggest coupling map...')
 
             # Search for the backend with the biggest coupling map
             for backend in backends:
@@ -358,7 +387,8 @@ class SimpleCTG:
             self.connections[couple[0]][couple[1]] = True
 
         if self.debugging:
-            print('[INFO] selected backend {} with {} qubits'.format(configs.backend_name, configs.n_qubits))
+            print('[INFO] selected backend {} with {} qubits'.format(
+                configs.backend_name, configs.n_qubits))
             print('[INFO] coupling map is {}\n'.format(self.couples))
             print('[INFO] Finding shortest paths between all qubits')
 
@@ -373,7 +403,8 @@ class SimpleCTG:
         self.__parse_input__(input_file)
 
         if len(self.variables) != len(self.inputs):
-            raise Exception('Number of inputs must be same as number of variables')
+            raise Exception(
+                'Number of inputs must be same as number of variables')
 
     # Sets the physical qubits to variables mapping
     # Example: [(a, 0), (b, 1)] means variable a is mapped to physical qubit 0 and variable b to physical qubit 1
@@ -384,22 +415,29 @@ class SimpleCTG:
         self.mapping = {}
         for t in mapping:
             if t[0] in self.mapping:
-                raise Exception('Variable {} is mapped more than once'.format(t[0]))
+                raise Exception(
+                    'Variable {} is mapped more than once'.format(t[0]))
             if t[1] in self.mapping.values():
-                raise Exception('Physical qubit {} is mapped to many variables'.format(t[1]))
+                raise Exception(
+                    'Physical qubit {} is mapped to many variables'.format(t[1]))
             if t[1] < 0 or t[1] >= self.qubits_num:
-                raise Exception('Invalid physical qubit index: {}'.format(t[1]))
+                raise Exception(
+                    'Invalid physical qubit index: {}'.format(t[1]))
             self.mapping[t[0]] = t[1]
         if ancilla_mapping:
             for t in ancilla_mapping:
                 if not t[0].startswith('ancilla'):
-                    raise Exception('Ancilla variable name must start with "ancilla" (Ex: ancilla0)')
+                    raise Exception(
+                        'Ancilla variable name must start with "ancilla" (Ex: ancilla0)')
                 if t[0] in self.mapping:
-                    raise Exception('Variable {} is mapped more than once'.format(t[0]))
+                    raise Exception(
+                        'Variable {} is mapped more than once'.format(t[0]))
                 if t[1] in self.mapping.values():
-                    raise Exception('Physical qubit {} is mapped to many variables'.format(t[1]))
+                    raise Exception(
+                        'Physical qubit {} is mapped to many variables'.format(t[1]))
                 if t[1] < 0 or t[1] >= self.qubits_num:
-                    raise Exception('Invalid physical qubit index: {}'.format(t[1]))
+                    raise Exception(
+                        'Invalid physical qubit index: {}'.format(t[1]))
                 self.mapping[t[0]] = t[1]
         if self.debugging:
             print('[INFO] Finished variables to physical mapping')
@@ -413,11 +451,13 @@ class SimpleCTG:
             raise Exception('Variable to physical qubit mapping is required!')
 
         if len(self.gates) == 0:
-            raise Exception('Nothing to construct! Possibly, not input file was provided')
+            raise Exception(
+                'Nothing to construct! Possibly, not input file was provided')
 
         for variable in self.variables:
             if variable not in self.mapping:
-                raise Exception('Variable {} is not mapped to any physical qubit!'.format(variable))
+                raise Exception(
+                    'Variable {} is not mapped to any physical qubit!'.format(variable))
 
         if self.debugging:
             print('[INFO] Constructing quantum circuit...')
@@ -475,12 +515,15 @@ class SimpleCTG:
                     control = self.variable_to_logical[gate.variables[0]]
                     target = self.variable_to_logical[gate.variables[1]]
                     self.circuit.cx(control, target)
-                    self.move_variable(gate.variables[0], self.logical_to_variable[position], True)
+                    self.move_variable(
+                        gate.variables[0], self.logical_to_variable[position], True)
                 else:
                     logical_a = self.variable_to_logical[gate.variables[0]]
                     logical_b = self.variable_to_logical[gate.variables[1]]
-                    self.move_variable(gate.variables[0], gate.variables[1], True)
-                    self.move_variable(gate.variables[1], self.logical_to_variable[logical_a], True)
+                    self.move_variable(
+                        gate.variables[0], gate.variables[1], True)
+                    self.move_variable(
+                        gate.variables[1], self.logical_to_variable[logical_a], True)
                     self.variable_to_logical[gate.variables[0]] = logical_a
                     self.variable_to_logical[gate.variables[1]] = logical_b
                     self.logical_to_variable[logical_a] = gate.variables[0]
@@ -524,7 +567,7 @@ def test(ctg: SimpleCTG, input_file: str, simple_mapping=False, debugging=True, 
         weighted_graph.physical_add_edges(ctg.couples)
         weighted_graph.construct_ctg(ctg.variables, ctg.gates)
         logical_circuit = list(weighted_graph.logical_graph.edges())
-        logical_graph_name, reduced_graph_name = weighted_graph.isomorph(ctg.paths, file_name)
+        logical_graph_name, reduced_graph_name = weighted_graph.isomorph(file_name)
         feature_keeper['logical_graph'] = logical_graph_name
         feature_keeper['reduced_graph'] = reduced_graph_name
         mapping, ancilla_mapping = weighted_graph.get_mapping()
@@ -543,18 +586,22 @@ def test(ctg: SimpleCTG, input_file: str, simple_mapping=False, debugging=True, 
     # Get the logical positions of the output variables
     variables_to_measure = [ctg.variable_to_logical[v] for v in ctg.outputs]
 
-    ctg.circuit.measure(variables_to_measure, list(range(len(variables_to_measure))))
- 
-    # Transpile the circuit https://towardsdatascience.com/what-is-a-quantum-circuit-transpiler-ba9a7853e6f9 
-    # set the optimization level  
-    compiled = qiskit_transpile(ctg.circuit, ctg.backend, initial_layout=layout, optimization_level=optimization_level)
+    ctg.circuit.measure(variables_to_measure, list(
+        range(len(variables_to_measure))))
+
+    # Transpile the circuit https://towardsdatascience.com/what-is-a-quantum-circuit-transpiler-ba9a7853e6f9
+    # set the optimization level
+    compiled = qiskit_transpile(
+        ctg.circuit, ctg.backend, initial_layout=layout, optimization_level=optimization_level)
     assembled = Q_assemble(compiled)
     qasm = compiled.qasm()
 
-    print('[RESULT] cost: {}'.format(len(assembled.experiments[0].instructions)))
+    print('[RESULT] cost: {}'.format(
+        len(assembled.experiments[0].instructions)))
     # print('[RESULT] qasm:\n{}'.format(qasm))
     if not simple_mapping:
-        print('[RESULT] swap: {}'.format(weighted_graph.count_swap(ctg.mapping, ctg.paths, logical_circuit)))
+        print('[RESULT] swap: {}'.format(weighted_graph.count_swap(
+            ctg.mapping, ctg.paths, logical_circuit)))
 
     # Use Aer's qasm_simulator
     simulator = Aer.get_backend('qasm_simulator')
@@ -564,7 +611,7 @@ def test(ctg: SimpleCTG, input_file: str, simple_mapping=False, debugging=True, 
 
     # Grab results from the job
     result = job.result()
-    
+
     # Return counts
     counts = result.get_counts(ctg.circuit)
     print('[RESULT] counts {}'.format(counts))
@@ -572,19 +619,22 @@ def test(ctg: SimpleCTG, input_file: str, simple_mapping=False, debugging=True, 
     # retrieve date
     today = datetime.datetime.today()
 
-    # save qasm to txt file 
-    qasm_name = './outputs/txt/{}_{}.txt'.format(file_name, today.strftime("%Y%m%d%H%M%S"))
+    # save qasm to txt file
+    qasm_name = './outputs/txt/{}_{}.txt'.format(
+        file_name, today.strftime("%Y%m%d%H%M%S"))
     feature_keeper['qasm_file'] = qasm_name
 
     with open(qasm_name, 'w+') as qasm_file:
         qasm_file.write(qasm)
         qasm_file.close()
-    
+
     # save circuit image
     try:
-        circuit_image_name = './outputs/circuit/{}_{}.txt'.format(file_name, today.strftime("%Y%m%d%H%M%S"))
+        circuit_image_name = './outputs/circuit/{}_{}.txt'.format(
+            file_name, today.strftime("%Y%m%d%H%M%S"))
         feature_keeper['ibm_circuit'] = circuit_image_name
-        ctg.circuit.draw(filename=circuit_image_name, vertical_compression='high', idle_wires=False, fold=75)
+        ctg.circuit.draw(filename=circuit_image_name,
+                         vertical_compression='high', idle_wires=False, fold=75)
     except Exception as ex:
         feature_keeper['ibm_circuit'] = 'None'
     plt.clf()
@@ -599,10 +649,12 @@ def test(ctg: SimpleCTG, input_file: str, simple_mapping=False, debugging=True, 
 
     return feature_keeper
 
-# function called by gui 
-def gui_interaction(circuit_file: str, directory: str, layout_type: bool, optimization_level: int,  architecture: str ,
+# function called by gui
+
+
+def gui_interaction(circuit_file: str, directory: str, layout_type: bool, optimization_level: int,  architecture: str,
                     num_of_iterations: int):
-    
+
     # save local copy to put back when done
     stdout = sys.stdout
     # create a special string
@@ -614,7 +666,8 @@ def gui_interaction(circuit_file: str, directory: str, layout_type: bool, optimi
     simple_ctg = SimpleCTG(architecture)
     simple_ctg.initialize('ibm-q', 'open', 'main')
 
-    circuit_features = test(simple_ctg, directory + "/" + circuit_file, simple_mapping=layout_type, optimization_level=optimization_level, num_of_iterations=num_of_iterations)
+    circuit_features = test(simple_ctg, directory + "/" + circuit_file, simple_mapping=layout_type,
+                            optimization_level=optimization_level, num_of_iterations=num_of_iterations)
 
     return s.getvalue(), circuit_features
 
