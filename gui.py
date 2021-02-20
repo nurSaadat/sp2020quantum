@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+
 """test.py: Implements graphical user interface"""
 
 __author__ = 'Saadat Nursultan'
@@ -8,63 +9,73 @@ __email__ = 'saadat.nursultan@nu.edu.kz'
 import os
 os.system('pip install -r requirements.txt')
 
-import SimpleCTG
-import GraphDrawer
-from qiskit import IBMQ
-import traceback
-import time
-import dearpygui.simple as simple
+
 import dearpygui.core as core
+import dearpygui.simple as simple
+import time
+import traceback
+from qiskit import IBMQ
+import GraphDrawer
+import SimpleCTG
 
-backend_dict = {}
-core.add_value('server_on', False)
-core.add_value('loading', False)
-core.add_value('prev_architecture', 0)
-core.add_value('qasmFile', '')
+class GUI:
+    def __init__(self):
+        self.backend_dict = {}
+        self.server_on = False
+        self.loading = False
+        self.prev_architecture = 0
+        self.qasm_file = ''
+        self.projection_map = {}
 
-# Callback for menu items
-
+gui = GUI()
 
 def print_me(sender, data):
-    log_debug(f"Menu Item: {sender}")
+    """
+    Callback for menu items.
+    """
+    core.log_debug("Menu Item: {}".format(sender))
 
-# fills progress bar
 
-
-def progressAsync(sender, data):
+def progress_async(sender, data):
+    """
+    Fills progress bar.
+    """
     counter = 0.0
-    while (not core.get_value('server_on')):
+    while (not gui.server_on):
         core.set_value('progress', value=counter)
         counter += 0.001
         time.sleep(0.001)
 
-# activates IBM account so the backends list can be fetched
 
-
-def activateIBMAccount():
+def activate_IBM_account():
+    """
+    Activates IBM account so the backends list can be fetched.
+    """
     TOKEN = 'd3ea16a94139c07aac8b34dc0a5d4d999354b232118788f43abe6c1414ce9b92a89194d5e7488a0fc8bce644b08927e85c4f127cd973cb32e76fc0d1a766758b'
     IBMQ.enable_account(TOKEN)
 
-# fills the backend_dict
 
-
-def getBackendsAsync(sender, data):
-    activateIBMAccount()
+def get_backends_async(sender, data):
+    """
+    Fills the backend_dict.
+    """
+    activate_IBM_account()
     backends = IBMQ.get_provider().backends()
     # add backend names with indexes, so it will be easier to retrieve them in radio button
     for i in range(len(backends)):
-        backend_dict[i] = backends[i].name()
-    core.set_value('server_on', True)
-    core.set_value('loading', True)
-
-# displaying all the elements after connecting to IBM
+        gui.backend_dict[i] = backends[i].name()
+    gui.server_on = True
+    gui.loading = True
 
 
-def showButton(sender, data):
-    if (core.get_value('server_on')):
-        if (core.get_value('loading')):
+def show_button(sender, data):
+    """
+    Displays all the elements after connecting to IBM.
+    """
+    if (gui.server_on):
+        if (gui.loading):
             core.delete_item('Please wait')
-            core.set_value('loading', False)
+            gui.loading = False
         core.configure_item('File Selector', show=True)
         core.configure_item('File location:', show=True)
         core.configure_item('##filedir', show=True)
@@ -85,26 +96,27 @@ def showButton(sender, data):
         core.configure_item('Program output:', show=True)
         core.configure_item('Program output will be displayed here', show=True)
 
-# resets all parameters to default
 
-
-def setDefault(sender, data):
+def set_default(sender, data):
+    """
+    resets all running parameters to default.
+    """
     if core.get_value('device_type') == 0:
         core.add_spacing(name='##space9', count=2)
         core.add_text('Architecture name:', before='##space5')
-        core.add_radio_button('radio##3', items=list(backend_dict.values())[
+        core.add_radio_button('radio##3', items=list(gui.backend_dict.values())[
                               1:], source='architecture', before='##space5')
     core.set_value('device_type', 1)
     core.set_value('architecture', 1)
     core.set_value('layout_type', 1)
     core.set_value('opt_level', 1)
     core.set_value('num_of_iter', 100)
-    # core.log_debug("Set to default")
-
-# sends the data to SimpleCTG
 
 
 def process(sender, data):
+    """
+    Sends the data to SimpleCTG.
+    """
     directory = core.get_value('directory')
     file_directory = core.get_value('file_directory')
     opt_level = core.get_value('opt_level')
@@ -119,9 +131,9 @@ def process(sender, data):
 
     # chooses the device
     if core.get_value('device_type') == 0:
-        architecture = backend_dict[0]
+        architecture = gui.backend_dict[0]
     else:
-        architecture = backend_dict[core.get_value('architecture') + 1]
+        architecture = gui.backend_dict[core.get_value('architecture') + 1]
 
     try:
         infoStr, circuit_features = SimpleCTG.gui_interaction(
@@ -134,11 +146,13 @@ def process(sender, data):
                         0, 500], pmax=[200, 500])
         core.draw_image('output_circuit', circuit_features['reduced_graph'], [
                         0, 500], pmax=[200, 500])
-        core.set_value('qasmFile', circuit_features['qasm_file'])
+        gui.qasm_file = circuit_features['qasm_file']
         core.set_value('circuitImage', circuit_features['ibm_circuit'])
+        gui.projection_map = circuit_features['mapping']
         core.set_value('Program output will be displayed here',
                        "Processed file: " + core.get_value('file_directory') + "\n" + infoStr)
         core.configure_item('Open qasm file', show=True)
+        core.configure_item('Mapping', show=True)
         core.configure_item('Path to IBM circuit representation', show=True)
         core.configure_item(
             'circuitImage', value=core.get_value('circuitImage'))
@@ -151,73 +165,92 @@ def process(sender, data):
         core.clear_drawing('input_circuit')
         core.clear_drawing('output_circuit')
         core.configure_item('Open qasm file', show=False)
+        core.configure_item('Mapping', show=False)
         core.configure_item('circuitImage', show=False)
         core.configure_item('Path to IBM circuit representation', show=False)
 
 
-# makes architecture list dynamic
-def showArchitectureList(sender, data):
+def show_architecture_list(sender, data):
+    """
+    Makes architecture list dynamic.
+    """
     my_var = core.get_value('device_type')
-    if (my_var == 1 and core.get_value('prev_architecture') != 1):
+    if (my_var == 1 and gui.prev_architecture != 1):
         core.add_spacing(name='##space9', count=2)
         core.add_text('Architecture name:', before='##space5')
-        core.add_radio_button('radio##3', items=list(backend_dict.values())[
+        core.add_radio_button('radio##3', items=list(gui.backend_dict.values())[
                               1:], source='architecture', before='##space5')
-        core.set_value('prev_architecture', 1)
-    elif (my_var == 0 and core.get_value('prev_architecture') != 0):
+        gui.prev_architecture = 1
+    elif (my_var == 0 and gui.prev_architecture != 0):
         core.delete_item('##space9')
         core.delete_item('Architecture name:')
         core.delete_item('radio##3')
-        core.set_value('prev_architecture', 0)
-
-# opens file dialog window to choose .pla file
+        gui.prev_architecture = 0
 
 
-def filePicker(sender, data):
-    core.open_file_dialog(callback=applySelectedDirectory, extensions='.real')
+def file_picker(sender, data):
+    """
+    Opens file dialog window to choose .pla file
+    """
+    core.open_file_dialog(callback=apply_selected_directory, extensions='.real')
 
-# sets the file name
 
-
-def applySelectedDirectory(sender, data):
+def apply_selected_directory(sender, data):
+    """
+    Sets the file name
+    """
     directory = data[0]
     file_directory = data[1]
     core.set_value('directory', directory)
     core.set_value('file_directory', file_directory)
 
-# Removes the qasm window name
-# TODO: make the function more general
+
+def delete_items(data):
+    """
+    Removes the window name.
+
+    Parameters:
+    data (List[str]): items to be deleted
+    """
+    for item in data:
+        core.delete_item(item)
 
 
-def deleteWindowName(data):
-    core.delete_item(data)
-
-# opens window with qasm code
-
-
-def openQasm(sender, data):
-    with simple.window('Qasm code', width=400, height=600, on_close=deleteWindowName('Qasm code')):
-        with open(core.get_value('qasmFile'), 'r') as f:
+def open_qasm(sender, data):
+    """
+    Opens window with qasm code
+    """
+    with simple.window('Qasm code', width=400, height=600, on_close=delete_items(['Qasm code'])):
+        with open(gui.qasm_file, 'r') as f:
             core.add_text(f.read())
 
 
-def helpShowArchitectures(sender, data):
+def help_show_architectures(sender, data):
+    """
+    Switch to architecture tab
+    """
     core.configure_item('helpArchitectures', show=True)
     core.configure_item('helpShowInstructions', show=False)
 
 
-def helpShowInstructions(sender, data):
+def help_show_instructions(sender, data):
+    """
+    Switch to instructions tab
+    """
     core.configure_item('helpShowInstructions', show=True)
     core.configure_item('helpArchitectures', show=False)
 
 
-def openHelpWindow(sender, data):
-    with simple.window('Help##window', width=1000, height=600, on_close=deleteWindowName('Help##window')):
+def open_help_window(sender, data):
+    """
+    Opens new window with help annotations
+    """
+    with simple.window('Help##window', width=1000, height=600, on_close=delete_items(['Help##window'])):
         with simple.menu_bar("Help Menu Bar"):
-            core.add_menu_item("Architectures", callback=helpShowArchitectures)
-            core.add_menu_item("Instructions", callback=helpShowInstructions)
+            core.add_menu_item("Architectures", callback=help_show_architectures)
+            core.add_menu_item("Instructions", callback=help_show_instructions)
 
-        with simple.group('helpArchitectures', show="False"):
+        with simple.group('helpArchitectures'):
             core.add_drawing('armonk', width=72, height=75)
             core.draw_image('armonk', './backends/img/armonk.png', [72, 72])
             core.add_text('ibmq_armonk: 1 qubit.')
@@ -246,7 +279,7 @@ def openHelpWindow(sender, data):
                 'ibmq_vigo, ibmq_valencia, and ibmq_ourence: 5 qubits.')
             core.add_spacing(name='##space10', count=10)
 
-        with simple.group('helpInstructions'):
+        with simple.group('helpInstructions', show="False"):
             core.add_text(
                 'In the Selector block a user can select optimization parameters:')
             core.add_text(
@@ -258,7 +291,7 @@ def openHelpWindow(sender, data):
             instruction_text = """In the Hardware & Circuit block the user can choose between testing the circuit on a quantum computer (IBM Q) and simulator (Qasm). The user also can choose quantum coupling (quantum computer architecture) - from IBM Q or Qasm. Finally, there will be a button to upload an input file.  After selection, the file name will be displayed in the Hardware & Circuit block and the circuit representation will be displayed in the Circuit before the reduction block. When pressing on the Process button the tool will find the optimal mapping of the circuit onto the quantum computer architecture. The resulting mapping will appear in the Circuit after the reduction block."""
             count = 0
             step = 120
-            while count < len(instruction_text):
+            while (count + step) < len(instruction_text):
                 core.add_text(instruction_text[count: count + step])
                 if instruction_text[count + step] != ' ' and instruction_text[count + step] != '-':
                     core.add_same_line()
@@ -266,8 +299,11 @@ def openHelpWindow(sender, data):
                 count += step
 
 
-def openAboutWindow(sender, data):
-    with simple.window('About##window', width=600, height=240, on_close=deleteWindowName('About##window')):
+def open_about_window(sender, data):
+    """
+    Opens new window with credentials
+    """
+    with simple.window('About##window', width=600, height=240, on_close=delete_items(['About##window'])):
         core.add_text('Developers:')
         core.add_text(
             '* Valeriy Novossyolov [Computer Science senior student, Nazarbayev University]')
@@ -285,10 +321,236 @@ def openAboutWindow(sender, data):
             'by Martin Lukac, Saadat Nursultan, Georgiy Krylov and Oliver Keszocze')
 
 
+def show_mapping(sender, data):
+    """
+    Opens new window with a mapping.
+    """
+    if core.get_value('device_type') == 0:
+        architecture = gui.backend_dict[0]
+    else:
+        architecture = gui.backend_dict[core.get_value('architecture') + 1]
+
+    old_dict = gui.projection_map
+    new_dict = dict([(value, key) for key, value in old_dict.items()])     
+    draw_graph(architecture, new_dict)
+    
+
+def draw_graph(architecture, mapping, diameter=20):
+    """
+    Draws a physical architecture and labels mapped nodes.
+
+    Parameters: 
+    architecture (str): Architecture type.
+    mapping (dict): Mapping from circuit graph to pysical architecture.
+    diameter (float): Diameter of the graph nodes. Also determines the size of resulting graph.
+
+    Returns: 
+    None 
+    """
+    with simple.window('Graph', width=800, height=800, on_close=delete_items(['Graph', 'drawing1'])):
+        core.add_drawing('drawing1', width=int(
+            diameter*diameter*2), height=int((diameter/2)**2))
+
+    start_x = diameter
+    start_y = diameter * 4
+    color_white = [255, 255, 255, 255]
+    color_black = [0, 0, 0, 255]
+    color_orange = [255, 170, 23, 255]
+    color_blue = [15, 27, 115, 255]
+    line_width = 5
+
+    num_of_nodes = {
+        architecture == 'ibmq_armonk': 1,
+        architecture == 'ibmq_athens' or
+        architecture == 'ibmq_santiago' or
+        architecture == 'ibmqx2' or
+        architecture == 'ibmq_vigo' or
+        architecture == 'ibmq_valencia' or
+        architecture == 'ibmq_ourence': 5,
+        architecture == 'ibmq_16_melbourne': 15
+    }[True]
+
+    ###
+    if architecture == 'ibmq_armonk':
+        # draw one node
+        core.draw_circle('drawing1', [start_x, start_y],
+                         diameter, color_orange, fill=color_orange)
+        core.draw_text('drawing1', [start_x - diameter, start_y + (
+            diameter / 2)], mapping[0], color=color_black, size=diameter)
+
+    ###
+    elif architecture == 'ibmq_athens' or architecture == 'ibmq_santiago':
+        for k in range(num_of_nodes):
+            if k in mapping.keys():
+                core.draw_circle(
+                    'drawing1', [start_x, start_y], diameter, color_orange, fill=color_orange)
+                core.draw_text('drawing1', [start_x - diameter, start_y + (
+                    diameter / 2)], mapping[k], color=color_black, size=diameter)
+            else:
+                core.draw_circle(
+                    'drawing1', [start_x, start_y], diameter, color_white, fill=color_white)
+                core.draw_text('drawing1', [start_x - diameter, start_y + (
+                    diameter / 2)], str(k), color=color_blue, size=diameter)
+            # draw an edge only if it is not the last node
+            if k < 4:
+                core.draw_line("drawing1", [start_x + diameter, start_y], [
+                               start_x + (diameter * 2), start_y], color_white, line_width)
+                start_x += diameter * 3
+
+    ###
+    elif architecture == 'ibmq_vigo' or architecture == 'ibmq_valencia' or architecture == 'ibmq_ourence':
+        for k in range(num_of_nodes):
+            if k == 2:
+                # save previous coordinates
+                previous_x, previous_y = start_x, start_y
+                # adjust coordinates
+                start_x -= (diameter * 3)
+                start_y -= (diameter * 3)
+                if k in mapping.keys():
+                    core.draw_circle(
+                        'drawing1', [start_x, start_y], diameter, color_orange, fill=color_orange)
+                    core.draw_text('drawing1', [start_x - diameter, start_y + (
+                        diameter / 2)], mapping[k], color=color_black, size=diameter)
+                else:
+                    core.draw_circle(
+                        'drawing1', [start_x, start_y], diameter, color_white, fill=color_white)
+                    core.draw_text('drawing1', [start_x - diameter, start_y + (
+                        diameter / 2)], str(k), color=color_blue, size=diameter)
+                core.draw_line("drawing1", [start_x, start_y + diameter], [
+                               start_x, start_y + (diameter * 2)], color_white, line_width)
+                # restore coordinates
+                start_x, start_y = previous_x, previous_y
+            else:
+                if k in mapping.keys():
+                    core.draw_circle(
+                        'drawing1', [start_x, start_y], diameter, color_orange, fill=color_orange)
+                    core.draw_text('drawing1', [start_x - diameter, start_y + (
+                        diameter / 2)], mapping[k], color=color_black, size=diameter)
+                else:
+                    core.draw_circle(
+                        'drawing1', [start_x, start_y], diameter, color_white, fill=color_white)
+                    core.draw_text('drawing1', [start_x - diameter, start_y + (
+                        diameter / 2)], str(k), color=color_blue, size=diameter)
+                # draw an edge only if it is not the last node
+                if k < 4:
+                    core.draw_line("drawing1", [start_x + diameter, start_y], [
+                                   start_x + (diameter * 2), start_y], color_white, line_width)
+                    start_x += diameter * 3
+
+    ###
+    elif architecture == 'ibmqx2':
+        k = 0
+        start_y = diameter
+        if k in mapping.keys():
+            core.draw_circle(
+                'drawing1', [start_x, start_y], diameter, color_orange, fill=color_orange)
+            core.draw_text('drawing1', [start_x - diameter, start_y + (
+                diameter / 2)], mapping[k], color=color_black, size=diameter)
+        else:
+            core.draw_circle(
+                'drawing1', [start_x, start_y], diameter, color_white, fill=color_white)
+            core.draw_text('drawing1', [start_x - diameter, start_y + (
+                diameter / 2)], str(k), color=color_blue, size=diameter)
+        core.draw_line("drawing1", [start_x, start_y + diameter],
+                       [start_x, start_y + (diameter * 2)], color_white, line_width)
+        k += 1
+        start_y += diameter * 3
+        if k in mapping.keys():
+            core.draw_circle(
+                'drawing1', [start_x, start_y], diameter, color_orange, fill=color_orange)
+            core.draw_text('drawing1', [start_x - diameter, start_y + (
+                diameter / 2)], mapping[k], color=color_black, size=diameter)
+        else:
+            core.draw_circle(
+                'drawing1', [start_x, start_y], diameter, color_white, fill=color_white)
+            core.draw_text('drawing1', [start_x - diameter, start_y + (
+                diameter / 2)], str(k), color=color_blue, size=diameter)
+        k += 1
+        start_x += diameter * 3
+        start_y -= diameter * 1.5
+        if k in mapping.keys():
+            core.draw_circle(
+                'drawing1', [start_x, start_y], diameter, color_orange, fill=color_orange)
+            core.draw_text('drawing1', [start_x - diameter, start_y + (
+                diameter / 2)], mapping[k], color=color_black, size=diameter)
+        else:
+            core.draw_circle(
+                'drawing1', [start_x, start_y], diameter, color_white, fill=color_white)
+            core.draw_text('drawing1', [start_x - diameter, start_y + (
+                diameter / 2)], str(k), color=color_blue, size=diameter)
+        core.draw_line("drawing1", [start_x + (diameter / 2) + 5, start_y - (diameter / 2) - 5], [
+                       start_x + (diameter * 2), start_y - (diameter * 1.5)], color_white, line_width)
+        core.draw_line("drawing1", [start_x + (diameter / 2) + 5, start_y + (diameter / 2) + 5], [
+                       start_x + (diameter * 2), start_y + (diameter * 1.5)], color_white, line_width)
+        core.draw_line("drawing1", [start_x - (diameter / 2) - 5, start_y - (diameter / 2) - 5], [
+                       start_x - (diameter * 2), start_y - (diameter * 1.5)], color_white, line_width)
+        core.draw_line("drawing1", [start_x - (diameter / 2) - 5, start_y + (diameter / 2) + 5], [
+                       start_x - (diameter * 2), start_y + (diameter * 1.5)], color_white, line_width)
+        k += 1
+        start_x += diameter * 3
+        start_y += diameter * 1.5
+        if k in mapping.keys():
+            core.draw_circle(
+                'drawing1', [start_x, start_y], diameter, color_orange, fill=color_orange)
+            core.draw_text('drawing1', [start_x - diameter, start_y + (
+                diameter / 2)], mapping[k], color=color_black, size=diameter)
+        else:
+            core.draw_circle(
+                'drawing1', [start_x, start_y], diameter, color_white, fill=color_white)
+            core.draw_text('drawing1', [start_x - diameter, start_y + (
+                diameter / 2)], str(k), color=color_blue, size=diameter)
+        k += 1
+        start_y -= diameter * 3
+        if k in mapping.keys():
+            core.draw_circle(
+                'drawing1', [start_x, start_y], diameter, color_orange, fill=color_orange)
+            core.draw_text('drawing1', [start_x - diameter, start_y + (
+                diameter / 2)], mapping[k], color=color_black, size=diameter)
+        else:
+            core.draw_circle(
+                'drawing1', [start_x, start_y], diameter, color_white, fill=color_white)
+            core.draw_text('drawing1', [start_x - diameter, start_y + (
+                diameter / 2)], str(k), color=color_blue, size=diameter)
+        core.draw_line("drawing1", [start_x, start_y + diameter],
+                       [start_x, start_y + (diameter * 2)], color_white, line_width)
+
+    ###
+    elif architecture == 'ibmq_16_melbourne':
+        start_y = diameter
+        for k in range(num_of_nodes):
+            temp_key = num_of_nodes - (k + 1)
+
+            if temp_key in mapping.keys():
+                core.draw_circle(
+                    'drawing1', [start_x, start_y], diameter, color_orange, fill=color_orange)
+                temp_key = num_of_nodes - (k + 1)
+                core.draw_text('drawing1', [start_x - diameter, start_y + (
+                    diameter / 2)], mapping[temp_key], color=color_black, size=diameter)
+            else:
+                core.draw_circle(
+                    'drawing1', [start_x, start_y], diameter, color_white, fill=color_white)
+                core.draw_text('drawing1', [start_x - diameter, start_y + (
+                    diameter / 2)], str(temp_key), color=color_blue, size=diameter)
+
+            if k != 7 and k != 8:
+                core.draw_line("drawing1", [start_x + diameter, start_y], [
+                               start_x + (diameter * 2), start_y], color_white, line_width)
+
+            if (k < 7):
+                core.draw_line("drawing1", [start_x, start_y + diameter], [
+                               start_x, start_y + (diameter * 2)], color_white, line_width)
+                start_x += diameter * 3
+            else:
+                start_x -= diameter * 3
+
+            if (k == 7):
+                start_y += diameter * 3
+
+
 if __name__ == '__main__':
     # Connect to IBM
-    core.run_async_function(getBackendsAsync, 0)
-    core.set_render_callback(showButton)
+    core.run_async_function(get_backends_async, 0)
+    core.set_render_callback(show_button)
 
     core.set_main_window_size(1500, 900)
 
@@ -296,7 +558,7 @@ if __name__ == '__main__':
     with simple.window('Please wait', no_scrollbar=True, height=70, width=400, x_pos=500, y_pos=200):
         core.add_progress_bar('progress', value=0.0,
                               overlay='Connecting to IBM...', width=400)
-        core.run_async_function(progressAsync, 0)
+        core.run_async_function(progress_async, 0)
 
     # Title
     core.add_text('Quantum visualization machine ver 1.0.0',
@@ -311,13 +573,13 @@ if __name__ == '__main__':
             core.add_menu_item("Save", callback=print_me)
             core.add_menu_item("Save As", callback=print_me)
 
-        core.add_menu_item("Help", callback=openHelpWindow)
-        core.add_menu_item("About", callback=openAboutWindow)
+        core.add_menu_item("Help", callback=open_help_window)
+        core.add_menu_item("About", callback=open_about_window)
 
     # Parameters group
     with simple.group('left group', width=300):
         # Select file button
-        core.add_button('File Selector', callback=filePicker, show=False)
+        core.add_button('File Selector', callback=file_picker, show=False)
         core.add_spacing(name='##space2', count=3)
         core.add_text('File location:', show=False)
         core.add_label_text('##filedir', value='None Selected',
@@ -330,7 +592,7 @@ if __name__ == '__main__':
         # Device type radio button
         core.add_text('Device type:', show=False)
         core.add_radio_button('radio##1', items=[
-                              'IBM simulator', 'IBM quantum computer'], callback=showArchitectureList, source='device_type', show=False)
+                              'IBM simulator', 'IBM quantum computer'], callback=show_architecture_list, source='device_type', show=False)
         core.add_spacing(name='##space5', count=3)
         # Layout radio button
         core.add_text('Quantum circuit layout method:', show=False)
@@ -348,7 +610,7 @@ if __name__ == '__main__':
                             tip='drag the slider to number of iterations', width=300, source='num_of_iter', show=False)
         core.add_spacing(name='##space8', count=3)
         # Default settings button
-        core.add_button('Set Default', callback=setDefault, show=False)
+        core.add_button('Set Default', callback=set_default, show=False)
         core.add_spacing(name='##space9', count=3)
         # Process button
         core.add_button('Process', callback=process, show=False)
@@ -366,9 +628,10 @@ if __name__ == '__main__':
     # program output
     core.add_same_line(name='line##3', xoffset=1000)
     with simple.group('right group'):
-        core.add_button('Open qasm file', callback=openQasm, show=False)
+        core.add_button('Open qasm file', callback=open_qasm, show=False)
         core.add_text('Path to IBM circuit representation', show=False)
         core.add_label_text('circuitImage')
+        core.add_button('Mapping', callback=show_mapping, show=False)
         core.add_text('Program output:', show=False)
         core.add_text('Program output will be displayed here',
                       show=False, wrap=440)

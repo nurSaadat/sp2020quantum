@@ -159,7 +159,7 @@ class Mapping:
         physical_qubits = [pair[1] for pair in self.map]
         return physical_qubits
 
-    def lineGraphRemapping(self, lineGraphMapping):
+    def line_graph_remapping(self, line_graph_mapping):
         """
         Takes an edge-to-edge mapping 
         (e.g. found by using graph matcher on the line graph representations of two graphs) 
@@ -176,7 +176,7 @@ class Mapping:
         mapping = list()
         potentialyFound = set()
 
-        for edgeMapping in lineGraphMapping:
+        for edgeMapping in line_graph_mapping:
             edgeG1, edgeG2 = edgeMapping
             for nodeG1 in edgeG1:
                 if nodeG1 not in mappingFound:
@@ -272,7 +272,7 @@ class Mapping:
         if subgraph_is_iso:
             # generate isomorphic mapping
             happy = [(j, i) for i, j in GM.mapping.items()]
-            happy = self.lineGraphRemapping(happy)
+            happy = self.line_graph_remapping(happy)
         else:
             # list of disconnecting edges
             disconnecting_edges = []
@@ -331,7 +331,7 @@ class Mapping:
                     self.physical_graph, self.logical_graph)
 
             happy = [(j, i) for i, j in GM.mapping.items()]
-            happy = self.lineGraphRemapping(happy)
+            happy = self.line_graph_remapping(happy)
 
         happy = sorted(happy, key=lambda el: el[0])
         # print("Happy mapping: ", happy)
@@ -397,7 +397,7 @@ class Mapping:
         logical_node (tuple(str, int)): The logical node from the node queue.
         permutations (List[n-tuple((node1, node2, weight))]): Permutations to go through all possible combinations: all possible orderings, no repeated elements.
         use_permutations (bool): Whether to use permutations.
-        physical_node_list (List[int]): Sorted physical degrees.
+        physical_node_list (List[(int, int)]): Physical degrees by degrees.
         mapping (List[(str, int)]): Resulting mapping from logical circuit to physical architecture.
         removed_edges (List[[(node1, node2, weight), List[int]]]): Record of removed edges for a potential rollback.
 
@@ -492,8 +492,8 @@ class Mapping:
         node_queue (List[(node, degree)]): queue of logical graph nodes.
         potential_physical_nodes (List[int]): copy of the physical degree list as a list of potential physical node placements.
         use_potential (bool): whether the list of potential physical node placement should be used. False when the potential_physical_nodes is empty.
-        logical_node_list (List[int]): sorted logical degrees.
-        physical_node_list (List[int]): sorted physical degrees.
+        logical_node_list (List[(str, int)]): logical nodes sorted by degrees.
+        physical_node_list (List[(int, int)]): physical nodes sorted by degrees.
         mapping (List[(str, int)]): resulting mapping from logical circuit to physical architecture.
 
         Returns:
@@ -660,13 +660,14 @@ class Mapping:
         if subgraph_is_iso:
             # generate isomorphic mapping
             happy = [(j, i) for i, j in GM.mapping.items()]
-            happy = self.lineGraphRemapping(happy)
+            happy = self.line_graph_remapping(happy)
         else:
             # sort all nodes by their degree
             logical_degree_list = sorted(
                 self.logical_graph.degree(), key=lambda node_deg_pair: node_deg_pair[1])
             physical_degree_list = sorted(
                 self.physical_graph.degree(), key=lambda node_deg_pair: node_deg_pair[1])
+            
             # copy the physical degree list as a list of potential physical node placements
             potential_physical_nodes = physical_degree_list.copy()
             # list for mapping

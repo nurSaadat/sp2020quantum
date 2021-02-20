@@ -574,6 +574,7 @@ def test(ctg: SimpleCTG, input_file: str, simple_mapping=False, debugging=True, 
 
     # Set mappings
     ctg.set_mapping(mapping, ancilla_mapping)
+    feature_keeper['mapping'] = ctg.mapping
     if debugging:
         print('[INFO] Mapping is', ctg.mapping)
 
@@ -649,12 +650,12 @@ def test(ctg: SimpleCTG, input_file: str, simple_mapping=False, debugging=True, 
 
     return feature_keeper
 
-# function called by gui
-
 
 def gui_interaction(circuit_file: str, directory: str, layout_type: bool, optimization_level: int,  architecture: str,
                     num_of_iterations: int):
-
+    """
+    Function called by gui.
+    """
     # save local copy to put back when done
     stdout = sys.stdout
     # create a special string

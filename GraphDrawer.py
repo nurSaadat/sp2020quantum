@@ -2,20 +2,20 @@ import dearpygui.core as core
 import dearpygui.simple as simple
 
 
-def drawGraph(architecture, mapping, diameter=20):
+def draw_graph(architecture, mapping, diameter=20):
     """
     Draws a physical architecture and labels mapped nodes.
 
     Parameters: 
-    architecture (string): Architecture type.
-    mapping (dictionary): Mapping from circuit graph to pysical architecture.
+    architecture (str): Architecture type.
+    mapping (dict): Mapping from circuit graph to pysical architecture.
     diameter (float): Diameter of the graph nodes. Also determines the size of resulting graph.
 
     Returns: 
     None 
     """
-    with simple.window('Graph', width=800, height=200):
-        core.add_drawing('drawing1', width=800, height=100)
+    with simple.window('Graph', width=800, height=800):
+        core.add_drawing('drawing1', width=int(diameter*diameter*2), height=int((diameter/2)**2))
 
     start_x = diameter
     start_y = diameter * 4
@@ -214,12 +214,12 @@ def drawGraph(architecture, mapping, diameter=20):
 
 
 if __name__ == '__main__':
-    diameter = 20
+    diameter = 30
     architecture = 'ibmq_16_melbourne'
     mapping = {
         1: 'a',
         2: 'b',
         3: 'd'
     }
-    drawGraph(diameter, architecture, mapping)
+    draw_graph(architecture, mapping, diameter=diameter)
     core.start_dearpygui()
