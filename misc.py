@@ -479,7 +479,7 @@ class Mapping:
         else:
             self.animCount += 1
 
-    def placeNodeOnNode(self, node_queue, potential_physical_nodes, use_potential, logical_node_list, physical_node_list, mapping):
+    def placeNodeOnNode(self, node_queue, potential_physical_nodes, use_potential, figureOuted_before, logical_node_list, physical_node_list, mapping):
         """
         BFS-like algorithm to find placement of logical nodes onto physical nodes.
         For the first run, the node_queue should contain the root node (usually a node with biggest degree)
@@ -529,20 +529,32 @@ class Mapping:
                     potential_physical_nodes = sorted(list(set(potential_physical_nodes).intersection(
                         potential)), key=lambda node_deg_pair: node_deg_pair[1])
         # initiate a try/excpet block to cycle through all potential physical nodes in case of wrong placement
-        self.anim()
+        # self.anim()
         try:
             # list of disconnecting edges
             disconnecting_edges = []
             # list of removed edges
             removed_edges = []
 
+            # boolean to return at the end
+            figureOuted = figureOuted_before
+
             # try to find more placements
-            if len(potential_physical_nodes) == 0:
+            if (len(potential_physical_nodes) == 0) and (not figureOuted):
                 # get all edges for the logical_node
                 edges = [(u, v, wt) for (u, v, wt) in self.logical_graph.edges.data(
                     'weight') if (u == logical_node[0]) or (v == logical_node[0])]
                 edges = sorted(
                     edges, key=lambda node_node_weight: node_node_weight[2])
+                # remove edges that are not connected to already placed nodes
+                for (u, v, wt) in edges:
+                    placed = False
+                    for (logNode, phyNode) in mapping:
+                        if (u == logNode) or (v == logNode):
+                            placed = True
+                            break
+                    if not placed:
+                        edges.remove((u, v, wt))
                 # get all permutations to go through all possible combinations
                 # ussually a node will have up to 4 edges, so number of permutations should be low
                 permutations = list(itertools.permutations(edges))
@@ -554,6 +566,7 @@ class Mapping:
                     # if there is anything in the potential_physical_nodes, then we finished successfully
                     if len(potential_physical_nodes) > 0:
                         break
+            figureOuted = True
 
                 
             # if there is no potential placements by this point, preveious node was placed wrong
@@ -626,7 +639,7 @@ class Mapping:
                     logical_node_list.remove(item)
 
             # next, go through all nodes in the node_queue
-            return (True, False, removed_edges, potential_physical_nodes)
+            return (True, False, removed_edges, potential_physical_nodes, figureOuted)
 
         except IndexError:
             # return all removed edges
@@ -638,7 +651,7 @@ class Mapping:
                     self.logical_add_weight(
                         alternative_path[i], alternative_path[i+1], edge_weight[2] * (-2))
 
-            return [False, False, [], potential_physical_nodes]
+            return [False, False, [], potential_physical_nodes, figureOuted]
 
     def isomorph(self, file_name):
         """
@@ -686,12 +699,15 @@ class Mapping:
             potential_list = {}
             current_node = 0
             use_potential = False
+            # memory to not get stuck in figure out wrong edge
+            figureOuted = {}
             # save the first node information
             # save node information to return to it if node placement fails
             saved_node_queue[current_node] = node_queue.copy()
             saved_logical_node_list[current_node] = logical_degree_list.copy()
             saved_physical_node_list[current_node] = physical_degree_list.copy()
             saved_mapping[current_node] = mapping.copy()
+            figureOuted[current_node] = False
             # start the algorithm
             while True:
                 # if we go below 0, then it means this algorithm failed
@@ -701,10 +717,10 @@ class Mapping:
                 # are we placing the next node, or trying to place another node on the same place?
                 if use_potential:
                     # another node on the same palce
-                    result = self.placeNodeOnNode(node_queue, potential_list[current_node], True, logical_degree_list, physical_degree_list, mapping)
+                    result = self.placeNodeOnNode(node_queue, potential_list[current_node], True, figureOuted[current_node], logical_degree_list, physical_degree_list, mapping)
                 else:
                     # the next node
-                    result = self.placeNodeOnNode(node_queue, [], False, logical_degree_list, physical_degree_list, mapping)
+                    result = self.placeNodeOnNode(node_queue, [], False, False, logical_degree_list, physical_degree_list, mapping)
                  
                 # was the current node placement successful?
                 if not result[0]:
@@ -721,6 +737,9 @@ class Mapping:
                     if len(result[3]) == 0:
                         # algorithm failed to place any node after placing the parent node 
                         # so, the parent node was wrong
+                        # clear figureOuted memory
+                        figureOuted[current_node] = False
+                        # go back to the parent node
                         current_node -= 1
                         use_potential = True
                         # return removed_edges by parent
@@ -739,6 +758,8 @@ class Mapping:
                     else:
                         # there are more nodes to try
                         use_potential = True
+                        # did the algorithm use figureOutWrongEnge()?
+                        figureOuted[current_node] = result[4]
                         # don't forget, that placeNodeOnNode pops potential_node_list
                         # return the current node info
                         node_queue = saved_node_queue[current_node].copy()
@@ -754,6 +775,8 @@ class Mapping:
                     saved_removed_edges[current_node] = result[2].copy()
                     # save the potential physical nodes for the current (placed) node
                     potential_list[current_node] = result[3]
+                    # did the algorithm use figureOutWrongEnge()?
+                    figureOuted[current_node] = result[4]
                     # increment the current_node
                     current_node += 1
                     use_potential = False
