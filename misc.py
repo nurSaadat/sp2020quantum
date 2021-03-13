@@ -31,6 +31,8 @@ class Mapping:
         self.physical_graph = nx.Graph()
         self.map = []
 
+        self.animCount = 0
+
     def __repr__(self):
         # list(self.logical_graph.nodes(data=True)
         return "Logical mapping:\n {} \nPhysical mapping:\n {} \nLogical to physical mapping:\n {} \n".format(
@@ -389,46 +391,33 @@ class Mapping:
         # return the name
         return graph_image
 
-    def figureOutWrongEdge(self, logical_node, permutations, use_permutations, physical_node_list, mapping, removed_edges):
+    def figureOutWrongEdge(self, logical_node, permutation_list, physical_node_list, mapping, removed_edges):
         """
         Recursively tries to remove edges such that one, or more potential physical placements appeares.
 
         Parameters:
         logical_node (tuple(str, int)): The logical node from the node queue.
-        permutations (List[n-tuple((node1, node2, weight))]): Permutations to go through all possible combinations: all possible orderings, no repeated elements.
-        use_permutations (bool): Whether to use permutations.
+        permutation_list (List[n-tuple((node1, node2, weight))]): order of edges to be removed
         physical_node_list (List[(int, int)]): Physical degrees by degrees.
         mapping (List[(str, int)]): Resulting mapping from logical circuit to physical architecture.
         removed_edges (List[[(node1, node2, weight), List[int]]]): Record of removed edges for a potential rollback.
 
         Returns:
-        The function instance or an empty list.
+        a list of physical nodes or an empty list if none were found.
         """
-        if not use_permutations:
-            # get all edges for the logical_node
-            edges = [(u, v, wt) for (u, v, wt) in self.logical_graph.edges.data(
-                'weight') if (u == logical_node[0]) or (v == logical_node[0])]
-            edges = sorted(
-                edges, key=lambda node_node_weight: node_node_weight[2])
-            # get all permutations to go through all possible combinations
-            # ussually a node will have up to 4 edges, so number of permutations should be low
-            permutations = list(itertools.permutations(edges))
-
         try:
-            # prepare lists
+            # prepare list
             potential_physical_nodes = []
-            edges_list = list(permutations.pop())
 
             # run the while loop until there are any potential placement, or we pop from an empty list
             while len(potential_physical_nodes) == 0:
 
                 # take the edge with the least weight
                 # if no more edges, then this will trigger the except
-                edge_weight = edges_list.pop(0)
+                edge_weight = permutation_list.pop(0)
 
                 # the weight of the poped edge may have changed
-                real_weight = self.logical_graph[edge_weight[0]
-                                                 ][edge_weight[1]]['weight']
+                real_weight = self.logical_graph[edge_weight[0]][edge_weight[1]]['weight']
 
                 # remove the edge with the least weight
                 self.logical_graph.remove_edge(edge_weight[0], edge_weight[1])
@@ -478,12 +467,19 @@ class Mapping:
                         alternative_path[i], alternative_path[i+1], edge_weight[2] * (-2))
             removed_edges.clear()
 
-            if len(permutations) > 0:
-                return self.figureOutWrongEdge(logical_node, permutations, True, physical_node_list, mapping, removed_edges)
-            else:
-                return []
+            return []
 
-    def placeNodeOnNode(self, node_queue, potential_physical_nodes, use_potential, logical_node_list, physical_node_list, mapping):
+    def anim(self):
+        animation = "|/-\\"
+
+        os.write(1, str.encode('\r' + animation[self.animCount % len(animation)]))
+        
+        if self.animCount > 99:
+            self.animCount = 0
+        else:
+            self.animCount += 1
+
+    def placeNodeOnNode(self, node_queue, potential_physical_nodes, use_potential, figureOuted_before, logical_node_list, physical_node_list, mapping):
         """
         BFS-like algorithm to find placement of logical nodes onto physical nodes.
         For the first run, the node_queue should contain the root node (usually a node with biggest degree)
@@ -502,15 +498,11 @@ class Mapping:
         Raises:
         IndexError
         """
-        # save the state
-        saved_node_queue = node_queue.copy()
-        saved_logical_node_list = logical_node_list.copy()
-        saved_physical_node_list = physical_node_list.copy()
-        saved_mapping = mapping.copy()
 
         # if node_queue is empty, then we are done
         if len(node_queue) == 0:
-            return True
+            # return True
+            return (True, True)
         # get the logical node
         logical_node = node_queue.pop(0)
 
@@ -537,20 +529,50 @@ class Mapping:
                     potential_physical_nodes = sorted(list(set(potential_physical_nodes).intersection(
                         potential)), key=lambda node_deg_pair: node_deg_pair[1])
         # initiate a try/excpet block to cycle through all potential physical nodes in case of wrong placement
+        # self.anim()
         try:
             # list of disconnecting edges
             disconnecting_edges = []
             # list of removed edges
             removed_edges = []
 
-            # try to find more placements
-            if len(potential_physical_nodes) == 0:
-                potential_physical_nodes = self.figureOutWrongEdge(
-                    logical_node, [], False, physical_node_list, mapping, removed_edges)
+            # boolean to return at the end
+            figureOuted = figureOuted_before
 
+            # try to find more placements
+            if (len(potential_physical_nodes) == 0) and (not figureOuted):
+                # get all edges for the logical_node
+                edges = [(u, v, wt) for (u, v, wt) in self.logical_graph.edges.data(
+                    'weight') if (u == logical_node[0]) or (v == logical_node[0])]
+                edges = sorted(
+                    edges, key=lambda node_node_weight: node_node_weight[2])
+                # remove edges that are not connected to already placed nodes
+                for (u, v, wt) in edges:
+                    placed = False
+                    for (logNode, phyNode) in mapping:
+                        if (u == logNode) or (v == logNode):
+                            placed = True
+                            break
+                    if not placed:
+                        edges.remove((u, v, wt))
+                # get all permutations to go through all possible combinations
+                # ussually a node will have up to 4 edges, so number of permutations should be low
+                permutations = list(itertools.permutations(edges))
+                # run a while loop until pernutations is empty
+                while len(permutations) > 0:
+                    permutation_list = list(permutations.pop())
+                    potential_physical_nodes = self.figureOutWrongEdge(logical_node, permutation_list, physical_node_list, mapping, removed_edges)
+                    
+                    # if there is anything in the potential_physical_nodes, then we finished successfully
+                    if len(potential_physical_nodes) > 0:
+                        break
+            figureOuted = True
+
+                
             # if there is no potential placements by this point, preveious node was placed wrong
             if len(potential_physical_nodes) == 0:
-                return False
+                # return False
+                return (False, False, [], [])
 
             physical_node = potential_physical_nodes.pop()
             physical_node_list.remove(physical_node)
@@ -606,15 +628,18 @@ class Mapping:
             for node, degree in logical_node_list:
                 if self.logical_graph.has_edge(logical_node[0], node):
                     temp_logical_node_list.remove((node, degree))
+                    # for qNode, qDegree in node_queue:
+                    #     if node == qNode:
+                    #         node_queue.remove((qNode, qDegree))
                     node_queue.append((node, degree))
 
-            logical_node_list = temp_logical_node_list
+            temp = logical_node_list.copy()
+            for item in temp:
+                if not item in temp_logical_node_list:
+                    logical_node_list.remove(item)
 
             # next, go through all nodes in the node_queue
-            if self.placeNodeOnNode(node_queue, [], False, logical_node_list, physical_node_list, mapping):
-                return True
-            else:
-                raise IndexError
+            return (True, False, removed_edges, potential_physical_nodes, figureOuted)
 
         except IndexError:
             # return all removed edges
@@ -626,18 +651,7 @@ class Mapping:
                     self.logical_add_weight(
                         alternative_path[i], alternative_path[i+1], edge_weight[2] * (-2))
 
-            # if there are no more potential physical edges, then placement of the previous node is wrong
-            if len(potential_physical_nodes) > 0:
-                # if placeNodeOnNode returned True, then we need to record changes in the saved_mapping into mapping
-                if self.placeNodeOnNode(saved_node_queue, potential_physical_nodes, True, saved_logical_node_list, saved_physical_node_list, saved_mapping):
-                    mapping.clear()
-                    for item in saved_mapping:
-                        mapping.append(item)
-                    return True
-                else:
-                    return False
-            else:
-                return False
+            return [False, False, [], potential_physical_nodes, figureOuted]
 
     def isomorph(self, file_name):
         """
@@ -668,8 +682,6 @@ class Mapping:
             physical_degree_list = sorted(
                 self.physical_graph.degree(), key=lambda node_deg_pair: node_deg_pair[1])
             
-            # copy the physical degree list as a list of potential physical node placements
-            potential_physical_nodes = physical_degree_list.copy()
             # list for mapping
             mapping = []
             # pop nodes with the biggest degree
@@ -678,14 +690,104 @@ class Mapping:
             # let's work like in BFS
             # queue of nodes to be done
             node_queue = [logical_node]
+            # memory for node placement
+            saved_node_queue = {}
+            saved_logical_node_list = {}
+            saved_physical_node_list = {}
+            saved_mapping = {}
+            saved_removed_edges = {}
+            potential_list = {}
+            current_node = 0
+            use_potential = False
+            # memory to not get stuck in figure out wrong edge
+            figureOuted = {}
+            # save the first node information
+            # save node information to return to it if node placement fails
+            saved_node_queue[current_node] = node_queue.copy()
+            saved_logical_node_list[current_node] = logical_degree_list.copy()
+            saved_physical_node_list[current_node] = physical_degree_list.copy()
+            saved_mapping[current_node] = mapping.copy()
+            figureOuted[current_node] = False
             # start the algorithm
-            result = self.placeNodeOnNode(
-                node_queue, [], False, logical_degree_list, physical_degree_list, mapping)
+            while True:
+                # if we go below 0, then it means this algorithm failed
+                if current_node < 0:
+                    raise NotImplementedError("Mapping not found")
 
-            if result:
-                happy = mapping
-            else:
-                raise NotImplementedError("Mapping not found")
+                # are we placing the next node, or trying to place another node on the same place?
+                if use_potential:
+                    # another node on the same palce
+                    result = self.placeNodeOnNode(node_queue, potential_list[current_node], True, figureOuted[current_node], logical_degree_list, physical_degree_list, mapping)
+                else:
+                    # the next node
+                    result = self.placeNodeOnNode(node_queue, [], False, False, logical_degree_list, physical_degree_list, mapping)
+                 
+                # was the current node placement successful?
+                if not result[0]:
+                    # No
+                    removed_edges = result[2]
+                    # return all removed edges
+                    for edge_weight, alternative_path in removed_edges:
+                        self.logical_add_weight(edge_weight[0], edge_weight[1], edge_weight[2])
+                        # subtract 2 * (weight of removed edge) to every edge on the alternative path
+                        for i in range(len(alternative_path) - 1):
+                            self.logical_add_weight(alternative_path[i], alternative_path[i+1], edge_weight[2] * (-2))
+
+                    # check potential_physical_nodes
+                    if len(result[3]) == 0:
+                        # algorithm failed to place any node after placing the parent node 
+                        # so, the parent node was wrong
+                        # clear figureOuted memory
+                        figureOuted[current_node] = False
+                        # go back to the parent node
+                        current_node -= 1
+                        use_potential = True
+                        # return removed_edges by parent
+                        removed_edges = saved_removed_edges[current_node].copy()
+                        # return all removed edges
+                        for edge_weight, alternative_path in removed_edges:
+                            self.logical_add_weight(edge_weight[0], edge_weight[1], edge_weight[2])
+                            # subtract 2 * (weight of removed edge) to every edge on the alternative path
+                            for i in range(len(alternative_path) - 1):
+                                self.logical_add_weight(alternative_path[i], alternative_path[i+1], edge_weight[2] * (-2))
+                        # return the previous node info
+                        node_queue = saved_node_queue[current_node].copy()
+                        logical_degree_list = saved_logical_node_list[current_node].copy()
+                        physical_degree_list = saved_physical_node_list[current_node].copy()
+                        mapping = saved_mapping[current_node].copy()
+                    else:
+                        # there are more nodes to try
+                        use_potential = True
+                        # did the algorithm use figureOutWrongEnge()?
+                        figureOuted[current_node] = result[4]
+                        # don't forget, that placeNodeOnNode pops potential_node_list
+                        # return the current node info
+                        node_queue = saved_node_queue[current_node].copy()
+                        logical_degree_list = saved_logical_node_list[current_node].copy()
+                        physical_degree_list = saved_physical_node_list[current_node].copy()
+                        mapping = saved_mapping[current_node].copy()
+                        # update the potential_list
+                        potential_list[current_node] = result[3].copy()
+                # did we place all of the nodes?
+                elif not result[1]:
+                    # No
+                    # save the removed edges
+                    saved_removed_edges[current_node] = result[2].copy()
+                    # save the potential physical nodes for the current (placed) node
+                    potential_list[current_node] = result[3]
+                    # did the algorithm use figureOutWrongEnge()?
+                    figureOuted[current_node] = result[4]
+                    # increment the current_node
+                    current_node += 1
+                    use_potential = False
+                    # save node information to return to it if node placement fails
+                    saved_node_queue[current_node] = node_queue.copy()
+                    saved_logical_node_list[current_node] = logical_degree_list.copy()
+                    saved_physical_node_list[current_node] = physical_degree_list.copy()
+                    saved_mapping[current_node] = mapping.copy()
+                else:
+                    happy = mapping
+                    break
 
         happy = sorted(happy, key=lambda el: el[0])
         # print("Happy mapping: ", happy)
