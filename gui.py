@@ -81,7 +81,7 @@ def show_button(sender, data):
         core.configure_item('##filedir', show=True)
         core.configure_item('File name:', show=True)
         core.configure_item('##file', show=True)
-        core.configure_item('Device type:', show=True)
+        core.configure_item('Architecture type:', show=True)
         core.configure_item('radio##1', show=True)
         core.configure_item('Quantum circuit layout method:', show=True)
         core.configure_item('radio##2', show=True)
@@ -169,23 +169,59 @@ def process(sender, data):
         core.configure_item('circuitImage', show=False)
         core.configure_item('Path to IBM circuit representation', show=False)
 
+def use_arbitrary_coupling(sender, data):
+    # TODO:
+    print('-')
+
+
+def add_IBM_computers_view():
+    core.add_spacing(name='##space9', count=2)
+    core.add_text('Architecture name:', before='##space5')
+    core.add_radio_button('radio##3', items=list(gui.backend_dict.values())[
+                            1:], source='architecture', before='##space5')
+    gui.prev_architecture = 1
+
+
+def add_arbitrary_coupling_view():
+    core.add_input_text('##architectureWindow', multiline=True, show=False)
+    core.add_button('Use', callback=use_arbitrary_coupling)
+    gui.prev_architecture = 2
+
+
+def delete_IBM_computers_view():
+    core.delete_item('##space9')
+    core.delete_item('Architecture name:')
+    core.delete_item('radio##3')
+    gui.prev_architecture = 0
+
+
+def delete_arbitrary_coupling_view():
+    core.delete_item('##architectureWindow')
+    core.delete_item('Use')
+    gui.prev_architecture = 0
+
 
 def show_architecture_list(sender, data):
     """
     Makes architecture list dynamic.
     """
     my_var = core.get_value('device_type')
-    if (my_var == 1 and gui.prev_architecture != 1):
-        core.add_spacing(name='##space9', count=2)
-        core.add_text('Architecture name:', before='##space5')
-        core.add_radio_button('radio##3', items=list(gui.backend_dict.values())[
-                              1:], source='architecture', before='##space5')
-        gui.prev_architecture = 1
-    elif (my_var == 0 and gui.prev_architecture != 0):
-        core.delete_item('##space9')
-        core.delete_item('Architecture name:')
-        core.delete_item('radio##3')
-        gui.prev_architecture = 0
+    core.log_debug(my_var)
+    if (my_var == 0):
+        if (gui.prev_architecture == 1):
+            delete_IBM_computers_view()
+        if (gui.prev_architecture == 2):
+            delete_arbitrary_coupling_view()
+
+    elif (my_var == 1 and gui.prev_architecture != 1):
+        add_IBM_computers_view()
+        if (gui.prev_architecture == 2):
+            delete_arbitrary_coupling_view()
+
+    elif (my_var == 2 and gui.prev_architecture != 2):
+        add_arbitrary_coupling_view()
+        if (gui.prev_architecture == 1):
+            delete_IBM_computers_view()
 
 
 def file_picker(sender, data):
@@ -288,7 +324,7 @@ def open_help_window(sender, data):
             core.add_text('* location of placement')
             core.add_text('* number of iterations.')
 
-            instruction_text = """In the Hardware & Circuit block the user can choose between testing the circuit on a quantum computer (IBM Q) and simulator (Qasm). The user also can choose quantum coupling (quantum computer architecture) - from IBM Q or Qasm. Finally, there will be a button to upload an input file.  After selection, the file name will be displayed in the Hardware & Circuit block and the circuit representation will be displayed in the Circuit before the reduction block. When pressing on the Process button the tool will find the optimal mapping of the circuit onto the quantum computer architecture. The resulting mapping will appear in the Circuit after the reduction block."""
+            instruction_text = """In the Hardware & Circuit block the user can choose between testing the circuit on a quantum computer (IBM Q) and simulator (Qasm). The user also can choose quantum coupling (quantum computer architecture) - from IBM Q or Qasm. Finally, there is a button to upload an input file.  After selection, the file name will be displayed in the Hardware & Circuit block and the circuit representation will be displayed in the Circuit before the reduction block. When pressing on the Process button the tool will find the optimal mapping of the circuit onto the quantum computer architecture. The resulting mapping will appear in the Circuit after the reduction block."""
             count = 0
             step = 120
             while (count + step) < len(instruction_text):
@@ -589,10 +625,10 @@ if __name__ == '__main__':
         core.add_label_text('##file', value='None Selected',
                             source='file_directory', show=False)
         core.add_spacing(name='##space4', count=3)
-        # Device type radio button
-        core.add_text('Device type:', show=False)
+        # Architecture type radio button
+        core.add_text('Architecture type:', show=False)
         core.add_radio_button('radio##1', items=[
-                              'IBM simulator', 'IBM quantum computer'], callback=show_architecture_list, source='device_type', show=False)
+                              'IBM simulator', 'IBM quantum computer', 'Arbitrary computer coupling'], callback=show_architecture_list, source='device_type', show=False)
         core.add_spacing(name='##space5', count=3)
         # Layout radio button
         core.add_text('Quantum circuit layout method:', show=False)
