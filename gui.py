@@ -329,6 +329,10 @@ def checkCustomArhiFile(sender, data):
 
     core.delete_item('Creating custom arbitrary coupling')
 
+    if core.get_value('device_type') == 2:
+        delete_arbitrary_coupling_view()
+        add_arbitrary_coupling_view()
+
 
 def file_picker(sender, data):
     """
