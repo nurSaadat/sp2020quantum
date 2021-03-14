@@ -143,16 +143,29 @@ def process(sender, data):
         layout_type = True
     else:
         layout_type = False
-
+    
     # chooses the device
     if core.get_value('device_type') == 0:
         architecture = gui.backend_dict[0]
-    else:
+        arbitrary = False
+    elif core.get_value('device_type') == 1:
         architecture = gui.backend_dict[core.get_value('architecture') + 1]
+        arbitrary = False
+    else:
+        # load arbitrary couplings from file
+        with open('arbitrary_coupling.pickle', 'rb') as arbitrary_file:
+            custom_dict = pickle.load(arbitrary_file)
+
+        for name, number in zip(custom_dict, range(len(custom_dict))):
+            if number ==  core.get_value('architecture'):
+                arhi_name = name
+
+        architecture = custom_dict[arhi_name]
+        arbitrary = True
 
     try:
         infoStr, circuit_features = SimpleCTG.gui_interaction(
-            file_directory, directory, layout_type, opt_level, architecture, num_of_iter
+            file_directory, directory, layout_type, opt_level, architecture, num_of_iter, arbitrary
         )
         # show program output
         core.configure_item(
@@ -319,8 +332,23 @@ def checkCustomArhiFile(sender, data):
             coupling.add((second_node, first_node))
 
     coupling_list = []
+
+    number = 0
+    temp_dict = {}
     for (first, second) in coupling:
-        coupling_list.append([first, second])
+        if first in temp_dict:
+            first_num = temp_dict[first]
+        else:
+            first_num = number
+            temp_dict[first] = number
+            number += 1
+        if second in temp_dict:
+            second_num = temp_dict[second]
+        else:
+            second_num = number
+            temp_dict[second] = number
+            number += 1
+        coupling_list.append([first_num, second_num])
 
     custom_dict[archi_name] = coupling_list
 
