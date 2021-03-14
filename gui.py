@@ -15,7 +15,6 @@ import dearpygui.simple as simple
 import time
 import traceback
 from qiskit import IBMQ
-import GraphDrawer
 import SimpleCTG
 
 class GUI:
@@ -35,6 +34,15 @@ def print_me(sender, data):
     """
     core.log_debug("Menu Item: {}".format(sender))
 
+def createTokenFile(sender, data):
+    """
+    Creates a new token.txt files and writes token to it.
+    """
+    token = core.get_value("##token")
+    with open('token.txt', 'w') as token_f:
+        token_f.write(token)
+    core.delete_item('Enter you personal token from IBM website')
+    test()
 
 def progress_async(sender, data):
     """
@@ -47,19 +55,21 @@ def progress_async(sender, data):
         time.sleep(0.001)
 
 
-def activate_IBM_account():
+def activate_IBM_account(token=""):
     """
     Activates IBM account so the backends list can be fetched.
     """
-    TOKEN = 'd3ea16a94139c07aac8b34dc0a5d4d999354b232118788f43abe6c1414ce9b92a89194d5e7488a0fc8bce644b08927e85c4f127cd973cb32e76fc0d1a766758b'
-    IBMQ.enable_account(TOKEN)
+    if not token:
+        raise ValueError('No personal token for authentication')
+    # TOKEN = 'd3ea16a94139c07aac8b34dc0a5d4d999354b232118788f43abe6c1414ce9b92a89194d5e7488a0fc8bce644b08927e85c4f127cd973cb32e76fc0d1a766758b'
+    IBMQ.enable_account(token)
 
 
 def get_backends_async(sender, data):
     """
     Fills the backend_dict.
     """
-    activate_IBM_account()
+    activate_IBM_account(token=data)
     backends = IBMQ.get_provider().backends()
     # add backend names with indexes, so it will be easier to retrieve them in radio button
     for i in range(len(backends)):
@@ -288,29 +298,29 @@ def open_help_window(sender, data):
 
         with simple.group('helpArchitectures'):
             core.add_drawing('armonk', width=72, height=75)
-            core.draw_image('armonk', './backends/img/armonk.png', [72, 72])
+            core.draw_image('armonk', './backends/armonk.png', [72, 72])
             core.add_text('ibmq_armonk: 1 qubit.')
             core.add_spacing(name='##space10', count=10)
 
             core.add_drawing('athens', width=518, height=75)
             core.draw_image(
-                'athens', './backends/img/athens-santiago.png', [0, 72])
+                'athens', './backends/athens-santiago.png', [0, 72])
             core.add_text('ibmq_athens and ibmq_santiago: 5 qubits.')
             core.add_spacing(name='##space10', count=10)
 
             core.add_drawing('yorktown', width=373, height=400)
-            core.draw_image('yorktown', './backends/img/ibmqx2.png', [0, 400])
+            core.draw_image('yorktown', './backends/ibmqx2.png', [0, 400])
             core.add_text('ibmqx2: 5 qubits.')
             core.add_spacing(name='##space10', count=10)
 
             core.add_drawing('melb', width=1000, height=196)
-            core.draw_image('melb', './backends/img/melbourne.png', [0, 196])
+            core.draw_image('melb', './backends/melbourne.png', [0, 196])
             core.add_text('ibmq_16_melbourne: 15 qubits.')
             core.add_spacing(name='##space10', count=10)
 
             core.add_drawing('vigo', width=373, height=400)
             core.draw_image(
-                'vigo', './backends/img/vigo-ourence-valencia.png', [0, 400])
+                'vigo', './backends/vigo-ourence-valencia.png', [0, 400])
             core.add_text(
                 'ibmq_vigo, ibmq_valencia, and ibmq_ourence: 5 qubits.')
             core.add_spacing(name='##space10', count=10)
@@ -583,103 +593,122 @@ def draw_graph(architecture, mapping, diameter=20):
                 start_y += diameter * 3
 
 
-if __name__ == '__main__':
-    # Connect to IBM
-    core.run_async_function(get_backends_async, 0)
-    core.set_render_callback(show_button)
+def test():
 
+    with open('token.txt', 'r') as token_file:
+        token = token_file.readline()
+        try:
+            # Connect to IBM
+            core.run_async_function(get_backends_async, data=token)
+            core.set_render_callback(show_button)
+
+            # Progress bar
+            with simple.window('Please wait', no_scrollbar=True, height=70, width=400, x_pos=500, y_pos=200):
+                core.add_progress_bar('progress', value=0.0,
+                                    overlay='Connecting to IBM...', width=400)
+                core.run_async_function(progress_async, 0)
+
+            # Title
+            core.add_text('Quantum visualization machine ver 1.0.0',
+                        color=[52, 73, 235])
+            core.add_spacing(name='##space1', count=5)
+
+            # Menu bar
+            with simple.menu_bar("Main Menu Bar"):
+
+                with simple.menu("File"):
+
+                    core.add_menu_item("Save", callback=print_me)
+                    core.add_menu_item("Save As", callback=print_me)
+
+                core.add_menu_item("Help", callback=open_help_window)
+                core.add_menu_item("About", callback=open_about_window)
+
+            # Parameters group
+            with simple.group('left group', width=300):
+                # Select file button
+                core.add_button('File Selector', callback=file_picker, show=False)
+                core.add_spacing(name='##space2', count=3)
+                core.add_text('File location:', show=False)
+                core.add_label_text('##filedir', value='None Selected',
+                                    source='directory', show=False)
+                core.add_spacing(name='##space3', count=3)
+                core.add_text('File name:', show=False)
+                core.add_label_text('##file', value='None Selected',
+                                    source='file_directory', show=False)
+                core.add_spacing(name='##space4', count=3)
+                # Architecture type radio button
+                core.add_text('Architecture type:', show=False)
+                core.add_radio_button('radio##1', items=[
+                                    'IBM simulator', 'IBM quantum computer', 'Arbitrary computer coupling'], callback=show_architecture_list, source='device_type', show=False)
+                core.add_spacing(name='##space5', count=3)
+                # Layout radio button
+                core.add_text('Quantum circuit layout method:', show=False)
+                core.add_radio_button('radio##2', items=[
+                                    'Original IBM layout', 'Advanced SWAP placement'], source='layout_type', show=False)
+                core.add_spacing(name='##space6', count=3)
+                # Optimization level slider
+                core.add_text('Optimization level:', show=False)
+                core.add_slider_int('##optimization_lvl', default_value=1, min_value=0, max_value=3,
+                                    tip='drag the slider to select an optimization level', width=300, source='opt_level', show=False)
+                core.add_spacing(name='##space7', count=3)
+                # Number of iterations slider
+                core.add_text('Number of iterations:', show=False)
+                core.add_slider_int('##num_of_iter', default_value=100, min_value=1, max_value=100,
+                                    tip='drag the slider to number of iterations', width=300, source='num_of_iter', show=False)
+                core.add_spacing(name='##space8', count=3)
+                # Default settings button
+                core.add_button('Set Default', callback=set_default, show=False)
+                core.add_spacing(name='##space9', count=3)
+                # Process button
+                core.add_button('Process', callback=process, show=False)
+
+            # graph images
+            core.add_same_line(name='line##3', xoffset=350)
+            with simple.group('center group'):
+                # Input circuit preview
+                core.add_text('Input circuit:', show=False)
+                core.add_drawing('input_circuit', width=600, height=500)
+                # Output circuit view
+                core.add_text('Output circuit:', show=False)
+                core.add_drawing('output_circuit', width=600, height=500)
+
+            # program output
+            core.add_same_line(name='line##3', xoffset=1000)
+            with simple.group('right group'):
+                core.add_button('Open qasm file', callback=open_qasm, show=False)
+                core.add_text('Path to IBM circuit representation', show=False)
+                core.add_label_text('circuitImage')
+                core.add_button('Mapping', callback=show_mapping, show=False)
+                core.add_text('Program output:', show=False)
+                core.add_text('Program output will be displayed here',
+                            show=False, wrap=440)
+
+            # opt_level = core.get_value('opt_level')
+            # num_of_iter = core.get_value('num_of_iter')
+            # layout_type = core.get_value('layout_type')
+            # architecture = core.get_value('device_type')
+            # core.log_debug(layout_type)
+            # core.log_debug(opt_level)
+            # core.log_debug(architecture)
+            # core.log_debug(num_of_iter)
+            # core.show_logger()
+
+            
+        except Exception as exc:
+            print("[ERROR]: {}".format(exc))
+
+
+if __name__ == '__main__':
     core.set_main_window_size(1500, 900)
 
-    # Progress bar
-    with simple.window('Please wait', no_scrollbar=True, height=70, width=400, x_pos=500, y_pos=200):
-        core.add_progress_bar('progress', value=0.0,
-                              overlay='Connecting to IBM...', width=400)
-        core.run_async_function(progress_async, 0)
+    # check if there is a file
+    if not os.path.isfile('token.txt'):
+        with simple.window('Enter you personal token from IBM website', no_scrollbar=True, height=70, width=400, x_pos=500, y_pos=200):
+                    core.add_input_text("##token", width=380)
+                    core.add_button("Enter", callback=createTokenFile)    
+    else:
+        test()
+           
+    core.start_dearpygui()           
 
-    # Title
-    core.add_text('Quantum visualization machine ver 1.0.0',
-                  color=[52, 73, 235])
-    core.add_spacing(name='##space1', count=5)
-
-    # Menu bar
-    with simple.menu_bar("Main Menu Bar"):
-
-        with simple.menu("File"):
-
-            core.add_menu_item("Save", callback=print_me)
-            core.add_menu_item("Save As", callback=print_me)
-
-        core.add_menu_item("Help", callback=open_help_window)
-        core.add_menu_item("About", callback=open_about_window)
-
-    # Parameters group
-    with simple.group('left group', width=300):
-        # Select file button
-        core.add_button('File Selector', callback=file_picker, show=False)
-        core.add_spacing(name='##space2', count=3)
-        core.add_text('File location:', show=False)
-        core.add_label_text('##filedir', value='None Selected',
-                            source='directory', show=False)
-        core.add_spacing(name='##space3', count=3)
-        core.add_text('File name:', show=False)
-        core.add_label_text('##file', value='None Selected',
-                            source='file_directory', show=False)
-        core.add_spacing(name='##space4', count=3)
-        # Architecture type radio button
-        core.add_text('Architecture type:', show=False)
-        core.add_radio_button('radio##1', items=[
-                              'IBM simulator', 'IBM quantum computer', 'Arbitrary computer coupling'], callback=show_architecture_list, source='device_type', show=False)
-        core.add_spacing(name='##space5', count=3)
-        # Layout radio button
-        core.add_text('Quantum circuit layout method:', show=False)
-        core.add_radio_button('radio##2', items=[
-                              'Original IBM layout', 'Advanced SWAP placement'], source='layout_type', show=False)
-        core.add_spacing(name='##space6', count=3)
-        # Optimization level slider
-        core.add_text('Optimization level:', show=False)
-        core.add_slider_int('##optimization_lvl', default_value=1, min_value=0, max_value=3,
-                            tip='drag the slider to select an optimization level', width=300, source='opt_level', show=False)
-        core.add_spacing(name='##space7', count=3)
-        # Number of iterations slider
-        core.add_text('Number of iterations:', show=False)
-        core.add_slider_int('##num_of_iter', default_value=100, min_value=1, max_value=100,
-                            tip='drag the slider to number of iterations', width=300, source='num_of_iter', show=False)
-        core.add_spacing(name='##space8', count=3)
-        # Default settings button
-        core.add_button('Set Default', callback=set_default, show=False)
-        core.add_spacing(name='##space9', count=3)
-        # Process button
-        core.add_button('Process', callback=process, show=False)
-
-    # graph images
-    core.add_same_line(name='line##3', xoffset=350)
-    with simple.group('center group'):
-        # Input circuit preview
-        core.add_text('Input circuit:', show=False)
-        core.add_drawing('input_circuit', width=600, height=500)
-        # Output circuit view
-        core.add_text('Output circuit:', show=False)
-        core.add_drawing('output_circuit', width=600, height=500)
-
-    # program output
-    core.add_same_line(name='line##3', xoffset=1000)
-    with simple.group('right group'):
-        core.add_button('Open qasm file', callback=open_qasm, show=False)
-        core.add_text('Path to IBM circuit representation', show=False)
-        core.add_label_text('circuitImage')
-        core.add_button('Mapping', callback=show_mapping, show=False)
-        core.add_text('Program output:', show=False)
-        core.add_text('Program output will be displayed here',
-                      show=False, wrap=440)
-
-    opt_level = core.get_value('opt_level')
-    num_of_iter = core.get_value('num_of_iter')
-    layout_type = core.get_value('layout_type')
-    architecture = core.get_value('device_type')
-    core.log_debug(layout_type)
-    core.log_debug(opt_level)
-    core.log_debug(architecture)
-    core.log_debug(num_of_iter)
-
-    # core.show_logger()
-    core.start_dearpygui()
