@@ -1,8 +1,4 @@
 __pycache__/*
-.ipynb_checkpoints/*
-codeTests/*
-latex_error.log
-CtgExperiments.ipynb
 .vscode/*
-outputs/
+outputs/*
 .idea/
