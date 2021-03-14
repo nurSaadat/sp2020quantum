@@ -16,6 +16,7 @@ import time
 import traceback
 from qiskit import IBMQ
 import SimpleCTG
+import pickle
 
 class GUI:
     def __init__(self):
@@ -25,6 +26,9 @@ class GUI:
         self.prev_architecture = 0
         self.qasm_file = ''
         self.projection_map = {}
+
+        self.arbitrary_node_list = []
+        self.arbitrary_node_connections = {}
 
 gui = GUI()
 
@@ -93,6 +97,7 @@ def show_button(sender, data):
         core.configure_item('##file', show=True)
         core.configure_item('Architecture type:', show=True)
         core.configure_item('radio##1', show=True)
+        core.configure_item('Create custom architecture', show=True)
         core.configure_item('Quantum circuit layout method:', show=True)
         core.configure_item('radio##2', show=True)
         core.configure_item('Optimization level:', show=True)
@@ -179,10 +184,6 @@ def process(sender, data):
         core.configure_item('circuitImage', show=False)
         core.configure_item('Path to IBM circuit representation', show=False)
 
-def use_arbitrary_coupling(sender, data):
-    # TODO:
-    print('-')
-
 
 def add_IBM_computers_view():
     core.add_spacing(name='##space9', count=2)
@@ -193,8 +194,13 @@ def add_IBM_computers_view():
 
 
 def add_arbitrary_coupling_view():
-    core.add_input_text('##architectureWindow', multiline=True, show=False)
-    core.add_button('Use', callback=use_arbitrary_coupling)
+    # load arbitrary couplings from file
+    with open('arbitrary_coupling.pickle', 'rb') as arbitrary_file:
+        custom_dict = pickle.load(arbitrary_file)
+
+    core.add_spacing(name='##space9', count=2)
+    core.add_text('Architecture name:', before='##space5')
+    core.add_radio_button('radio##3', items=list(custom_dict.keys()), source='architecture', before='##space5')
     gui.prev_architecture = 2
 
 
@@ -206,8 +212,9 @@ def delete_IBM_computers_view():
 
 
 def delete_arbitrary_coupling_view():
-    core.delete_item('##architectureWindow')
-    core.delete_item('Use')
+    core.delete_item('##space9')
+    core.delete_item('Architecture name:')
+    core.delete_item('radio##3')
     gui.prev_architecture = 0
 
 
@@ -224,14 +231,103 @@ def show_architecture_list(sender, data):
             delete_arbitrary_coupling_view()
 
     elif (my_var == 1 and gui.prev_architecture != 1):
-        add_IBM_computers_view()
         if (gui.prev_architecture == 2):
             delete_arbitrary_coupling_view()
+        add_IBM_computers_view()
 
     elif (my_var == 2 and gui.prev_architecture != 2):
-        add_arbitrary_coupling_view()
         if (gui.prev_architecture == 1):
             delete_IBM_computers_view()
+        add_arbitrary_coupling_view()
+
+
+# function that creates a new window to create a new arbitrary coupling
+def create_architecture(sender, data):
+    # delete if window already exists
+    core.delete_item('Creating custom arbitrary coupling')
+
+    with simple.window('Creating custom arbitrary coupling', no_scrollbar=True, height=500, width=600, x_pos=500, y_pos=200):
+        # clear helper value
+        gui.arbitrary_node_list = [] 
+        gui.arbitrary_node_connections = {}
+
+        # get the names of nodes
+        core.add_text('', show=False)
+        with simple.group('node creation##90'):
+            core.add_text('Please, list the name of nodes and separate them with commas ",".')
+            core.add_text('Please, use unique names:')
+            core.add_input_text("##nodes_list_input", width=380)
+            core.add_button("Enter##a", callback=checkCustomNodes)
+        
+        # get the connections between nodes
+        with simple.group('connection creation##100', show=False):
+            core.add_text('Please, list the connections between nodes.')
+            core.add_text('Use numbers to indicate the node and separate them with commas ",":') 
+
+        # get the name for this copuling and save it
+        with simple.group('finalization##110', show=False):
+            core.add_text('Please, name this custom copuling.')
+            core.add_text('Maximum 30 symbols:') 
+            core.add_input_text("##architecture_name", width=380)
+            core.add_button("Enter##c", callback=checkCustomArhiFile)
+
+
+# callback for one of the buttons in create_architecture()
+# colects the names of nodes from the user and transitions the window to the next state
+def checkCustomNodes(sender, data):
+    # colect and process the names of nodes
+    nodes_list = core.get_value("##nodes_list_input")
+    nodes_list = list(item.strip(" ") for item in nodes_list.split(","))
+    gui.arbitrary_node_list = nodes_list
+
+    # transition the window to the next state
+    core.delete_item('node creation##90')
+    core.configure_item('connection creation##100', show=True)
+    for node_name in nodes_list:
+        core.add_input_text("connections to node {}##node_connection_{}".format(node_name, node_name), width=380, parent="connection creation##100")
+    core.add_button("Enter##b", callback=checkCustomConnections, parent="connection creation##100")
+
+
+# callback for one of the buttons in create_architecture()
+# colects the connections between nodes from the user and transitions the window to the next state
+def checkCustomConnections(sender, data):
+    # colect and process the connections between nodes
+    for node_name in gui.arbitrary_node_list:
+        connections = core.get_value("connections to node {}##node_connection_{}".format(node_name, node_name))
+        connections = list(item.strip(" ") for item in connections.split(","))
+        gui.arbitrary_node_connections[node_name] = connections
+
+    # transition the window to the next state
+    core.delete_item('connection creation##100')
+    core.configure_item('finalization##110', show=True)
+
+
+def checkCustomArhiFile(sender, data):
+    # check if the arbitrary coupling file exists and load the dictionary
+    if not os.path.isfile('arbitrary_coupling.pickle'):
+        custom_dict = {}
+    else:
+        with open('arbitrary_coupling.pickle', 'rb') as arbitrary_file:
+            custom_dict = pickle.load(arbitrary_file)
+
+    archi_name = core.get_value("##architecture_name")
+    coupling = set()
+    
+    for first_node in gui.arbitrary_node_connections:
+        for second_node in gui.arbitrary_node_connections[first_node]:
+            coupling.add((first_node, second_node))
+            coupling.add((second_node, first_node))
+
+    coupling_list = []
+    for (first, second) in coupling:
+        coupling_list.append([first, second])
+
+    custom_dict[archi_name] = coupling_list
+
+    with open('arbitrary_coupling.pickle', 'wb') as arbitrary_file:
+        pickle.dump(custom_dict, arbitrary_file, pickle.HIGHEST_PROTOCOL)
+
+    core.delete_item('Creating custom arbitrary coupling')
 
 
 def file_picker(sender, data):
@@ -642,6 +738,9 @@ def test():
                 core.add_radio_button('radio##1', items=[
                                     'IBM simulator', 'IBM quantum computer', 'Arbitrary computer coupling'], callback=show_architecture_list, source='device_type', show=False)
                 core.add_spacing(name='##space5', count=3)
+                # "Create arbitrary coupling" button
+                core.add_button('Create custom architecture', callback=create_architecture, show=False)
+                core.add_spacing(name='##space11', count=3)
                 # Layout radio button
                 core.add_text('Quantum circuit layout method:', show=False)
                 core.add_radio_button('radio##2', items=[
@@ -709,6 +808,5 @@ if __name__ == '__main__':
                     core.add_button("Enter", callback=createTokenFile)    
     else:
         test()
-           
+   
     core.start_dearpygui()           
-
