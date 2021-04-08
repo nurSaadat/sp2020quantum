@@ -689,6 +689,7 @@ def test():
 
 
 if __name__ == '__main__':
+    core.add_additional_font('Karla-Regular.ttf', 20)
     core.set_main_window_size(1500, 900)
 
     # check if there is a file
