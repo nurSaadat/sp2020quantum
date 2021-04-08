@@ -683,17 +683,6 @@ def test():
                 core.add_text('Program output:', show=False)
                 core.add_text('Program output will be displayed here',
                             show=False, wrap=440)
-
-            # opt_level = core.get_value('opt_level')
-            # num_of_iter = core.get_value('num_of_iter')
-            # layout_type = core.get_value('layout_type')
-            # architecture = core.get_value('device_type')
-            # core.log_debug(layout_type)
-            # core.log_debug(opt_level)
-            # core.log_debug(architecture)
-            # core.log_debug(num_of_iter)
-            # core.show_logger()
-
             
         except Exception as exc:
             print("[ERROR]: {}".format(exc))
