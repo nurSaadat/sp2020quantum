@@ -608,11 +608,6 @@ def test():
                                     overlay='Connecting to IBM...', width=400)
                 core.run_async_function(progress_async, 0)
 
-            # Title
-            core.add_text('Quantum visualization machine ver 1.0.0',
-                        color=[52, 73, 235])
-            core.add_spacing(name='##space1', count=5)
-
             # Menu bar
             with simple.menu_bar("Main Menu Bar"):
 
