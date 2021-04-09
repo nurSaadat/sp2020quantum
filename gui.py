@@ -680,7 +680,6 @@ def test():
                 core.add_child('##output_block1', width=460, height=300)
                 core.add_button('Open qasm file', callback=open_qasm, show=False)
                 core.add_text('Path to IBM circuit representation', show=False)
-                core.add_label_text('circuitImage')
                 core.add_button('Mapping', callback=show_mapping, show=False)
                 core.end()
                 core.add_text('Program output:', show=False)
