@@ -620,8 +620,9 @@ def test():
                 core.add_menu_item("About", callback=open_about_window)
 
             # Parameters group
-            with simple.group('left group', width=300):
+            with simple.group('left group', width=350):
                 # Select file button
+                core.add_child('##file_block', width=350, height=180)
                 core.add_button('File Selector', callback=file_picker, show=False)
                 core.add_spacing(name='##space2', count=3)
                 core.add_text('File location:', show=False)
@@ -631,8 +632,10 @@ def test():
                 core.add_text('File name:', show=False)
                 core.add_label_text('##file', value='None Selected',
                                     source='file_directory', show=False)
+                core.end()
                 core.add_spacing(name='##space4', count=3)
                 # Architecture type radio button
+                core.add_child('##settings_block', width=350, height=450)
                 core.add_text('Architecture type:', show=False)
                 core.add_radio_button('radio##1', items=[
                                     'IBM simulator', 'IBM quantum computer', 'Arbitrary computer coupling'], callback=show_architecture_list, source='device_type', show=False)
@@ -654,31 +657,38 @@ def test():
                 core.add_spacing(name='##space8', count=3)
                 # Default settings button
                 core.add_button('Set Default', callback=set_default, show=False)
+                core.end()
                 core.add_spacing(name='##space9', count=3)
                 # Process button
                 core.add_button('Process', callback=process, show=False)
 
             # graph images
-            core.add_same_line(name='line##3', xoffset=350)
+            core.add_same_line(name='line##3', xoffset=370)
             with simple.group('center group'):
+                core.add_child('##images_block', width=640)
                 # Input circuit preview
                 core.add_text('Input circuit:', show=False)
                 core.add_drawing('input_circuit', width=600, height=500)
                 # Output circuit view
                 core.add_text('Output circuit:', show=False)
                 core.add_drawing('output_circuit', width=600, height=500)
+                core.end()
 
             # program output
-            core.add_same_line(name='line##3', xoffset=1000)
+            core.add_same_line(name='line##3', xoffset=1020)
             with simple.group('right group'):
+                core.add_child('##output_block1', width=460, height=300)
                 core.add_button('Open qasm file', callback=open_qasm, show=False)
                 core.add_text('Path to IBM circuit representation', show=False)
                 core.add_label_text('circuitImage')
                 core.add_button('Mapping', callback=show_mapping, show=False)
+                core.end()
                 core.add_text('Program output:', show=False)
+                core.add_child('##output_block2', width=460, height=180)
                 core.add_text('Program output will be displayed here',
                             show=False, wrap=440)
-            
+                core.end()
+
         except Exception as exc:
             print("[ERROR]: {}".format(exc))
 
@@ -769,7 +779,7 @@ def set_colors():
 
 if __name__ == '__main__':
     set_styles()
-    core.set_theme('Classic')
+    set_colors()
     core.show_debug()    
 
     # check if there is a file
