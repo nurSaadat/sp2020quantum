@@ -86,25 +86,13 @@ def show_button(sender, data):
         if (gui.loading):
             core.delete_item('Please wait')
             gui.loading = False
-        core.configure_item('File Selector', show=True)
-        core.configure_item('File location:', show=True)
-        core.configure_item('##filedir', show=True)
-        core.configure_item('File name:', show=True)
-        core.configure_item('##file', show=True)
-        core.configure_item('Architecture type:', show=True)
-        core.configure_item('radio##1', show=True)
-        core.configure_item('Quantum circuit layout method:', show=True)
-        core.configure_item('radio##2', show=True)
-        core.configure_item('Optimization level:', show=True)
-        core.configure_item('##optimization_lvl', show=True)
-        core.configure_item('Number of iterations:', show=True)
-        core.configure_item('##num_of_iter', show=True)
-        core.configure_item('Set Default', show=True)
+        core.configure_item('##file_block', show=True)
+        core.configure_item('##settings_block', show=True)
         core.configure_item('Process', show=True)
-        core.configure_item('Input circuit:', show=True)
-        core.configure_item('Output circuit:', show=True)
+        core.configure_item('##images_block', show=True)
+        core.configure_item('##output_block1', show=True)
+        core.configure_item('##output_block2', show=True)
         core.configure_item('Program output:', show=True)
-        core.configure_item('Program output will be displayed here', show=True)
 
 
 def set_default(sender, data):
@@ -157,15 +145,13 @@ def process(sender, data):
         core.draw_image('output_circuit', circuit_features['reduced_graph'], [
                         0, 500], pmax=[200, 500])
         gui.qasm_file = circuit_features['qasm_file']
-        core.set_value('circuitImage', circuit_features['ibm_circuit'])
+        core.set_value('##circuitImage', circuit_features['ibm_circuit'])
         gui.projection_map = circuit_features['mapping']
         core.set_value('Program output will be displayed here',
                        "Processed file: " + core.get_value('file_directory') + "\n" + infoStr)
         core.configure_item('Open qasm file', show=True)
         core.configure_item('Mapping', show=True)
         core.configure_item('Path to IBM circuit representation', show=True)
-        core.configure_item(
-            'circuitImage', value=core.get_value('circuitImage'))
     except Exception as ex:
         # if error, then makes text red and removes features
         core.configure_item(
@@ -176,7 +162,7 @@ def process(sender, data):
         core.clear_drawing('output_circuit')
         core.configure_item('Open qasm file', show=False)
         core.configure_item('Mapping', show=False)
-        core.configure_item('circuitImage', show=False)
+        core.configure_item('##circuitImage', show=False)
         core.configure_item('Path to IBM circuit representation', show=False)
 
 def use_arbitrary_coupling(sender, data):
@@ -622,41 +608,41 @@ def test():
             # Parameters group
             with simple.group('left group', width=350):
                 # Select file button
-                core.add_child('##file_block', width=350, height=180)
-                core.add_button('File Selector', callback=file_picker, show=False)
+                core.add_child('##file_block', width=350, height=180, show=False)
+                core.add_button('File Selector', callback=file_picker)
                 core.add_spacing(name='##space2', count=3)
-                core.add_text('File location:', show=False)
+                core.add_text('File location:')
                 core.add_label_text('##filedir', value='None Selected',
-                                    source='directory', show=False)
+                                    source='directory')
                 core.add_spacing(name='##space3', count=3)
-                core.add_text('File name:', show=False)
+                core.add_text('File name:')
                 core.add_label_text('##file', value='None Selected',
-                                    source='file_directory', show=False)
+                                    source='file_directory')
                 core.end()
                 core.add_spacing(name='##space4', count=3)
                 # Architecture type radio button
-                core.add_child('##settings_block', width=350, height=450)
-                core.add_text('Architecture type:', show=False)
+                core.add_child('##settings_block', width=350, height=450, show=False)
+                core.add_text('Architecture type:')
                 core.add_radio_button('radio##1', items=[
-                                    'IBM simulator', 'IBM quantum computer', 'Arbitrary computer coupling'], callback=show_architecture_list, source='device_type', show=False)
+                                    'IBM simulator', 'IBM quantum computer', 'Arbitrary computer coupling'], callback=show_architecture_list, source='device_type')
                 core.add_spacing(name='##space5', count=3)
                 # Layout radio button
-                core.add_text('Quantum circuit layout method:', show=False)
+                core.add_text('Quantum circuit layout method:')
                 core.add_radio_button('radio##2', items=[
-                                    'Original IBM layout', 'Advanced SWAP placement'], source='layout_type', show=False)
+                                    'Original IBM layout', 'Advanced SWAP placement'], source='layout_type')
                 core.add_spacing(name='##space6', count=3)
                 # Optimization level slider
-                core.add_text('Optimization level:', show=False)
+                core.add_text('Optimization level:')
                 core.add_slider_int('##optimization_lvl', default_value=1, min_value=0, max_value=3,
-                                    tip='drag the slider to select an optimization level', width=300, source='opt_level', show=False)
+                                    tip='drag the slider to select an optimization level', width=300, source='opt_level')
                 core.add_spacing(name='##space7', count=3)
                 # Number of iterations slider
-                core.add_text('Number of iterations:', show=False)
+                core.add_text('Number of iterations:')
                 core.add_slider_int('##num_of_iter', default_value=100, min_value=1, max_value=100,
-                                    tip='drag the slider to number of iterations', width=300, source='num_of_iter', show=False)
+                                    tip='drag the slider to number of iterations', width=300, source='num_of_iter')
                 core.add_spacing(name='##space8', count=3)
                 # Default settings button
-                core.add_button('Set Default', callback=set_default, show=False)
+                core.add_button('Set Default', callback=set_default)
                 core.end()
                 core.add_spacing(name='##space9', count=3)
                 # Process button
@@ -665,27 +651,27 @@ def test():
             # graph images
             core.add_same_line(name='line##3', xoffset=370)
             with simple.group('center group'):
-                core.add_child('##images_block', width=640)
+                core.add_child('##images_block', width=640, show=False)
                 # Input circuit preview
-                core.add_text('Input circuit:', show=False)
+                core.add_text('Input circuit:')
                 core.add_drawing('input_circuit', width=600, height=500)
                 # Output circuit view
-                core.add_text('Output circuit:', show=False)
+                core.add_text('Output circuit:')
                 core.add_drawing('output_circuit', width=600, height=500)
                 core.end()
 
             # program output
             core.add_same_line(name='line##3', xoffset=1020)
             with simple.group('right group'):
-                core.add_child('##output_block1', width=460, height=300)
-                core.add_button('Open qasm file', callback=open_qasm, show=False)
-                core.add_text('Path to IBM circuit representation', show=False)
-                core.add_button('Mapping', callback=show_mapping, show=False)
+                core.add_child('##output_block1', width=460, height=300, show=False)
+                core.add_button('Open qasm file', callback=open_qasm)
+                core.add_text('Path to IBM circuit representation')
+                core.add_label_text('##circuitImage')
+                core.add_button('Mapping', callback=show_mapping)
                 core.end()
                 core.add_text('Program output:', show=False)
-                core.add_child('##output_block2', width=460, height=180)
-                core.add_text('Program output will be displayed here',
-                            show=False, wrap=440)
+                core.add_child('##output_block2', width=460, height=180, show=False)
+                core.add_text('Program output will be displayed here', wrap=440)
                 core.end()
 
         except Exception as exc:
