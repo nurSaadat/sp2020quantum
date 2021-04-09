@@ -683,6 +683,7 @@ def test():
             print("[ERROR]: {}".format(exc))
 
 def set_styles():
+    core.set_main_window_size(1500, 900)
     core.set_style_window_padding(8.00, 8.00)
     core.set_style_frame_padding(12.00, 4.00)
     core.set_style_item_spacing(8.00, 2.00)
@@ -691,7 +692,7 @@ def set_styles():
     core.set_style_indent_spacing(12.00)
     core.set_style_scrollbar_size(16.00)
     core.set_style_grab_min_size(20.00)
-    core.set_style_window_border_size(0.00)
+    core.set_style_window_border_size(1.00)
     core.set_style_child_border_size(1.00)
     core.set_style_popup_border_size(0.00)
     core.set_style_frame_border_size(0.00)
@@ -712,14 +713,64 @@ def set_styles():
     core.set_style_antialiased_fill(True)
     core.set_style_curve_tessellation_tolerance(1.25)
     core.set_style_circle_segment_max_error(1.60)
-    
+    core.add_additional_font('Karla-Regular.ttf', 20)
+
+def set_colors():
+    core.set_theme_item(core.mvGuiCol_Text, 230, 230, 230, 255)
+    core.set_theme_item(core.mvGuiCol_TextDisabled, 153, 153, 153, 255)
+    core.set_theme_item(core.mvGuiCol_WindowBg, 0, 0, 0, 179)
+    core.set_theme_item(core.mvGuiCol_ChildBg, 0, 0, 0, 0)
+    core.set_theme_item(core.mvGuiCol_PopupBg, 28, 28, 36, 235)
+    core.set_theme_item(core.mvGuiCol_Border, 128, 128, 128, 128)
+    core.set_theme_item(core.mvGuiCol_BorderShadow, 0, 0, 0, 0)
+    core.set_theme_item(core.mvGuiCol_FrameBg, 110, 110, 110, 99)
+    core.set_theme_item(core.mvGuiCol_FrameBgHovered, 120, 120, 176, 102)
+    core.set_theme_item(core.mvGuiCol_FrameBgActive, 107, 105, 163, 176)
+    core.set_theme_item(core.mvGuiCol_TitleBg, 69, 69, 138, 212)
+    core.set_theme_item(core.mvGuiCol_TitleBgActive, 82, 82, 161, 222)
+    core.set_theme_item(core.mvGuiCol_TitleBgCollapsed, 102, 102, 204, 51)
+    core.set_theme_item(core.mvGuiCol_MenuBarBg, 102, 102, 140, 204)
+    core.set_theme_item(core.mvGuiCol_ScrollbarBg, 51, 64, 77, 153)
+    core.set_theme_item(core.mvGuiCol_ScrollbarGrab, 102, 102, 204, 77)
+    core.set_theme_item(core.mvGuiCol_ScrollbarGrabHovered, 102, 102, 204, 102)
+    core.set_theme_item(core.mvGuiCol_ScrollbarGrabActive, 105, 99, 204, 153)
+    core.set_theme_item(core.mvGuiCol_CheckMark, 230, 230, 230, 128)
+    core.set_theme_item(core.mvGuiCol_SliderGrab, 255, 255, 255, 77)
+    core.set_theme_item(core.mvGuiCol_SliderGrabActive, 105, 99, 204, 153)
+    core.set_theme_item(core.mvGuiCol_Button, 89, 102, 156, 158)
+    core.set_theme_item(core.mvGuiCol_ButtonHovered, 102, 122, 181, 201)
+    core.set_theme_item(core.mvGuiCol_ButtonActive, 117, 138, 204, 255)
+    core.set_theme_item(core.mvGuiCol_Header, 102, 102, 230, 115)
+    core.set_theme_item(core.mvGuiCol_HeaderHovered, 115, 115, 230, 204)
+    core.set_theme_item(core.mvGuiCol_HeaderActive, 135, 135, 222, 204)
+    core.set_theme_item(core.mvGuiCol_Separator, 128, 128, 128, 153)
+    core.set_theme_item(core.mvGuiCol_SeparatorHovered, 153, 153, 179, 255)
+    core.set_theme_item(core.mvGuiCol_SeparatorActive, 179, 179, 230, 255)
+    core.set_theme_item(core.mvGuiCol_ResizeGrip, 255, 255, 255, 41)
+    core.set_theme_item(core.mvGuiCol_ResizeGripHovered, 199, 209, 255, 153)
+    core.set_theme_item(core.mvGuiCol_ResizeGripActive, 199, 209, 255, 230)
+    core.set_theme_item(core.mvGuiCol_Tab, 86, 86, 174, 200)
+    core.set_theme_item(core.mvGuiCol_TabHovered, 115, 115, 230, 204)
+    core.set_theme_item(core.mvGuiCol_TabActive, 103, 103, 185, 215)
+    core.set_theme_item(core.mvGuiCol_TabActive, 103, 103, 185, 215)
+    core.set_theme_item(core.mvGuiCol_TabUnfocused, 72, 72, 145, 209)
+    core.set_theme_item(core.mvGuiCol_TabUnfocusedActive, 89, 89, 166, 213)
+    core.set_theme_item(core.mvGuiCol_PlotLines, 255, 255, 255, 255)
+    core.set_theme_item(core.mvGuiCol_PlotLinesHovered, 230, 179, 0, 255)
+    core.set_theme_item(core.mvGuiCol_PlotHistogram, 230, 179, 0, 255)
+    core.set_theme_item(core.mvGuiCol_PlotHistogramHovered, 255, 153, 0, 255)
+    core.set_theme_item(core.mvGuiCol_TextSelectedBg, 0, 0, 255, 89)
+    core.set_theme_item(core.mvGuiCol_DragDropTarget, 255, 255, 0, 230)
+    core.set_theme_item(core.mvGuiCol_NavHighlight, 115, 115, 230, 204)
+    core.set_theme_item(core.mvGuiCol_NavWindowingHighlight, 255, 255, 255, 179)
+    core.set_theme_item(core.mvGuiCol_NavWindowingDimBg, 204, 204, 204, 51)
+    core.set_theme_item(core.mvGuiCol_ModalWindowDimBg, 51, 51, 51, 89)
+
 
 if __name__ == '__main__':
-    core.add_additional_font('Karla-Regular.ttf', 20)
+    set_styles()
     core.set_theme('Classic')
-    # core.show_documentation()
-    core.show_debug()
-    core.set_main_window_size(1500, 900)
+    core.show_debug()    
 
     # check if there is a file
     if not os.path.isfile('token.txt'):
@@ -729,6 +780,5 @@ if __name__ == '__main__':
     else:
         test()
            
-    core.show_logger()
     core.start_dearpygui()           
 
