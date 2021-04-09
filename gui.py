@@ -682,9 +682,43 @@ def test():
         except Exception as exc:
             print("[ERROR]: {}".format(exc))
 
+def set_styles():
+    core.set_style_window_padding(8.00, 8.00)
+    core.set_style_frame_padding(12.00, 4.00)
+    core.set_style_item_spacing(8.00, 2.00)
+    core.set_style_item_inner_spacing(2.00, 1.00)
+    core.set_style_touch_extra_padding(0.00, 0.00)
+    core.set_style_indent_spacing(12.00)
+    core.set_style_scrollbar_size(16.00)
+    core.set_style_grab_min_size(20.00)
+    core.set_style_window_border_size(0.00)
+    core.set_style_child_border_size(1.00)
+    core.set_style_popup_border_size(0.00)
+    core.set_style_frame_border_size(0.00)
+    core.set_style_tab_border_size(0.00)
+    core.set_style_window_rounding(4.00)
+    core.set_style_child_rounding(4.00)
+    core.set_style_frame_rounding(5.00)
+    core.set_style_popup_rounding(4.00)
+    core.set_style_scrollbar_rounding(5.00)
+    core.set_style_grab_rounding(4.00)
+    core.set_style_tab_rounding(5.00)
+    core.set_style_window_title_align(0.50, 0.50)
+    core.set_style_button_text_align(0.50, 0.50)
+    core.set_style_selectable_text_align(0.00, 0.00)
+    core.set_style_display_safe_area_padding(4.00, 4.00)
+    core.set_style_global_alpha(1.00)
+    core.set_style_antialiased_lines(True)
+    core.set_style_antialiased_fill(True)
+    core.set_style_curve_tessellation_tolerance(1.25)
+    core.set_style_circle_segment_max_error(1.60)
+    
 
 if __name__ == '__main__':
     core.add_additional_font('Karla-Regular.ttf', 20)
+    core.set_theme('Classic')
+    # core.show_documentation()
+    core.show_debug()
     core.set_main_window_size(1500, 900)
 
     # check if there is a file
@@ -695,5 +729,6 @@ if __name__ == '__main__':
     else:
         test()
            
+    core.show_logger()
     core.start_dearpygui()           
 
