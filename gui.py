@@ -108,7 +108,7 @@ def set_default(sender, data):
     core.set_value('architecture', 1)
     core.set_value('layout_type', 1)
     core.set_value('opt_level', 1)
-    core.set_value('num_of_iter', 100)
+    core.set_value('##num_of_iter', 100)
 
 
 def process(sender, data):
@@ -118,7 +118,7 @@ def process(sender, data):
     directory = core.get_value('directory')
     file_directory = core.get_value('file_directory')
     opt_level = core.get_value('opt_level')
-    num_of_iter = core.get_value('num_of_iter')
+    num_of_iter = core.get_value('##num_of_iter')
 
     # converts layout type to boolean for SimpleCTG
     temp = core.get_value('layout_type')
@@ -579,6 +579,15 @@ def draw_graph(architecture, mapping, diameter=20):
                 start_y += diameter * 3
 
 
+def check_iteration_num(sender, data):
+    if core.get_value(sender) > 1 and core.get_value('Number of iterations should not be less than 1.'):
+        core.delete_item('Number of iterations should not be less than 1.')
+    if core.get_value(sender) < 1:
+        core.set_value('##num_of_iter', 1)
+        if not core.get_value('Number of iterations should not be less than 1.'):
+            core.add_text('Number of iterations should not be less than 1.', color=[255,0,0,255], before='##num_of_iter', wrap=300)
+
+
 def test():
 
     with open('token.txt', 'r') as token_file:
@@ -638,8 +647,7 @@ def test():
                 core.add_spacing(name='##space7', count=3)
                 # Number of iterations slider
                 core.add_text('Number of iterations:')
-                core.add_slider_int('##num_of_iter', default_value=100, min_value=1, max_value=100,
-                                    tip='drag the slider to number of iterations', width=300, source='num_of_iter')
+                core.add_input_int('##num_of_iter', width=300, callback=check_iteration_num, default_value=100)
                 core.add_spacing(name='##space8', count=3)
                 # Default settings button
                 core.add_button('Set Default', callback=set_default)
