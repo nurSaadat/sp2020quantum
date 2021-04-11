@@ -17,6 +17,7 @@ import traceback
 from qiskit import IBMQ
 import SimpleCTG
 
+
 class GUI:
     def __init__(self):
         self.backend_dict = {}
@@ -26,13 +27,16 @@ class GUI:
         self.qasm_file = ''
         self.projection_map = {}
 
+
 gui = GUI()
+
 
 def print_me(sender, data):
     """
     Callback for menu items.
     """
     core.log_debug("Menu Item: {}".format(sender))
+
 
 def createTokenFile(sender, data):
     """
@@ -43,6 +47,7 @@ def createTokenFile(sender, data):
         token_f.write(token)
     core.delete_item('Enter you personal token from IBM website')
     test()
+
 
 def progress_async(sender, data):
     """
@@ -165,6 +170,7 @@ def process(sender, data):
         core.configure_item('##circuitImage', show=False)
         core.configure_item('Path to IBM circuit representation', show=False)
 
+
 def use_arbitrary_coupling(sender, data):
     # TODO:
     print('-')
@@ -174,7 +180,7 @@ def add_IBM_computers_view():
     core.add_spacing(name='##space9', count=2)
     core.add_text('Architecture name:', before='##space5')
     core.add_radio_button('radio##3', items=list(gui.backend_dict.values())[
-                            1:], source='architecture', before='##space5')
+        1:], source='architecture', before='##space5')
     gui.prev_architecture = 1
 
 
@@ -224,7 +230,8 @@ def file_picker(sender, data):
     """
     Opens file dialog window to choose .pla file
     """
-    core.open_file_dialog(callback=apply_selected_directory, extensions='.real')
+    core.open_file_dialog(
+        callback=apply_selected_directory, extensions='.real')
 
 
 def apply_selected_directory(sender, data):
@@ -279,7 +286,8 @@ def open_help_window(sender, data):
     """
     with simple.window('Help##window', width=1000, height=600, on_close=delete_items(['Help##window'])):
         with simple.menu_bar("Help Menu Bar"):
-            core.add_menu_item("Architectures", callback=help_show_architectures)
+            core.add_menu_item(
+                "Architectures", callback=help_show_architectures)
             core.add_menu_item("Instructions", callback=help_show_instructions)
 
         with simple.group('helpArchitectures'):
@@ -363,9 +371,9 @@ def show_mapping(sender, data):
         architecture = gui.backend_dict[core.get_value('architecture') + 1]
 
     old_dict = gui.projection_map
-    new_dict = dict([(value, key) for key, value in old_dict.items()])     
+    new_dict = dict([(value, key) for key, value in old_dict.items()])
     draw_graph(architecture, new_dict)
-    
+
 
 def draw_graph(architecture, mapping, diameter=20):
     """
@@ -585,7 +593,8 @@ def check_iteration_num(sender, data):
     if core.get_value(sender) < 1:
         core.set_value('##num_of_iter', 1)
         if not core.get_value('Number of iterations should not be less than 1.'):
-            core.add_text('Number of iterations should not be less than 1.', color=[255,0,0,255], before='##num_of_iter', wrap=300)
+            core.add_text('Number of iterations should not be less than 1.', color=[
+                          255, 0, 0, 255], before='##num_of_iter', wrap=300)
 
 
 def test():
@@ -600,7 +609,7 @@ def test():
             # Progress bar
             with simple.window('Please wait', no_scrollbar=True, height=70, width=400, x_pos=500, y_pos=200):
                 core.add_progress_bar('progress', value=0.0,
-                                    overlay='Connecting to IBM...', width=400)
+                                      overlay='Connecting to IBM...', width=400)
                 core.run_async_function(progress_async, 0)
 
             # Menu bar
@@ -617,7 +626,8 @@ def test():
             # Parameters group
             with simple.group('left group', width=350):
                 # Select file button
-                core.add_child('##file_block', width=350, height=180, show=False)
+                core.add_child('##file_block', width=350,
+                               height=180, show=False)
                 core.add_button('File Selector', callback=file_picker)
                 core.add_spacing(name='##space2', count=3)
                 core.add_text('File location:')
@@ -630,15 +640,16 @@ def test():
                 core.end()
                 core.add_spacing(name='##space4', count=3)
                 # Architecture type radio button
-                core.add_child('##settings_block', width=350, height=450, show=False)
+                core.add_child('##settings_block', width=350,
+                               height=450, show=False)
                 core.add_text('Architecture type:')
                 core.add_radio_button('radio##1', items=[
-                                    'IBM simulator', 'IBM quantum computer', 'Arbitrary computer coupling'], callback=show_architecture_list, source='device_type')
+                    'IBM simulator', 'IBM quantum computer', 'Arbitrary computer coupling'], callback=show_architecture_list, source='device_type')
                 core.add_spacing(name='##space5', count=3)
                 # Layout radio button
                 core.add_text('Quantum circuit layout method:')
                 core.add_radio_button('radio##2', items=[
-                                    'Original IBM layout', 'Advanced SWAP placement'], source='layout_type')
+                    'Original IBM layout', 'Advanced SWAP placement'], source='layout_type')
                 core.add_spacing(name='##space6', count=3)
                 # Optimization level slider
                 core.add_text('Optimization level:')
@@ -647,7 +658,8 @@ def test():
                 core.add_spacing(name='##space7', count=3)
                 # Number of iterations slider
                 core.add_text('Number of iterations:')
-                core.add_input_int('##num_of_iter', width=300, callback=check_iteration_num, default_value=100)
+                core.add_input_int('##num_of_iter', width=300,
+                                   callback=check_iteration_num, default_value=100)
                 core.add_spacing(name='##space8', count=3)
                 # Default settings button
                 core.add_button('Set Default', callback=set_default)
@@ -663,29 +675,35 @@ def test():
                 # Input circuit preview
                 core.add_text('Input circuit:')
                 core.add_drawing('input_circuit', width=600, height=500)
-                core.draw_rectangle('input_circuit', [0, 150], [600, 500], [255, 255, 255, 0], [255, 255, 255, 50])
+                core.draw_rectangle('input_circuit', [0, 150], [600, 500], [
+                                    255, 255, 255, 0], [255, 255, 255, 50])
                 # Output circuit view
                 core.add_text('Output circuit:')
                 core.add_drawing('output_circuit', width=600, height=500)
-                core.draw_rectangle('output_circuit', [0, 150], [600, 500], [255, 255, 255, 0], [255, 255, 255, 50])
+                core.draw_rectangle('output_circuit', [0, 150], [600, 500], [
+                                    255, 255, 255, 0], [255, 255, 255, 50])
                 core.end()
 
             # program output
             core.add_same_line(name='line##3', xoffset=1020)
             with simple.group('right group'):
-                core.add_child('##output_block1', width=460, height=300, show=False)
+                core.add_child('##output_block1', width=460,
+                               height=300, show=False)
                 core.add_button('Open qasm file', callback=open_qasm)
                 core.add_text('Path to IBM circuit representation')
                 core.add_label_text('##circuitImage')
                 core.add_button('Mapping', callback=show_mapping)
                 core.end()
                 core.add_text('Program output:', show=False)
-                core.add_child('##output_block2', width=460, height=180, show=False)
-                core.add_text('Program output will be displayed here', wrap=440)
+                core.add_child('##output_block2', width=460,
+                               height=180, show=False)
+                core.add_text(
+                    'Program output will be displayed here', wrap=440)
                 core.end()
 
         except Exception as exc:
             print("[ERROR]: {}".format(exc))
+
 
 def set_styles():
     core.set_main_window_size(1500, 900)
@@ -720,6 +738,7 @@ def set_styles():
     core.set_style_circle_segment_max_error(1.60)
     core.add_additional_font('Karla-Regular.ttf', 20)
 
+
 def set_colors():
     core.set_theme_item(core.mvGuiCol_Text, 230, 230, 230, 255)
     core.set_theme_item(core.mvGuiCol_TextDisabled, 153, 153, 153, 255)
@@ -738,7 +757,7 @@ def set_colors():
     core.set_theme_item(core.mvGuiCol_ResizeGrip, 255, 255, 255, 41)
     core.set_theme_item(core.mvGuiCol_ResizeGripHovered, 199, 209, 255, 153)
     core.set_theme_item(core.mvGuiCol_ResizeGripActive, 199, 209, 255, 230)
-    core.set_theme_item(core.mvGuiCol_Tab, 86, 86, 174, 200) 
+    core.set_theme_item(core.mvGuiCol_Tab, 86, 86, 174, 200)
     core.set_theme_item(core.mvGuiCol_TabHovered, 115, 115, 230, 204)
     core.set_theme_item(core.mvGuiCol_TabActive, 103, 103, 185, 215)
     core.set_theme_item(core.mvGuiCol_TabUnfocused, 72, 72, 145, 209)
@@ -750,7 +769,8 @@ def set_colors():
     core.set_theme_item(core.mvGuiCol_TextSelectedBg, 0, 0, 255, 89)
     core.set_theme_item(core.mvGuiCol_DragDropTarget, 255, 255, 0, 230)
     core.set_theme_item(core.mvGuiCol_NavHighlight, 115, 115, 230, 204)
-    core.set_theme_item(core.mvGuiCol_NavWindowingHighlight, 255, 255, 255, 179)
+    core.set_theme_item(
+        core.mvGuiCol_NavWindowingHighlight, 255, 255, 255, 179)
     core.set_theme_item(core.mvGuiCol_NavWindowingDimBg, 204, 204, 204, 51)
     core.set_theme_item(core.mvGuiCol_ModalWindowDimBg, 51, 51, 51, 89)
     core.set_theme_item(core.mvGuiCol_WindowBg, 7, 7, 10, 255)
@@ -778,10 +798,9 @@ if __name__ == '__main__':
     # check if there is a file
     if not os.path.isfile('token.txt'):
         with simple.window('Enter you personal token from IBM website', no_scrollbar=True, height=70, width=400, x_pos=500, y_pos=200):
-                    core.add_input_text("##token", width=380)
-                    core.add_button("Enter", callback=createTokenFile)    
+            core.add_input_text("##token", width=380)
+            core.add_button("Enter", callback=createTokenFile)
     else:
         test()
-           
-    core.start_dearpygui()           
 
+    core.start_dearpygui()
