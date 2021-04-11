@@ -29,7 +29,7 @@ class SimpleCTG:
     # machin_name: specify which IBM server to use, if not specified then one with the biggest coupling map is used
     # builtin_funcs: specify whether use qiskit's swap and/or ccx functions by listing them. Ex: ['swap', 'ccx']
     # debugging: to be more verbose and print information on each steps
-    def __init__(self, machine_name: Optional[str] = None, builtin_funcs: Optional[List[str]] = None, debugging=False):
+    def __init__(self, machine_name: Optional[str] = None, builtin_funcs: Optional[List[str]] = None, debugging=False, arbitrary_coupling: Optional[List[str]] = None):
         # Quantum machine information
         self.machine_name = machine_name
         self.backend = None
@@ -37,6 +37,16 @@ class SimpleCTG:
         self.qubits_num = 0
         self.connections: Dict[(int, Dict[(int, bool)])] = {}
         self.paths: Dict[(int, Dict[(int, List[int])])] = {}
+        self.arbitrary = False
+        # if we are using arbitrary coupling, we need some modifications
+        if arbitrary_coupling != None:
+            self.couples = arbitrary_coupling
+            temp  = set()
+            for [first, second] in arbitrary_coupling:
+                temp.add(first)
+                temp.add(second)
+            self.qubits_num = len(temp)
+            self.arbitrary = True
 
         # The circuit information
         # The layout is variable -> logical -> physical
@@ -354,8 +364,12 @@ class SimpleCTG:
 
             self.backend = IBMQ.get_provider(
                 hub, group, project).get_backend(self.machine_name)
+            
+            configs = self.backend.configuration()
+            self.couples = configs.coupling_map
+            self.qubits_num = configs.n_qubits
         # Otherwise search for the quantum machine with the biggest coupling map
-        else:
+        elif not self.arbitrary:
             if self.debugging:
                 print('[INFO] Fetching list of backends...')
 
@@ -373,12 +387,14 @@ class SimpleCTG:
                     self.backend = backend
                     self.couples = coupling_map
 
-        if self.backend is None:
-            raise Exception('No backend was selected')
+            configs = self.backend.configuration()
+            self.couples = configs.coupling_map
+            self.qubits_num = configs.n_qubits
 
-        configs = self.backend.configuration()
-        self.couples = configs.coupling_map
-        self.qubits_num = configs.n_qubits
+        # if self.backend is None:
+        #     raise Exception('No backend was selected')
+
+        
 
         # Construct a graph where connections[0][1] means physical qubits 0 and 1 are connected
         for couple in self.couples:
@@ -651,8 +667,8 @@ def test(ctg: SimpleCTG, input_file: str, simple_mapping=False, debugging=True, 
     return feature_keeper
 
 
-def gui_interaction(circuit_file: str, directory: str, layout_type: bool, optimization_level: int,  architecture: str,
-                    num_of_iterations: int):
+def gui_interaction(circuit_file: str, directory: str, layout_type: bool, optimization_level: int,  architecture: str or list,
+                    num_of_iterations: int, arbitrary : bool):
     """
     Function called by gui.
     """
@@ -664,11 +680,14 @@ def gui_interaction(circuit_file: str, directory: str, layout_type: bool, optimi
     sys.stdout = s
 
     # create SimpleCTG instance
-    simple_ctg = SimpleCTG(architecture)
+    if arbitrary:
+        simple_ctg = SimpleCTG(None, arbitrary_coupling=architecture)
+    else:
+        simple_ctg = SimpleCTG(architecture)
     simple_ctg.initialize('ibm-q', 'open', 'main')
 
-    circuit_features = test(simple_ctg, directory + "/" + circuit_file, simple_mapping=layout_type,
-                            optimization_level=optimization_level, num_of_iterations=num_of_iterations)
+    circuit_features = test(simple_ctg, directory + "/" + circuit_file, simple_mapping=layout_type, optimization_level=optimization_level, num_of_iterations=num_of_iterations)
+        
 
     return s.getvalue(), circuit_features
 
