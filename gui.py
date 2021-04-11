@@ -177,6 +177,9 @@ def use_arbitrary_coupling(sender, data):
 
 
 def add_IBM_computers_view():
+    """
+    Adds IBM architecture selector.
+    """
     core.add_spacing(name='##space9', count=2)
     core.add_text('Architecture name:', before='##space5')
     core.add_radio_button('radio##3', items=list(gui.backend_dict.values())[
@@ -191,6 +194,9 @@ def add_arbitrary_coupling_view():
 
 
 def delete_IBM_computers_view():
+    """
+    Removes IBM architecture selector.
+    """
     core.delete_item('##space9')
     core.delete_item('Architecture name:')
     core.delete_item('radio##3')
@@ -588,6 +594,11 @@ def draw_graph(architecture, mapping, diameter=20):
 
 
 def check_iteration_num(sender, data):
+    """
+    Controls the number_of_iterations value so it will not be less than 1.
+
+    If value is less than 1, a warning message is displayed and default value of 1 is set.
+    """
     if core.get_value(sender) > 1 and core.get_value('Number of iterations should not be less than 1.'):
         core.delete_item('Number of iterations should not be less than 1.')
     if core.get_value(sender) < 1:
@@ -597,8 +608,10 @@ def check_iteration_num(sender, data):
                           255, 0, 0, 255], before='##num_of_iter', wrap=300)
 
 
-def test():
-
+def start():
+    """
+    Renders main window elements.
+    """
     with open('token.txt', 'r') as token_file:
         token = token_file.readline()
         try:
@@ -706,6 +719,9 @@ def test():
 
 
 def set_styles():
+    """
+    Sets custom values for DearPy GUI window settings.
+    """
     core.set_main_window_size(1500, 900)
     core.set_style_window_padding(8.00, 8.00)
     core.set_style_frame_padding(12.00, 4.00)
@@ -740,6 +756,9 @@ def set_styles():
 
 
 def set_colors():
+    """
+    Sets colors for DearPy GUI window.
+    """
     core.set_theme_item(core.mvGuiCol_Text, 230, 230, 230, 255)
     core.set_theme_item(core.mvGuiCol_TextDisabled, 153, 153, 153, 255)
     core.set_theme_item(core.mvGuiCol_PopupBg, 28, 28, 36, 235)
@@ -801,6 +820,6 @@ if __name__ == '__main__':
             core.add_input_text("##token", width=380)
             core.add_button("Enter", callback=createTokenFile)
     else:
-        test()
+        start()
 
     core.start_dearpygui()
