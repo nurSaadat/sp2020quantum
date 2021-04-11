@@ -199,13 +199,18 @@ def add_IBM_computers_view():
 
 def add_arbitrary_coupling_view():
     # load arbitrary couplings from file
-    with open('arbitrary_coupling.pickle', 'rb') as arbitrary_file:
-        custom_dict = pickle.load(arbitrary_file)
+    try:
+        with open('arbitrary_coupling.pickle', 'rb') as arbitrary_file:
+            custom_dict = pickle.load(arbitrary_file)
 
-    core.add_spacing(name='##space9', count=2)
-    core.add_text('Architecture name:', before='##space5')
-    core.add_radio_button('radio##3', items=list(custom_dict.keys()), source='architecture', before='##space5')
-    gui.prev_architecture = 2
+        core.add_spacing(name='##space9', count=2)
+        core.add_text('Architecture name:', before='##space5')
+        core.add_radio_button('radio##3', items=list(custom_dict.keys()), source='architecture', before='##space5')
+        gui.prev_architecture = 2
+    except:
+        core.add_spacing(name='##space9', count=2)
+        core.add_text('There are no arbitrary couplings.', before='##space5')
+        gui.prev_architecture = 2
 
 
 def delete_IBM_computers_view():
@@ -220,8 +225,12 @@ def delete_IBM_computers_view():
 
 def delete_arbitrary_coupling_view():
     core.delete_item('##space9')
-    core.delete_item('Architecture name:')
-    core.delete_item('radio##3')
+    if core.get_value("Architecture name:"):
+        core.delete_item('Architecture name:')
+        core.delete_item('radio##3')
+    else:
+        core.delete_item('There are no arbitrary couplings.')
+    
     gui.prev_architecture = 0
 
 
@@ -236,16 +245,19 @@ def show_architecture_list(sender, data):
             delete_IBM_computers_view()
         if (gui.prev_architecture == 2):
             delete_arbitrary_coupling_view()
+        core.configure_item('Create custom architecture', show=False)
 
     elif (my_var == 1 and gui.prev_architecture != 1):
         if (gui.prev_architecture == 2):
             delete_arbitrary_coupling_view()
         add_IBM_computers_view()
+        core.configure_item('Create custom architecture', show=False)
 
     elif (my_var == 2 and gui.prev_architecture != 2):
         if (gui.prev_architecture == 1):
             delete_IBM_computers_view()
         add_arbitrary_coupling_view()
+        core.configure_item('Create custom architecture', show=True)
 
 
 # function that creates a new window to create a new arbitrary coupling
@@ -389,7 +401,7 @@ def open_qasm(sender, data):
     """
     Opens window with qasm code
     """
-    with simple.window('Qasm code', width=400, height=600, on_close=delete_items(['Qasm code'])):
+    with simple.window('Qasm code', width=500, height=600, on_close=delete_items(['Qasm code'])):
         with open(gui.qasm_file, 'r') as f:
             core.add_text(f.read())
 
@@ -473,7 +485,7 @@ def open_about_window(sender, data):
     """
     Opens new window with credentials
     """
-    with simple.window('About##window', width=600, height=240, on_close=delete_items(['About##window'])):
+    with simple.window('About##window', width=700, height=300, on_close=delete_items(['About##window'])):
         core.add_text('Developers:')
         core.add_text(
             '* Valeriy Novossyolov [Computer Science senior student, Nazarbayev University]')
@@ -943,7 +955,7 @@ if __name__ == '__main__':
 
     # check if there is a file
     if not os.path.isfile('token.txt'):
-        with simple.window('Enter you personal token from IBM website', no_scrollbar=True, height=70, width=400, x_pos=500, y_pos=200):
+        with simple.window('Enter you personal token from IBM website', no_scrollbar=True, height=100, width=400, x_pos=500, y_pos=200):
             core.add_input_text("##token", width=380)
             core.add_button("Enter", callback=createTokenFile)
     else:
