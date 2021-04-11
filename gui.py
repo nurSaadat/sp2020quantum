@@ -663,9 +663,11 @@ def test():
                 # Input circuit preview
                 core.add_text('Input circuit:')
                 core.add_drawing('input_circuit', width=600, height=500)
+                core.draw_rectangle('input_circuit', [0, 150], [600, 500], [255, 255, 255, 0], [255, 255, 255, 50])
                 # Output circuit view
                 core.add_text('Output circuit:')
                 core.add_drawing('output_circuit', width=600, height=500)
+                core.draw_rectangle('output_circuit', [0, 150], [600, 500], [255, 255, 255, 0], [255, 255, 255, 50])
                 core.end()
 
             # program output
@@ -772,7 +774,6 @@ def set_colors():
 if __name__ == '__main__':
     set_styles()
     set_colors()
-    core.show_debug()    
 
     # check if there is a file
     if not os.path.isfile('token.txt'):
