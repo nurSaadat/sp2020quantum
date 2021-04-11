@@ -693,7 +693,7 @@ def gui_interaction(circuit_file: str, directory: str, layout_type: bool, optimi
 
 
 ## MAIN ##
-# # try:
+# try:
 # # Set file name
 # filename = input("Enter file name without .real: ")
 
@@ -709,5 +709,5 @@ def gui_interaction(circuit_file: str, directory: str, layout_type: bool, optimi
 # simple_ctg.initialize('ibm-q', 'open', 'main')
 
 # test(simple_ctg, './tests/' + filename + '.real')
-# # except Exception as ex:
-# #     print('\n[ERROR] {}'.format(ex))
+# except Exception as ex:
+#     print('\n[ERROR] {}'.format(ex))

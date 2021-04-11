@@ -18,6 +18,7 @@ from qiskit import IBMQ
 import SimpleCTG
 import pickle
 
+
 class GUI:
     def __init__(self):
         self.backend_dict = {}
@@ -26,17 +27,18 @@ class GUI:
         self.prev_architecture = 0
         self.qasm_file = ''
         self.projection_map = {}
-
         self.arbitrary_node_list = []
         self.arbitrary_node_connections = {}
 
 gui = GUI()
+
 
 def print_me(sender, data):
     """
     Callback for menu items.
     """
     core.log_debug("Menu Item: {}".format(sender))
+
 
 def createTokenFile(sender, data):
     """
@@ -46,7 +48,8 @@ def createTokenFile(sender, data):
     with open('token.txt', 'w') as token_f:
         token_f.write(token)
     core.delete_item('Enter you personal token from IBM website')
-    test()
+    start()
+
 
 def progress_async(sender, data):
     """
@@ -90,26 +93,13 @@ def show_button(sender, data):
         if (gui.loading):
             core.delete_item('Please wait')
             gui.loading = False
-        core.configure_item('File Selector', show=True)
-        core.configure_item('File location:', show=True)
-        core.configure_item('##filedir', show=True)
-        core.configure_item('File name:', show=True)
-        core.configure_item('##file', show=True)
-        core.configure_item('Architecture type:', show=True)
-        core.configure_item('radio##1', show=True)
-        core.configure_item('Create custom architecture', show=True)
-        core.configure_item('Quantum circuit layout method:', show=True)
-        core.configure_item('radio##2', show=True)
-        core.configure_item('Optimization level:', show=True)
-        core.configure_item('##optimization_lvl', show=True)
-        core.configure_item('Number of iterations:', show=True)
-        core.configure_item('##num_of_iter', show=True)
-        core.configure_item('Set Default', show=True)
+        core.configure_item('##file_block', show=True)
+        core.configure_item('##settings_block', show=True)
         core.configure_item('Process', show=True)
-        core.configure_item('Input circuit:', show=True)
-        core.configure_item('Output circuit:', show=True)
+        core.configure_item('##images_block', show=True)
+        core.configure_item('##output_block1', show=True)
+        core.configure_item('##output_block2', show=True)
         core.configure_item('Program output:', show=True)
-        core.configure_item('Program output will be displayed here', show=True)
 
 
 def set_default(sender, data):
@@ -125,7 +115,7 @@ def set_default(sender, data):
     core.set_value('architecture', 1)
     core.set_value('layout_type', 1)
     core.set_value('opt_level', 1)
-    core.set_value('num_of_iter', 100)
+    core.set_value('##num_of_iter', 100)
 
 
 def process(sender, data):
@@ -135,7 +125,7 @@ def process(sender, data):
     directory = core.get_value('directory')
     file_directory = core.get_value('file_directory')
     opt_level = core.get_value('opt_level')
-    num_of_iter = core.get_value('num_of_iter')
+    num_of_iter = core.get_value('##num_of_iter')
 
     # converts layout type to boolean for SimpleCTG
     temp = core.get_value('layout_type')
@@ -175,15 +165,13 @@ def process(sender, data):
         core.draw_image('output_circuit', circuit_features['reduced_graph'], [
                         0, 500], pmax=[200, 500])
         gui.qasm_file = circuit_features['qasm_file']
-        core.set_value('circuitImage', circuit_features['ibm_circuit'])
+        core.set_value('##circuitImage', circuit_features['ibm_circuit'])
         gui.projection_map = circuit_features['mapping']
         core.set_value('Program output will be displayed here',
                        "Processed file: " + core.get_value('file_directory') + "\n" + infoStr)
         core.configure_item('Open qasm file', show=True)
         core.configure_item('Mapping', show=True)
         core.configure_item('Path to IBM circuit representation', show=True)
-        core.configure_item(
-            'circuitImage', value=core.get_value('circuitImage'))
     except Exception as ex:
         # if error, then makes text red and removes features
         core.configure_item(
@@ -194,15 +182,18 @@ def process(sender, data):
         core.clear_drawing('output_circuit')
         core.configure_item('Open qasm file', show=False)
         core.configure_item('Mapping', show=False)
-        core.configure_item('circuitImage', show=False)
+        core.configure_item('##circuitImage', show=False)
         core.configure_item('Path to IBM circuit representation', show=False)
 
 
 def add_IBM_computers_view():
+    """
+    Adds IBM architecture selector.
+    """
     core.add_spacing(name='##space9', count=2)
     core.add_text('Architecture name:', before='##space5')
     core.add_radio_button('radio##3', items=list(gui.backend_dict.values())[
-                            1:], source='architecture', before='##space5')
+        1:], source='architecture', before='##space5')
     gui.prev_architecture = 1
 
 
@@ -218,6 +209,9 @@ def add_arbitrary_coupling_view():
 
 
 def delete_IBM_computers_view():
+    """
+    Removes IBM architecture selector.
+    """
     core.delete_item('##space9')
     core.delete_item('Architecture name:')
     core.delete_item('radio##3')
@@ -366,7 +360,8 @@ def file_picker(sender, data):
     """
     Opens file dialog window to choose .pla file
     """
-    core.open_file_dialog(callback=apply_selected_directory, extensions='.real')
+    core.open_file_dialog(
+        callback=apply_selected_directory, extensions='.real')
 
 
 def apply_selected_directory(sender, data):
@@ -421,7 +416,8 @@ def open_help_window(sender, data):
     """
     with simple.window('Help##window', width=1000, height=600, on_close=delete_items(['Help##window'])):
         with simple.menu_bar("Help Menu Bar"):
-            core.add_menu_item("Architectures", callback=help_show_architectures)
+            core.add_menu_item(
+                "Architectures", callback=help_show_architectures)
             core.add_menu_item("Instructions", callback=help_show_instructions)
 
         with simple.group('helpArchitectures'):
@@ -505,9 +501,9 @@ def show_mapping(sender, data):
         architecture = gui.backend_dict[core.get_value('architecture') + 1]
 
     old_dict = gui.projection_map
-    new_dict = dict([(value, key) for key, value in old_dict.items()])     
+    new_dict = dict([(value, key) for key, value in old_dict.items()])
     draw_graph(architecture, new_dict)
-    
+
 
 def draw_graph(architecture, mapping, diameter=20):
     """
@@ -521,7 +517,7 @@ def draw_graph(architecture, mapping, diameter=20):
     Returns: 
     None 
     """
-    with simple.window('Graph', width=800, height=800, on_close=delete_items(['Graph', 'drawing1'])):
+    with simple.window('Graph', width=800, height=800, on_close=delete_items(['Graph'])):
         core.add_drawing('drawing1', width=int(
             diameter*diameter*2), height=int((diameter/2)**2))
 
@@ -721,8 +717,25 @@ def draw_graph(architecture, mapping, diameter=20):
                 start_y += diameter * 3
 
 
-def test():
+def check_iteration_num(sender, data):
+    """
+    Controls the number_of_iterations value so it will not be less than 1.
 
+    If value is less than 1, a warning message is displayed and default value of 1 is set.
+    """
+    if core.get_value(sender) > 1 and core.get_value('Number of iterations should not be less than 1.'):
+        core.delete_item('Number of iterations should not be less than 1.')
+    if core.get_value(sender) < 1:
+        core.set_value('##num_of_iter', 1)
+        if not core.get_value('Number of iterations should not be less than 1.'):
+            core.add_text('Number of iterations should not be less than 1.', color=[
+                          255, 0, 0, 255], before='##num_of_iter', wrap=300)
+
+
+def start():
+    """
+    Renders main window elements.
+    """
     with open('token.txt', 'r') as token_file:
         token = token_file.readline()
         try:
@@ -733,13 +746,8 @@ def test():
             # Progress bar
             with simple.window('Please wait', no_scrollbar=True, height=70, width=400, x_pos=500, y_pos=200):
                 core.add_progress_bar('progress', value=0.0,
-                                    overlay='Connecting to IBM...', width=400)
+                                      overlay='Connecting to IBM...', width=400)
                 core.run_async_function(progress_async, 0)
-
-            # Title
-            core.add_text('Quantum visualization machine ver 1.0.0',
-                        color=[52, 73, 235])
-            core.add_spacing(name='##space1', count=5)
 
             # Menu bar
             with simple.menu_bar("Main Menu Bar"):
@@ -753,92 +761,192 @@ def test():
                 core.add_menu_item("About", callback=open_about_window)
 
             # Parameters group
-            with simple.group('left group', width=300):
+            with simple.group('left group', width=350):
                 # Select file button
-                core.add_button('File Selector', callback=file_picker, show=False)
+                core.add_child('##file_block', width=350,
+                               height=180, show=False)
+                core.add_button('File Selector', callback=file_picker)
                 core.add_spacing(name='##space2', count=3)
-                core.add_text('File location:', show=False)
+                core.add_text('File location:')
                 core.add_label_text('##filedir', value='None Selected',
-                                    source='directory', show=False)
+                                    source='directory')
                 core.add_spacing(name='##space3', count=3)
-                core.add_text('File name:', show=False)
+                core.add_text('File name:')
                 core.add_label_text('##file', value='None Selected',
-                                    source='file_directory', show=False)
+                                    source='file_directory')
+                core.end()
                 core.add_spacing(name='##space4', count=3)
                 # Architecture type radio button
-                core.add_text('Architecture type:', show=False)
+                core.add_child('##settings_block', width=350,
+                               height=450, show=False)
+                core.add_text('Architecture type:')
                 core.add_radio_button('radio##1', items=[
-                                    'IBM simulator', 'IBM quantum computer', 'Arbitrary computer coupling'], callback=show_architecture_list, source='device_type', show=False)
+                    'IBM simulator', 'IBM quantum computer', 'Arbitrary computer coupling'], callback=show_architecture_list, source='device_type')
                 core.add_spacing(name='##space5', count=3)
                 # "Create arbitrary coupling" button
                 core.add_button('Create custom architecture', callback=create_architecture, show=False)
                 core.add_spacing(name='##space11', count=3)
                 # Layout radio button
-                core.add_text('Quantum circuit layout method:', show=False)
+                core.add_text('Quantum circuit layout method:')
                 core.add_radio_button('radio##2', items=[
-                                    'Original IBM layout', 'Advanced SWAP placement'], source='layout_type', show=False)
+                    'Original IBM layout', 'Advanced SWAP placement'], source='layout_type')
                 core.add_spacing(name='##space6', count=3)
                 # Optimization level slider
-                core.add_text('Optimization level:', show=False)
+                core.add_text('Optimization level:')
                 core.add_slider_int('##optimization_lvl', default_value=1, min_value=0, max_value=3,
-                                    tip='drag the slider to select an optimization level', width=300, source='opt_level', show=False)
+                                    tip='drag the slider to select an optimization level', width=300, source='opt_level')
                 core.add_spacing(name='##space7', count=3)
                 # Number of iterations slider
-                core.add_text('Number of iterations:', show=False)
-                core.add_slider_int('##num_of_iter', default_value=100, min_value=1, max_value=100,
-                                    tip='drag the slider to number of iterations', width=300, source='num_of_iter', show=False)
+                core.add_text('Number of iterations:')
+                core.add_input_int('##num_of_iter', width=300,
+                                   callback=check_iteration_num, default_value=100)
                 core.add_spacing(name='##space8', count=3)
                 # Default settings button
-                core.add_button('Set Default', callback=set_default, show=False)
+                core.add_button('Set Default', callback=set_default)
+                core.end()
                 core.add_spacing(name='##space9', count=3)
                 # Process button
                 core.add_button('Process', callback=process, show=False)
 
             # graph images
-            core.add_same_line(name='line##3', xoffset=350)
+            core.add_same_line(name='line##3', xoffset=370)
             with simple.group('center group'):
+                core.add_child('##images_block', width=640, show=False)
                 # Input circuit preview
-                core.add_text('Input circuit:', show=False)
+                core.add_text('Input circuit:')
                 core.add_drawing('input_circuit', width=600, height=500)
+                core.draw_rectangle('input_circuit', [0, 150], [600, 500], [
+                                    255, 255, 255, 0], [255, 255, 255, 50])
                 # Output circuit view
-                core.add_text('Output circuit:', show=False)
+                core.add_text('Output circuit:')
                 core.add_drawing('output_circuit', width=600, height=500)
+                core.draw_rectangle('output_circuit', [0, 150], [600, 500], [
+                                    255, 255, 255, 0], [255, 255, 255, 50])
+                core.end()
 
             # program output
-            core.add_same_line(name='line##3', xoffset=1000)
+            core.add_same_line(name='line##3', xoffset=1020)
             with simple.group('right group'):
-                core.add_button('Open qasm file', callback=open_qasm, show=False)
-                core.add_text('Path to IBM circuit representation', show=False)
-                core.add_label_text('circuitImage')
-                core.add_button('Mapping', callback=show_mapping, show=False)
+                core.add_child('##output_block1', width=460,
+                               height=300, show=False)
+                core.add_button('Open qasm file', callback=open_qasm)
+                core.add_text('Path to IBM circuit representation')
+                core.add_label_text('##circuitImage')
+                core.add_button('Mapping', callback=show_mapping)
+                core.end()
                 core.add_text('Program output:', show=False)
-                core.add_text('Program output will be displayed here',
-                            show=False, wrap=440)
+                core.add_child('##output_block2', width=460,
+                               height=180, show=False)
+                core.add_text(
+                    'Program output will be displayed here', wrap=440)
+                core.end()
 
-            # opt_level = core.get_value('opt_level')
-            # num_of_iter = core.get_value('num_of_iter')
-            # layout_type = core.get_value('layout_type')
-            # architecture = core.get_value('device_type')
-            # core.log_debug(layout_type)
-            # core.log_debug(opt_level)
-            # core.log_debug(architecture)
-            # core.log_debug(num_of_iter)
-            # core.show_logger()
-
-            
         except Exception as exc:
             print("[ERROR]: {}".format(exc))
 
 
-if __name__ == '__main__':
+def set_styles():
+    """
+    Sets custom values for DearPy GUI window settings.
+    """
     core.set_main_window_size(1500, 900)
+    core.set_style_window_padding(8.00, 8.00)
+    core.set_style_frame_padding(12.00, 4.00)
+    core.set_style_item_spacing(8.00, 2.00)
+    core.set_style_item_inner_spacing(2.00, 1.00)
+    core.set_style_touch_extra_padding(0.00, 0.00)
+    core.set_style_indent_spacing(12.00)
+    core.set_style_scrollbar_size(16.00)
+    core.set_style_grab_min_size(20.00)
+    core.set_style_window_border_size(1.00)
+    core.set_style_child_border_size(1.00)
+    core.set_style_popup_border_size(0.00)
+    core.set_style_frame_border_size(0.00)
+    core.set_style_tab_border_size(0.00)
+    core.set_style_window_rounding(4.00)
+    core.set_style_child_rounding(4.00)
+    core.set_style_frame_rounding(5.00)
+    core.set_style_popup_rounding(4.00)
+    core.set_style_scrollbar_rounding(5.00)
+    core.set_style_grab_rounding(4.00)
+    core.set_style_tab_rounding(5.00)
+    core.set_style_window_title_align(0.50, 0.50)
+    core.set_style_button_text_align(0.50, 0.50)
+    core.set_style_selectable_text_align(0.00, 0.00)
+    core.set_style_display_safe_area_padding(4.00, 4.00)
+    core.set_style_global_alpha(1.00)
+    core.set_style_antialiased_lines(True)
+    core.set_style_antialiased_fill(True)
+    core.set_style_curve_tessellation_tolerance(1.25)
+    core.set_style_circle_segment_max_error(1.60)
+    core.add_additional_font('Karla-Regular.ttf', 20)
+
+
+def set_colors():
+    """
+    Sets colors for DearPy GUI window.
+    """
+    core.set_theme_item(core.mvGuiCol_Text, 230, 230, 230, 255)
+    core.set_theme_item(core.mvGuiCol_TextDisabled, 153, 153, 153, 255)
+    core.set_theme_item(core.mvGuiCol_PopupBg, 28, 28, 36, 235)
+    core.set_theme_item(core.mvGuiCol_BorderShadow, 0, 0, 0, 0)
+    core.set_theme_item(core.mvGuiCol_ScrollbarBg, 51, 64, 77, 153)
+    core.set_theme_item(core.mvGuiCol_ScrollbarGrab, 102, 102, 204, 77)
+    core.set_theme_item(core.mvGuiCol_ScrollbarGrabHovered, 102, 102, 204, 102)
+    core.set_theme_item(core.mvGuiCol_ScrollbarGrabActive, 105, 99, 204, 153)
+    core.set_theme_item(core.mvGuiCol_Header, 102, 102, 230, 115)
+    core.set_theme_item(core.mvGuiCol_HeaderHovered, 115, 115, 230, 204)
+    core.set_theme_item(core.mvGuiCol_HeaderActive, 135, 135, 222, 204)
+    core.set_theme_item(core.mvGuiCol_Separator, 128, 128, 128, 153)
+    core.set_theme_item(core.mvGuiCol_SeparatorHovered, 153, 153, 179, 255)
+    core.set_theme_item(core.mvGuiCol_SeparatorActive, 179, 179, 230, 255)
+    core.set_theme_item(core.mvGuiCol_ResizeGrip, 255, 255, 255, 41)
+    core.set_theme_item(core.mvGuiCol_ResizeGripHovered, 199, 209, 255, 153)
+    core.set_theme_item(core.mvGuiCol_ResizeGripActive, 199, 209, 255, 230)
+    core.set_theme_item(core.mvGuiCol_Tab, 86, 86, 174, 200)
+    core.set_theme_item(core.mvGuiCol_TabHovered, 115, 115, 230, 204)
+    core.set_theme_item(core.mvGuiCol_TabActive, 103, 103, 185, 215)
+    core.set_theme_item(core.mvGuiCol_TabUnfocused, 72, 72, 145, 209)
+    core.set_theme_item(core.mvGuiCol_TabUnfocusedActive, 89, 89, 166, 213)
+    core.set_theme_item(core.mvGuiCol_PlotLines, 255, 255, 255, 255)
+    core.set_theme_item(core.mvGuiCol_PlotLinesHovered, 230, 179, 0, 255)
+    core.set_theme_item(core.mvGuiCol_PlotHistogram, 230, 179, 0, 255)
+    core.set_theme_item(core.mvGuiCol_PlotHistogramHovered, 255, 153, 0, 255)
+    core.set_theme_item(core.mvGuiCol_TextSelectedBg, 0, 0, 255, 89)
+    core.set_theme_item(core.mvGuiCol_DragDropTarget, 255, 255, 0, 230)
+    core.set_theme_item(core.mvGuiCol_NavHighlight, 115, 115, 230, 204)
+    core.set_theme_item(
+        core.mvGuiCol_NavWindowingHighlight, 255, 255, 255, 179)
+    core.set_theme_item(core.mvGuiCol_NavWindowingDimBg, 204, 204, 204, 51)
+    core.set_theme_item(core.mvGuiCol_ModalWindowDimBg, 51, 51, 51, 89)
+    core.set_theme_item(core.mvGuiCol_WindowBg, 7, 7, 10, 255)
+    core.set_theme_item(core.mvGuiCol_ChildBg, 255, 255, 255, 34)
+    core.set_theme_item(core.mvGuiCol_Border, 65, 65, 65, 128)
+    core.set_theme_item(core.mvGuiCol_FrameBg, 98, 0, 238, 201)
+    core.set_theme_item(core.mvGuiCol_FrameBgHovered, 82, 3, 194, 201)
+    core.set_theme_item(core.mvGuiCol_FrameBgActive, 87, 0, 211, 142)
+    core.set_theme_item(core.mvGuiCol_TitleBg, 42, 0, 136, 191)
+    core.set_theme_item(core.mvGuiCol_TitleBgActive, 55, 0, 179, 219)
+    core.set_theme_item(core.mvGuiCol_TitleBgCollapsed, 59, 68, 132, 255)
+    core.set_theme_item(core.mvGuiCol_MenuBarBg, 83, 4, 195, 255)
+    core.set_theme_item(core.mvGuiCol_CheckMark, 3, 218, 197, 255)
+    core.set_theme_item(core.mvGuiCol_SliderGrab, 3, 218, 197, 255)
+    core.set_theme_item(core.mvGuiCol_SliderGrabActive, 35, 180, 166, 255)
+    core.set_theme_item(core.mvGuiCol_Button, 98, 0, 238, 255)
+    core.set_theme_item(core.mvGuiCol_ButtonHovered, 98, 0, 238, 222)
+    core.set_theme_item(core.mvGuiCol_ButtonActive, 98, 0, 238, 158)
+
+
+if __name__ == '__main__':
+    set_styles()
+    set_colors()
 
     # check if there is a file
     if not os.path.isfile('token.txt'):
         with simple.window('Enter you personal token from IBM website', no_scrollbar=True, height=70, width=400, x_pos=500, y_pos=200):
-                    core.add_input_text("##token", width=380)
-                    core.add_button("Enter", callback=createTokenFile)    
+            core.add_input_text("##token", width=380)
+            core.add_button("Enter", callback=createTokenFile)
     else:
-        test()
-   
-    core.start_dearpygui()           
+        start()
+
+    core.start_dearpygui()
