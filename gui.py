@@ -393,73 +393,55 @@ def open_qasm(sender, data):
         with open(gui.qasm_file, 'r') as f:
             core.add_text(f.read())
 
-
-def help_show_architectures(sender, data):
-    """
-    Switch to architecture tab
-    """
-    core.configure_item('helpArchitectures', show=True)
-    core.configure_item('helpShowInstructions', show=False)
-
-
-def help_show_instructions(sender, data):
-    """
-    Switch to instructions tab
-    """
-    core.configure_item('helpShowInstructions', show=True)
-    core.configure_item('helpArchitectures', show=False)
-
-
 def open_help_window(sender, data):
     """
     Opens new window with help annotations
     """
     with simple.window('Help##window', width=1000, height=600, on_close=delete_items(['Help##window'])):
-        with simple.menu_bar("Help Menu Bar"):
-            core.add_menu_item(
-                "Architectures", callback=help_show_architectures)
-            core.add_menu_item("Instructions", callback=help_show_instructions)
+        with simple.tab_bar("Help tabs"):
+            with simple.tab('Architectures##help'):
+                core.add_drawing('armonk', width=72, height=75)
+                core.draw_image('armonk', './backends/armonk.png', [72, 72])
+                core.add_text('ibmq_armonk: 1 qubit.')
+                core.add_spacing(name='##space10', count=10)
 
-        with simple.group('helpArchitectures'):
-            core.add_drawing('armonk', width=72, height=75)
-            core.draw_image('armonk', './backends/armonk.png', [72, 72])
-            core.add_text('ibmq_armonk: 1 qubit.')
-            core.add_spacing(name='##space10', count=10)
+                core.add_drawing('athens', width=518, height=75)
+                core.draw_image(
+                    'athens', './backends/athens-santiago.png', [0, 72])
+                core.add_text('ibmq_athens and ibmq_santiago: 5 qubits.')
+                core.add_spacing(name='##space12', count=10)
 
-            core.add_drawing('athens', width=518, height=75)
-            core.draw_image(
-                'athens', './backends/athens-santiago.png', [0, 72])
-            core.add_text('ibmq_athens and ibmq_santiago: 5 qubits.')
-            core.add_spacing(name='##space10', count=10)
+                core.add_drawing('yorktown', width=373, height=400)
+                core.draw_image('yorktown', './backends/ibmqx2.png', [0, 400])
+                core.add_text('ibmqx2: 5 qubits.')
+                core.add_spacing(name='##space13', count=10)
 
-            core.add_drawing('yorktown', width=373, height=400)
-            core.draw_image('yorktown', './backends/ibmqx2.png', [0, 400])
-            core.add_text('ibmqx2: 5 qubits.')
-            core.add_spacing(name='##space10', count=10)
+                core.add_drawing('melb', width=1000, height=196)
+                core.draw_image('melb', './backends/melbourne.png', [0, 196])
+                core.add_text('ibmq_16_melbourne: 15 qubits.')
+                core.add_spacing(name='##space14', count=10)
 
-            core.add_drawing('melb', width=1000, height=196)
-            core.draw_image('melb', './backends/melbourne.png', [0, 196])
-            core.add_text('ibmq_16_melbourne: 15 qubits.')
-            core.add_spacing(name='##space10', count=10)
+            with simple.tab('Instructions##help'):
+                core.add_text(
+                    '1. In the Selector block a user can select optimization parameters:')
+                core.add_spacing(name='##text_spacing1', count=5)
 
-        with simple.group('helpInstructions', show="False"):
-            core.add_text(
-                'In the Selector block a user can select optimization parameters:')
-            core.add_text(
-                '* the level of optimization provided by IBM Q (ranging from 0 to 3)')
-            core.add_text('* IBM Original layout or advanced SWAP placement')
-            core.add_text('* location of placement')
-            core.add_text('* number of iterations.')
+                core.add_text(
+                    '* the level of optimization provided by IBM Q (ranging from 0 to 3)')
+                core.add_text('* IBM Original layout or advanced SWAP placement')
+                core.add_text('* location of placement')
+                core.add_text('* number of iterations.')
+                core.add_spacing(name='##text_spacing2', count=5)
 
-            instruction_text = """In the Hardware & Circuit block the user can choose between testing the circuit on a quantum computer (IBM Q) and simulator (Qasm). The user also can choose quantum coupling (quantum computer architecture) - from IBM Q or Qasm. Finally, there is a button to upload an input file.  After selection, the file name will be displayed in the Hardware & Circuit block and the circuit representation will be displayed in the Circuit before the reduction block. When pressing on the Process button the tool will find the optimal mapping of the circuit onto the quantum computer architecture. The resulting mapping will appear in the Circuit after the reduction block."""
-            count = 0
-            step = 120
-            while (count + step) < len(instruction_text):
-                core.add_text(instruction_text[count: count + step])
-                if instruction_text[count + step] != ' ' and instruction_text[count + step] != '-':
-                    core.add_same_line()
-                    core.add_text('-')
-                count += step
+                core.add_text('2. In the Hardware & Circuit block choose between testing the circuit on a quantum computer (IBM Q) and simulator (Qasm).', wrap=900)
+                core.add_spacing(name='##text_spacing3', count=5)
+                core.add_text('3. Choose quantum coupling (quantum computer architecture) - IBM Q or Qasm.', wrap=900)
+                core.add_spacing(name='##text_spacing4', count=5)
+                core.add_text('4. Upload an input file. After selection, the file name will be displayed in the Hardware & Circuit block and the circuit representation will be displayed in the Circuit before the reduction block.', wrap=900)
+                core.add_spacing(name='##text_spacing5', count=5)
+                core.add_text('5. When pressing on the Process button the tool will find the optimal mapping of the circuit onto the quantum computer architecture.', wrap=900)
+                core.add_spacing(name='##text_spacing6', count=5)
+                core.add_text('6. The resulting mapping will appear in the Circuit after the reduction block.', wrap=900)
 
 
 def open_about_window(sender, data):
