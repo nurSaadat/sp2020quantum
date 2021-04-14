@@ -68,7 +68,6 @@ def activate_IBM_account(token=""):
     """
     if not token:
         raise ValueError('No personal token for authentication')
-    # TOKEN = 'd3ea16a94139c07aac8b34dc0a5d4d999354b232118788f43abe6c1414ce9b92a89194d5e7488a0fc8bce644b08927e85c4f127cd973cb32e76fc0d1a766758b'
     IBMQ.enable_account(token)
 
 
@@ -80,7 +79,8 @@ def get_backends_async(sender, data):
     backends = IBMQ.get_provider().backends()
     # add backend names with indexes, so it will be easier to retrieve them in radio button
     for i in range(len(backends)):
-        gui.backend_dict[i] = backends[i].name()
+        if not backends[i].name().startswith("simulator"):
+            gui.backend_dict[i] = backends[i].name()
     gui.server_on = True
     gui.loading = True
 
@@ -440,13 +440,6 @@ def open_help_window(sender, data):
             core.add_drawing('melb', width=1000, height=196)
             core.draw_image('melb', './backends/melbourne.png', [0, 196])
             core.add_text('ibmq_16_melbourne: 15 qubits.')
-            core.add_spacing(name='##space10', count=10)
-
-            core.add_drawing('vigo', width=373, height=400)
-            core.draw_image(
-                'vigo', './backends/vigo-ourence-valencia.png', [0, 400])
-            core.add_text(
-                'ibmq_vigo, ibmq_valencia, and ibmq_ourence: 5 qubits.')
             core.add_spacing(name='##space10', count=10)
 
         with simple.group('helpInstructions', show="False"):
