@@ -16,7 +16,7 @@ refactoring of quantum and reversible circuits: Quantum layout,” in 2020
 # Functionality
 
 When running the program, it checks whether all necessary libraries are installed and asks for a valid IBM 
-personal token. It is neede as we use IBM Q resources to run our circuits and receive statistics, and can be obtained 
+personal token. It is needed as IBM Q resources are used to run circuits and receive statistics, and it can be obtained 
 after registration on the IBM Quantum website. [Link to the IBM Q website](https://quantum-computing.ibm.com/) (Accessed 16 Nov 2022)
 ![upd_token](https://user-images.githubusercontent.com/39532643/202240062-d4420e19-51d5-45dc-bbf7-8f7b8e6c2206.png)
 ![upd_connect](https://user-images.githubusercontent.com/39532643/202240084-f1cfbf07-c74f-4923-bcd0-19f1b2eb493d.png)
@@ -52,10 +52,10 @@ This is how the application window looks after processing a circuit
 
 # System requirements
 
-All of our program components are written in Python
+All of the program components are written in Python
 because the IBM Q API is designed so it can be used in
-Python programs extensively. Our graphical interface supports
+Python programs extensively. The graphical interface supports
 any given operating system and hardware which supports
-Python. For the graphical implementation, our visualization
+Python. For the graphical implementation, the visualization
 tool relies on third-party GUI library Dear PyGui. For the
-algorithm implementation, our tool requires internet connection with IBM Q servers.
+algorithm implementation, the tool requires internet connection with IBM Q servers.
